@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<title>Studara — Promo Video</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  width: 1280px; height: 720px;
+  background: #0A0A0F;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  overflow: hidden;
+  color: #fff;
+  position: relative;
+}
+
+/* ─── BG GRADIENT ORBS ─────────────────────────── */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+  animation: drift 12s ease-in-out infinite alternate;
+}
+.orb1 { width:500px;height:500px;background:#7C3AED;top:-100px;left:-100px;animation-delay:0s; }
+.orb2 { width:400px;height:400px;background:#0D9488;top:300px;right:-80px;animation-delay:3s; }
+.orb3 { width:350px;height:350px;background:#2563EB;bottom:-80px;left:300px;animation-delay:6s; }
+@keyframes drift { from{transform:translate(0,0) scale(1)} to{transform:translate(40px,30px) scale(1.1)} }
+
+/* ─── SCENES ─────────────────────────────────────── */
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+.scene.active { opacity: 1; pointer-events: all; }
+
+/* ─── PROGRESS BAR ───────────────────────────────── */
+#progress-bar {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #7C3AED, #0D9488, #2563EB);
+  width: 0%;
+  transition: width 0.1s linear;
+  z-index: 1000;
+}
+
+/* ─── SCENE COUNTER ──────────────────────────────── */
+#counter {
+  position: absolute;
+  top: 20px; left: 20px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  font-weight: 600;
+  letter-spacing: 2px;
+  z-index: 1000;
+}
+
+/* ─── SKIP / REPLAY ──────────────────────────────── */
+#controls {
+  position: absolute;
+  bottom: 16px; right: 20px;
+  display: flex; gap: 10px;
+  z-index: 1000;
+}
+.ctrl-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ctrl-btn:hover { background:rgba(255,255,255,0.15); color:#fff; }
+
+/* ═══════════════════════════════════════════════════
+   SCENE 0 — INTRO LOGO
+════════════════════════════════════════════════════ */
+.intro {
+  flex-direction: column;
+  text-align: center;
+}
+.logo-ring {
+  width: 160px; height: 160px;
+  border-radius: 44px;
+  background: linear-gradient(135deg, #7C3AED, #4F46E5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 72px;
+  box-shadow: 0 0 80px rgba(124,58,237,0.5);
+  margin-bottom: 28px;
+  animation: popIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.3s;
+}
+@keyframes popIn {
+  from { transform: scale(0.3); opacity:0; }
+  to   { transform: scale(1);   opacity:1; }
+}
+.intro-title {
+  font-size: 80px;
+  font-weight: 900;
+  background: linear-gradient(90deg, #A78BFA, #38BDF8, #34D399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: slideUp 0.6s ease both;
+  animation-delay: 0.7s;
+}
+.intro-sub {
+  font-size: 22px;
+  color: rgba(255,255,255,0.5);
+  margin-top: 12px;
+  animation: slideUp 0.6s ease both;
+  animation-delay: 1s;
+}
+.intro-country {
+  font-size: 16px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 8px;
+  animation: slideUp 0.6s ease both;
+  animation-delay: 1.2s;
+}
+@keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* ═══════════════════════════════════════════════════
+   PHONE MOCKUP (used across scenes)
+════════════════════════════════════════════════════ */
+.phone-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.phone {
+  width: 300px; height: 600px;
+  background: #1C1C1E;
+  border-radius: 48px;
+  border: 6px solid #3A3A3C;
+  box-shadow: 0 0 0 1px #555, 0 50px 100px rgba(0,0,0,0.7), inset 0 0 0 1px #444;
+  overflow: hidden;
+  position: relative;
+}
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 90px; height: 24px;
+  background: #1C1C1E;
+  border-radius: 0 0 16px 16px;
+  z-index: 999;
+}
+.screen {
+  width:100%; height:100%;
+  border-radius: 42px;
+  overflow: hidden;
+  position: relative;
+  background: #F3F4F6;
+  direction: rtl;
+  font-family: 'Segoe UI','Arial',sans-serif;
+}
+
+/* ── Status bar ── */
+.sb {
+  display:flex; justify-content:space-between; align-items:center;
+  padding: 10px 16px 4px;
+  font-size: 11px; font-weight: 700;
+  position: absolute; top:0; left:0; right:0;
+  z-index: 10; color:#fff;
+}
+.sb.dk { color:#111; }
+
+/* ── OrbitBar ── */
+.ob {
+  position:absolute; bottom:16px; left:20px; right:20px;
+  height:60px; background:#fff; border-radius:30px;
+  display:flex; align-items:center; justify-content:space-around;
+  box-shadow:0 8px 32px rgba(0,0,0,0.15); z-index:100;
+}
+.ob-center {
+  width:48px;height:48px;
+  background:linear-gradient(135deg,#0D9488,#059669);
+  border-radius:24px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;
+  box-shadow:0 4px 16px rgba(13,148,136,0.5);
+}
+
+/* ─── SIDE COPY PANEL ────────────────────────────── */
+.copy-panel {
+  max-width: 460px;
+  padding: 0 60px 0 0;
+}
+.copy-eyebrow {
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 12px;
+}
+.copy-title {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.copy-body {
+  font-size: 16px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+.copy-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-left: 8px;
+  margin-bottom: 8px;
+}
+
+/* ─── SPLIT LAYOUT ───────────────────────────────── */
+.split {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+  width: 100%;
+  padding: 0 60px;
+}
+.split.rev { flex-direction: row-reverse; }
+
+/* ─── FULL CENTER ────────────────────────────────── */
+.full-center {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.multi-phones {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.multi-phones .phone {
+  width: 200px;
+  height: 400px;
+}
+.multi-phones .phone.main {
+  width: 240px;
+  height: 480px;
+  transform: translateY(-20px);
+  box-shadow: 0 0 60px rgba(124,58,237,0.4), 0 50px 100px rgba(0,0,0,0.7);
+}
+
+/* ═══════════════════════════════════════════════════
+   SCREEN CONTENT STYLES
+════════════════════════════════════════════════════ */
+
+/* ONBOARDING */
+.s-onboard {
+  background: linear-gradient(160deg, #6D28D9, #4F46E5);
+  display:flex; flex-direction:column; align-items:center;
+  padding-top: 60px;
+}
+.ob-logo { font-size:48px; margin-bottom:8px; }
+.ob-name { font-size:32px; font-weight:900; color:#fff; }
+.ob-tag  { font-size:11px; color:rgba(255,255,255,0.65); margin-top:4px; text-align:center; line-height:1.5; }
+.ob-feats { padding:20px 16px 0; width:100%; }
+.ob-feat {
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,0.12);
+  border-radius:12px; padding:8px 12px; margin-bottom:6px;
+  font-size:11px; color:rgba(255,255,255,0.9); font-weight:600;
+}
+.ob-cta {
+  position:absolute; bottom:84px; left:16px; right:16px;
+  background:#fff; border-radius:14px; padding:12px;
+  text-align:center; font-weight:800; font-size:13px; color:#6D28D9;
+}
+
+/* HOME */
+.s-home { background:#F3F4F6; }
+.h-hdr {
+  background:linear-gradient(135deg,#0D9488,#059669);
+  padding:30px 14px 16px; color:#fff;
+}
+.h-greet { font-size:11px; opacity:.8; }
+.h-name  { font-size:17px; font-weight:800; margin-top:2px; }
+.h-stats { display:flex; gap:6px; margin-top:12px; }
+.h-stat  { flex:1; background:rgba(255,255,255,0.18); border-radius:10px; padding:6px 8px; text-align:center; }
+.h-num   { font-size:15px; font-weight:900; }
+.h-lbl   { font-size:9px; opacity:.8; margin-top:1px; }
+.h-body  { padding:10px; }
+.h-focus { background:#fff; border-radius:14px; padding:12px; margin-bottom:8px; box-shadow:0 2px 10px rgba(0,0,0,0.06); }
+.h-focus-title { font-size:11px; font-weight:800; color:#111; }
+.h-chips { display:flex; gap:5px; margin-top:6px; flex-wrap:wrap; }
+.chip { font-size:9px; font-weight:700; padding:3px 8px; border-radius:16px; }
+.c-fire { background:#FEF3C7; color:#D97706; }
+.c-xp   { background:#EDE9FE; color:#7C3AED; }
+.c-exam { background:#DBEAFE; color:#2563EB; }
+.h-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.h-card { background:#fff; border-radius:12px; padding:10px 8px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+.h-card .ico { font-size:20px; }
+.h-card .lbl { font-size:9px; font-weight:700; color:#374151; margin-top:3px; }
+.h-card .sub { font-size:8px; color:#9CA3AF; }
+
+/* RESOURCES */
+.res-hdr { background:#7C3AED; padding:30px 14px 14px; color:#fff; }
+.res-ttl { font-size:15px; font-weight:800; }
+.res-srch { background:rgba(255,255,255,0.2); border-radius:10px; padding:7px 10px; margin-top:8px; font-size:10px; color:rgba(255,255,255,0.65); }
+.r-item { background:#fff; border-radius:12px; padding:10px; margin:0 8px 6px; display:flex; align-items:center; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+.r-ico { width:36px;height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.r-name { font-size:10px; font-weight:700; color:#111; }
+.r-sub  { font-size:8px; color:#9CA3AF; margin-top:1px; }
+.r-dl   { font-size:8px; font-weight:700; padding:2px 6px; border-radius:6px; background:#D1FAE5; color:#059669; }
+
+/* FLASHCARDS */
+.fl-hdr { background:#0EA5E9; padding:30px 14px 14px; color:#fff; }
+.fl-ttl { font-size:15px; font-weight:800; }
+.fl-sub { font-size:10px; opacity:.8; margin-top:2px; }
+.dk { border-radius:14px; padding:12px; margin:0 8px 8px; color:#fff; position:relative; overflow:hidden; }
+.dk::before { content:'📚'; position:absolute; right:10px; top:10px; font-size:24px; opacity:.15; }
+.dk-name  { font-size:11px; font-weight:800; }
+.dk-count { font-size:9px; opacity:.8; margin-top:3px; }
+.dk-bar   { height:3px; background:rgba(255,255,255,0.25); border-radius:2px; margin-top:8px; overflow:hidden; }
+.dk-fill  { height:100%; background:rgba(255,255,255,0.8); border-radius:2px; }
+
+/* PROFILE */
+.pr-hdr { background:linear-gradient(135deg,#6D28D9,#4F46E5); padding:28px 14px 16px; color:#fff; text-align:center; }
+.pr-av { width:60px;height:60px; border-radius:30px; background:rgba(255,255,255,0.2); display:inline-flex; align-items:center; justify-content:center; font-size:28px; border:2px solid rgba(255,255,255,0.35); margin-bottom:6px; }
+.pr-name { font-size:14px; font-weight:800; }
+.pr-uni  { font-size:9px; opacity:.7; margin-top:1px; }
+.pr-lvl  { display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.15); border-radius:16px; padding:3px 10px; font-size:9px; font-weight:700; margin-top:6px; }
+.xp-wrap { background:rgba(255,255,255,0.15); border-radius:5px; height:7px; margin:8px 12px 0; overflow:hidden; }
+.xp-fill { height:100%; width:68%; background:#FCD34D; border-radius:5px; }
+.xp-lbl  { display:flex; justify-content:space-between; font-size:8px; opacity:.65; padding:2px 12px 0; }
+.pr-shortcuts { display:flex; gap:6px; padding:8px 8px 0; }
+.pr-short { flex:1; background:#fff; border-radius:12px; padding:10px 6px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+.pr-short .ico { font-size:18px; }
+.pr-short .lbl { font-size:8px; font-weight:700; color:#374151; margin-top:3px; }
+.pr-info { background:#fff; border-radius:12px; margin:6px 8px; padding:10px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+.pi-row { display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid #F3F4F6; font-size:9px; }
+.pi-row:last-child { border-bottom:none; }
+.pi-k { color:#9CA3AF; }
+.pi-v { font-weight:700; color:#111; }
+
+/* BADGES */
+.bg-hdr { background:linear-gradient(135deg,#6D28D9,#4F46E5); padding:30px 14px 14px; color:#fff; text-align:center; }
+.bg-ttl { font-size:15px; font-weight:800; }
+.bg-sub { font-size:10px; opacity:.7; margin-top:3px; }
+.bg-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; padding:8px; }
+.bg-item { background:#fff; border-radius:12px; padding:8px 4px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+.bg-item.locked { opacity:.4; filter:grayscale(.5); }
+.bg-em { font-size:20px; }
+.bg-nm { font-size:7px; font-weight:700; color:#111; margin-top:3px; }
+.bg-xp { font-size:7px; color:#7C3AED; font-weight:700; margin-top:1px; }
+
+/* JOBS */
+.j-hdr { background:#F97316; padding:30px 14px 14px; color:#fff; }
+.j-ttl { font-size:15px; font-weight:800; }
+.j-sub { font-size:10px; opacity:.8; margin-top:2px; }
+.j-item { background:#fff; border-radius:12px; padding:10px; margin:0 8px 6px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+.j-top { display:flex; align-items:center; gap:8px; }
+.j-logo { width:34px;height:34px; border-radius:9px; display:flex;align-items:center;justify-content:center; font-size:16px; flex-shrink:0; }
+.j-title { font-size:10px; font-weight:800; color:#111; }
+.j-co   { font-size:8px; color:#6B7280; }
+.j-chips { display:flex; gap:4px; margin-top:6px; }
+.j-chip { font-size:7px; font-weight:700; padding:2px 6px; border-radius:6px; }
+
+/* STUDY CARD */
+.st-hdr { background:#0EA5E9; padding:28px 14px 12px; color:#fff; }
+.st-back { font-size:16px; }
+.st-deck { font-size:12px; font-weight:800; }
+.st-prog { font-size:9px; opacity:.75; }
+.st-bar { height:3px; background:rgba(255,255,255,0.3); margin:6px 12px 0; border-radius:2px; overflow:hidden; }
+.st-bar-fill { height:100%; width:35%; background:rgba(255,255,255,0.85); border-radius:2px; }
+.st-card { background:#fff; border-radius:18px; margin:12px; padding:20px; box-shadow:0 8px 28px rgba(0,0,0,0.1); text-align:center; }
+.st-tag { font-size:9px; font-weight:700; background:#DBEAFE; color:#2563EB; padding:2px 8px; border-radius:8px; }
+.st-text { font-size:15px; font-weight:800; color:#111; margin:8px 0 4px; }
+.st-hint { font-size:9px; color:#9CA3AF; font-style:italic; }
+.st-ans { background:#fff; border-radius:18px; margin:8px 12px 0; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.07); text-align:center; }
+.st-rats { display:flex; gap:5px; margin:8px 12px 0; }
+.st-rat { flex:1; border-radius:10px; padding:6px 3px; text-align:center; font-size:9px; font-weight:700; }
+
+/* TIMETABLE */
+.tm-hdr { background:#2563EB; padding:30px 14px 12px; color:#fff; }
+.tm-ttl { font-size:15px; font-weight:800; }
+.days-row { display:flex; gap:5px; padding:8px 8px 0; overflow-x:hidden; }
+.d-pill { flex-shrink:0; padding:4px 10px; border-radius:16px; font-size:9px; font-weight:700; background:#fff; color:#6B7280; box-shadow:0 2px 4px rgba(0,0,0,0.06); }
+.d-pill.act { background:#2563EB; color:#fff; }
+.tm-item { background:#fff; border-radius:12px; padding:8px 10px; margin:0 8px 5px; display:flex; align-items:center; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+.tm-clr { width:3px; height:34px; border-radius:2px; flex-shrink:0; }
+.tm-subj { font-size:10px; font-weight:700; color:#111; }
+.tm-det  { font-size:8px; color:#9CA3AF; margin-top:1px; }
+.tm-hr   { font-size:9px; font-weight:700; color:#6B7280; text-align:center; }
+
+/* UPLOAD */
+.up-hdr { background:#7C3AED; padding:30px 14px 12px; color:#fff; }
+.up-ttl { font-size:14px; font-weight:800; margin-top:4px; }
+
+/* EXAM */
+.ex-hdr { background:linear-gradient(135deg,#0D9488,#059669); padding:30px 14px 12px; color:#fff; }
+.ex-ttl { font-size:14px; font-weight:800; margin-top:4px; }
+.ex-item { background:#fff; border-radius:12px; padding:10px 12px; margin:0 8px 6px; box-shadow:0 2px 6px rgba(0,0,0,0.05); display:flex; align-items:center; justify-content:space-between; }
+.ex-sub { font-size:12px; font-weight:800; color:#111; }
+.ex-dt  { font-size:9px; color:#9CA3AF; margin-top:2px; }
+.ex-cnt { text-align:center; border-radius:10px; padding:6px 10px; }
+.ex-num { font-size:18px; font-weight:900; }
+.ex-lbl { font-size:8px; font-weight:700; }
+
+/* REMINDERS */
+.rm-hdr { background:#EC4899; padding:30px 14px 12px; color:#fff; }
+.rm-ttl { font-size:15px; font-weight:800; }
+.rm-item { background:#fff; border-radius:12px; padding:10px; margin:0 8px 6px; display:flex; align-items:center; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+.rm-dot  { width:9px;height:9px;border-radius:5px;flex-shrink:0; }
+.rm-txt  { font-size:10px; font-weight:700; color:#111; }
+.rm-tm   { font-size:8px; color:#9CA3AF; margin-top:1px; }
+
+/* ─── FEATURE CALLOUT BUBBLES ─────────────────────── */
+.callout {
+  position: absolute;
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+  white-space: nowrap;
+}
+.callout .num {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  display: block;
+}
+
+/* ─── OUTRO ───────────────────────────────────────── */
+.outro-title {
+  font-size: 64px;
+  font-weight: 900;
+  background: linear-gradient(90deg, #A78BFA, #38BDF8, #34D399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+.outro-sub {
+  font-size: 20px;
+  color: rgba(255,255,255,0.45);
+  margin-top: 12px;
+  text-align: center;
+}
+.qr-box {
+  width: 120px; height: 120px;
+  background: #fff;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px;
+  margin: 28px auto 0;
+  box-shadow: 0 0 40px rgba(124,58,237,0.3);
+}
+.store-btns { display:flex; gap:16px; justify-content:center; margin-top:20px; }
+.store-btn {
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.store-btn.apple { background: #fff; color: #111; }
+.store-btn.gplay { background: #34D399; color: #064E3B; }
+
+/* ─── SCENE TRANSITIONS ───────────────────────────── */
+.slide-left  { animation: slideLeft  0.6s ease both; }
+.slide-right { animation: slideRight 0.6s ease both; }
+.fade-up     { animation: fadeUp     0.6s ease both; }
+@keyframes slideLeft  { from{transform:translateX(-60px);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes slideRight { from{transform:translateX(60px);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes fadeUp     { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* pulse animation for highlighted elements */
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.5); }
+  50%      { box-shadow: 0 0 0 12px rgba(124,58,237,0); }
+}
+.pulse { animation: pulse 2s ease infinite; }
+
+/* Floating badge animation */
+@keyframes floatBadge {
+  0%   { transform:translateY(0) scale(1); }
+  50%  { transform:translateY(-8px) scale(1.05); }
+  100% { transform:translateY(0) scale(1); }
+}
+.float { animation: floatBadge 3s ease-in-out infinite; }
+
+/* XP +50 popup */
+.xp-popup {
+  position:absolute; right:-20px; top:60px;
+  background:linear-gradient(135deg,#7C3AED,#4F46E5);
+  color:#fff; font-size:12px; font-weight:800;
+  padding:6px 14px; border-radius:20px;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.5);
+  animation: xpPop 1s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 1.5s;
+  white-space: nowrap;
+}
+@keyframes xpPop { from{transform:scale(0) translateY(20px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+
+</style>
+</head>
+<body>
+
+<!-- BG Orbs -->
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<!-- Progress -->
+<div id="progress-bar"></div>
+<div id="counter">01 / 10</div>
+<div id="controls">
+  <div class="ctrl-btn" onclick="prevScene()">◀ السابق</div>
+  <div class="ctrl-btn" onclick="togglePause()" id="pause-btn">⏸ إيقاف</div>
+  <div class="ctrl-btn" onclick="nextScene()">التالي ▶</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 0 — LOGO INTRO
+════════════════════════════════════════════════════ -->
+<div class="scene active" id="scene-0">
+  <div class="intro">
+    <div class="logo-ring">📚</div>
+    <div class="intro-title">Studara</div>
+    <div class="intro-sub">منصة الطالب الموريتاني</div>
+    <div class="intro-country">🇲🇷 صُنع في موريتانيا • 2026</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 1 — ONBOARDING
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-1">
+  <div class="split">
+    <div class="copy-panel slide-left">
+      <div class="copy-eyebrow">الانطلاق</div>
+      <div class="copy-title">كل ما يحتاجه<br/>الطالب<br/><span style="color:#A78BFA">في مكان واحد</span></div>
+      <div class="copy-body">موارد دراسية، بطاقات مراجعة، جدول المحاضرات، فرص العمل — كلها بتطبيق واحد.</div>
+      <div>
+        <span class="copy-pill" style="background:rgba(167,139,250,0.15);color:#A78BFA;border:1px solid rgba(167,139,250,0.3)">📖 آلاف الملفات</span>
+        <span class="copy-pill" style="background:rgba(56,189,248,0.15);color:#38BDF8;border:1px solid rgba(56,189,248,0.3)">🧠 بطاقات ذكية</span>
+        <span class="copy-pill" style="background:rgba(52,211,153,0.15);color:#34D399;border:1px solid rgba(52,211,153,0.3)">🏆 نقاط وشارات</span>
+      </div>
+    </div>
+    <div class="phone-wrap slide-right">
+      <div class="phone">
+        <div class="screen s-onboard">
+          <div class="sb"><span>22:30</span><span>⚡🔋</span></div>
+          <div class="ob-logo" style="font-size:44px;margin-top:55px;text-align:center">📚</div>
+          <div class="ob-name" style="text-align:center">Studara</div>
+          <div class="ob-tag" style="font-size:11px;color:rgba(255,255,255,0.65);text-align:center;margin-top:4px;padding:0 20px">كل ما يحتاجه الطالب<br/>في مكان واحد</div>
+          <div class="ob-feats">
+            <div class="ob-feat">📖 <span>آلاف الموارد الدراسية</span></div>
+            <div class="ob-feat">🧠 <span>بطاقات ذكية للمراجعة</span></div>
+            <div class="ob-feat">💼 <span>فرص عمل وتدريب</span></div>
+            <div class="ob-feat">🏆 <span>نقاط وشارات تحفيزية</span></div>
+          </div>
+          <div class="ob-cta">ابدأ الآن →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 2 — HOME
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-2">
+  <div class="split rev">
+    <div class="copy-panel slide-right" style="padding:0 0 0 60px">
+      <div class="copy-eyebrow">الصفحة الرئيسية</div>
+      <div class="copy-title">تابع تقدمك<br/>كل <span style="color:#34D399">يوم</span></div>
+      <div class="copy-body">سلسلة يومية، نقاط XP، وعداد الامتحانات — كل ما يحفزك على الاستمرار.</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;background:rgba(253,186,80,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px">🔥</div>
+          <div><div style="font-weight:700;font-size:14px">7 أيام متتالية</div><div style="font-size:12px;color:rgba(255,255,255,0.4)">حافظ على سلسلتك اليومية</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;background:rgba(167,139,250,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px">⭐</div>
+          <div><div style="font-weight:700;font-size:14px">350 نقطة XP</div><div style="font-size:12px;color:rgba(255,255,255,0.4)">تقدم في المستويات</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;background:rgba(56,189,248,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px">📅</div>
+          <div><div style="font-weight:700;font-size:14px">12 يوم للامتحان</div><div style="font-size:12px;color:rgba(255,255,255,0.4)">ابدأ المراجعة الآن</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap slide-left">
+      <div class="phone">
+        <div class="screen s-home">
+          <div class="h-hdr">
+            <div class="sb"><span>22:30</span><span>⚡🔋</span></div>
+            <div style="margin-top:26px">
+              <div class="h-greet">صباح الخير، طالب 👋</div>
+              <div class="h-name">أحمد ولد محمد</div>
+            </div>
+            <div class="h-stats">
+              <div class="h-stat"><div class="h-num">🔥 7</div><div class="h-lbl">أيام</div></div>
+              <div class="h-stat"><div class="h-num">⭐ 350</div><div class="h-lbl">XP</div></div>
+              <div class="h-stat"><div class="h-num">📅 12</div><div class="h-lbl">للامتحان</div></div>
+            </div>
+          </div>
+          <div class="h-body">
+            <div class="h-focus">
+              <div class="h-focus-title">🎯 ما يهمك اليوم</div>
+              <div class="h-chips">
+                <span class="chip c-fire">🔥 سلسلة 7 أيام</span>
+                <span class="chip c-xp">⭐ 350 XP</span>
+                <span class="chip c-exam">📅 رياضيات 12 يوم</span>
+              </div>
+            </div>
+            <div style="font-size:10px;font-weight:800;color:#111;margin-bottom:6px">⚡ وصول سريع</div>
+            <div class="h-grid">
+              <div class="h-card"><div class="ico">📚</div><div class="lbl">الموارد</div><div class="sub">1,240 ملف</div></div>
+              <div class="h-card"><div class="ico">🧠</div><div class="lbl">البطاقات</div><div class="sub">5 مجموعات</div></div>
+              <div class="h-card"><div class="ico">📅</div><div class="lbl">الجدول</div><div class="sub">4 مواد اليوم</div></div>
+              <div class="h-card"><div class="ico">💼</div><div class="lbl">الوظائف</div><div class="sub">23 فرصة</div></div>
+            </div>
+          </div>
+          <div class="ob"><span style="font-size:18px">🏠</span><div class="ob-center">＋</div><span style="font-size:18px">👤</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 3 — RESOURCES
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-3">
+  <div class="split">
+    <div class="copy-panel slide-left">
+      <div class="copy-eyebrow">الموارد الدراسية</div>
+      <div class="copy-title">آلاف الملفات<br/>في <span style="color:#A78BFA">ثوانٍ</span></div>
+      <div class="copy-body">ملخصات، محاضرات، امتحانات سابقة — كل ما تحتاجه للنجاح متاح مجاناً.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:900;color:#A78BFA">1,240+</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">ملف دراسي</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:900;color:#38BDF8">12+</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">تخصص</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:900;color:#34D399">مجاناً</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">بدون اشتراك</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:900;color:#FCD34D">+50 XP</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">عند كل رفع</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap slide-right">
+      <div class="phone">
+        <div class="screen">
+          <div class="res-hdr">
+            <div class="sb"><span>22:31</span><span>⚡🔋</span></div>
+            <div style="margin-top:26px"><div class="res-ttl">📚 الموارد الدراسية</div><div class="res-srch">🔍 ابحث عن مادة أو ملف...</div></div>
+          </div>
+          <div style="overflow-y:hidden;padding-top:6px">
+            <div class="r-item"><div class="r-ico" style="background:#EDE9FE">📄</div><div><div class="r-name">ملخص الجبر الخطي</div><div class="r-sub">رياضيات • السنة 2 • PDF</div></div><div class="r-dl">⬇ 142</div></div>
+            <div class="r-item"><div class="r-ico" style="background:#FEF3C7">📊</div><div><div class="r-name">محاضرات الإحصاء</div><div class="r-sub">إحصاء • السنة 3 • PPT</div></div><div class="r-dl">⬇ 89</div></div>
+            <div class="r-item"><div class="r-ico" style="background:#DBEAFE">📝</div><div><div class="r-name">امتحانات سابقة — فيزياء</div><div class="r-sub">فيزياء • السنة 1 • PDF</div></div><div class="r-dl">⬇ 231</div></div>
+            <div class="r-item"><div class="r-ico" style="background:#D1FAE5">💻</div><div><div class="r-name">مدخل إلى البرمجة</div><div class="r-sub">معلوماتية • السنة 1 • PDF</div></div><div class="r-dl">⬇ 318</div></div>
+            <div class="r-item"><div class="r-ico" style="background:#FCE7F3">🎓</div><div><div class="r-name">تمارين محلولة — كيمياء</div><div class="r-sub">كيمياء • السنة 2 • PDF</div></div><div class="r-dl">⬇ 67</div></div>
+          </div>
+          <div class="ob"><span style="font-size:18px">🏠</span><div class="ob-center">＋</div><span style="font-size:18px">👤</span></div>
+        </div>
+      </div>
+      <div class="xp-popup">⭐ +50 XP مكتسب!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 4 — FLASHCARDS
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-4">
+  <div class="split rev">
+    <div class="copy-panel slide-right" style="padding:0 0 0 60px">
+      <div class="copy-eyebrow">بطاقات المراجعة</div>
+      <div class="copy-title">راجع بطريقة<br/><span style="color:#38BDF8">أذكى</span></div>
+      <div class="copy-body">نظام التكرار المتباعد يجعل المراجعة فعّالة وسريعة. صنع بطاقاتك الخاصة في ثوانٍ.</div>
+      <div style="background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:16px;padding:16px;margin-top:8px">
+        <div style="font-size:13px;font-weight:700;color:#38BDF8;margin-bottom:8px">🧠 كيف يعمل؟</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.8">
+          ١. اقرأ السؤال<br/>
+          ٢. تذكّر الإجابة<br/>
+          ٣. قيّم مدى معرفتك<br/>
+          ٤. التطبيق يحدد موعد المراجعة التالية
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap slide-left">
+      <div class="phone">
+        <div class="screen">
+          <div class="fl-hdr">
+            <div class="sb"><span>22:33</span><span>⚡🔋</span></div>
+            <div style="margin-top:26px"><div class="fl-ttl">🧠 بطاقات المراجعة</div><div class="fl-sub">5 مجموعات • 47 بطاقة للمراجعة</div></div>
+          </div>
+          <div style="padding-top:8px">
+            <div class="dk" style="background:linear-gradient(135deg,#6D28D9,#7C3AED)"><div class="dk-name">الجبر الخطي</div><div class="dk-count">18 بطاقة • 5 للمراجعة اليوم</div><div class="dk-bar"><div class="dk-fill" style="width:72%"></div></div></div>
+            <div class="dk" style="background:linear-gradient(135deg,#0EA5E9,#0284C7)"><div class="dk-name">الفيزياء الكمية</div><div class="dk-count">24 بطاقة • 12 للمراجعة اليوم</div><div class="dk-bar"><div class="dk-fill" style="width:45%"></div></div></div>
+            <div class="dk" style="background:linear-gradient(135deg,#059669,#047857)"><div class="dk-name">مصطلحات الاقتصاد</div><div class="dk-count">30 بطاقة • 8 للمراجعة اليوم</div><div class="dk-bar"><div class="dk-fill" style="width:60%"></div></div></div>
+            <div class="dk" style="background:linear-gradient(135deg,#F97316,#EA580C)"><div class="dk-name">اللغة الفرنسية</div><div class="dk-count">15 بطاقة • ✓ منجز اليوم</div><div class="dk-bar"><div class="dk-fill" style="width:100%"></div></div></div>
+          </div>
+          <div class="ob"><span style="font-size:18px">🏠</span><div class="ob-center">＋</div><span style="font-size:18px">👤</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 5 — STUDY SESSION
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-5">
+  <div class="split">
+    <div class="copy-panel slide-left">
+      <div class="copy-eyebrow">جلسة المراجعة</div>
+      <div class="copy-title">بطاقات تفاعلية<br/><span style="color:#34D399">تتكيف</span> معك</div>
+      <div class="copy-body">قيّم مدى فهمك وسيحسب التطبيق متى تحتاج لمراجعة هذه البطاقة مجدداً.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+        <div style="flex:1;min-width:120px;background:#FEE2E2;border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:22px">🔴</div>
+          <div style="font-size:12px;font-weight:700;color:#DC2626;margin-top:4px">مجدداً</div>
+          <div style="font-size:10px;color:#9CA3AF">غداً</div>
+        </div>
+        <div style="flex:1;min-width:120px;background:#FEF3C7;border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:22px">🟡</div>
+          <div style="font-size:12px;font-weight:700;color:#D97706;margin-top:4px">صعب</div>
+          <div style="font-size:10px;color:#9CA3AF">3 أيام</div>
+        </div>
+        <div style="flex:1;min-width:120px;background:#D1FAE5;border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:22px">🟢</div>
+          <div style="font-size:12px;font-weight:700;color:#059669;margin-top:4px">جيد</div>
+          <div style="font-size:10px;color:#9CA3AF">أسبوع</div>
+        </div>
+        <div style="flex:1;min-width:120px;background:#DBEAFE;border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:22px">⚡</div>
+          <div style="font-size:12px;font-weight:700;color:#2563EB;margin-top:4px">سهل</div>
+          <div style="font-size:10px;color:#9CA3AF">شهر</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap slide-right">
+      <div class="phone">
+        <div class="screen" style="background:#F0FDFE">
+          <div class="st-hdr">
+            <div class="sb"><span>22:34</span><span>⚡🔋</span></div>
+            <div style="margin-top:26px;display:flex;align-items:center;gap:8px">
+              <span class="st-back">←</span>
+              <div><div class="st-deck">الجبر الخطي</div><div class="st-prog">البطاقة 3 / 5</div></div>
+            </div>
+            <div class="st-bar"><div class="st-bar-fill"></div></div>
+          </div>
+          <div class="st-card">
+            <div class="st-tag">السؤال</div>
+            <div class="st-text">ما هو تعريف المصفوفة المتماثلة؟</div>
+            <div class="st-hint">اضغط لرؤية الإجابة 👆</div>
+          </div>
+          <div class="st-ans">
+            <div class="st-tag" style="background:#D1FAE5;color:#059669">الإجابة</div>
+            <div style="font-size:11px;color:#111;font-weight:600;margin-top:8px;line-height:1.5">مصفوفة مربعة حيث Aᵢⱼ = Aⱼᵢ</div>
+          </div>
+          <div class="st-rats">
+            <div class="st-rat" style="background:#FEE2E2;color:#DC2626">🔴<br/>مجدداً</div>
+            <div class="st-rat" style="background:#FEF3C7;color:#D97706">🟡<br/>صعب</div>
+            <div class="st-rat" style="background:#D1FAE5;color:#059669">🟢<br/>جيد</div>
+            <div class="st-rat" style="background:#DBEAFE;color:#2563EB">⚡<br/>سهل</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 6 — TIMETABLE
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-6">
+  <div class="split rev">
+    <div class="copy-panel slide-right" style="padding:0 0 0 60px">
+      <div class="copy-eyebrow">الجدول الدراسي</div>
+      <div class="copy-title">جدولك<br/>في <span style="color:#2563EB">يدك</span></div>
+      <div class="copy-body">سجّل محاضراتك أسبوعياً واعرف ماذا لديك كل يوم دون أي تعقيد.</div>
+      <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:16px;padding:16px;margin-top:12px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span>📅</span><span style="color:rgba(255,255,255,0.7)">جدول أسبوعي كامل</span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span>🔔</span><span style="color:rgba(255,255,255,0.7)">تذكيرات تلقائية قبل المحاضرة</span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px"><span>📍</span><span style="color:rgba(255,255,255,0.7)">القاعة والأستاذ في نظرة واحدة</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap slide-left">
+      <div class="phone">
+        <div class="screen">
+          <div class="tm-hdr">
+            <div class="sb"><span>22:35</span><span>⚡🔋</span></div>
+            <div style="margin-top:26px"><div class="tm-ttl">📅 جدول المحاضرات</div></div>
+          </div>
+          <div class="days-row">
+            <div class="d-pill">أحد</div>
+            <div class="d-pill act">إثنين</div>
+            <div class="d-pill">ثلاثاء</div>
+            <div class="d-pill">أربعاء</div>
+            <div class="d-pill">خميس</div>
+          </div>
+          <div style="padding-top:8px">
+            <div class="tm-item"><div class="tm-clr" style="background:#6D28D9"></div><div style="flex:1"><div class="tm-subj">الجبر الخطي</div><div class="tm-det">قاعة A12 • د. أحمد سيدي</div></div><div class="tm-hr">08:00<br/>09:30</div></div>
+            <div class="tm-item"><div class="tm-clr" style="background:#0EA5E9"></div><div style="flex:1"><div class="tm-subj">الفيزياء التجريبية</div><div class="tm-det">مختبر 3 • د. فاطمة</div></div><div class="tm-hr">10:00<br/>11:30</div></div>
+            <div class="tm-item"><div class="tm-clr" style="background:#F97316"></div><div style="flex:1"><div class="tm-subj">الاقتصاد الجزئي</div><div class="tm-det">قاعة B4 • د. محمد سالم</div></div><div class="tm-hr">14:00<br/>15:30</div></div>
+            <div class="tm-item"><div class="tm-clr" style="background:#EC4899"></div><div style="flex:1"><div class="tm-subj">اللغة الفرنسية</div><div class="tm-det">قاعة C2 • أ. مريم</div></div><div class="tm-hr">16:00<br/>17:00</div></div>
+          </div>
+          <div class="ob"><span style="font-size:18px">🏠</span><div class="ob-center">＋</div><span style="font-size:18px">👤</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 7 — JOBS
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-7">
+  <div class="split">
+    <div class="copy-panel slide-left">
+      <div class="copy-eyebrow">فرص العمل</div>
+      <div class="copy-title">فرصتك<br/>في <span style="color:#F97316">موريتانيا</span></div>
+      <div class="copy-body">وظائف وتدريبات محدّثة يومياً من أكبر الشركات في موريتانيا.</div>
+      <div style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);border-radius:16px;padding:14px;margin-top:12px">
+        <div style="font-size:13px;font-weight:700;color:#F97316;margin-bottom:6px">🏢 من يعلن؟</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span style="background:rgba(249,115,22,0.15);color:#F97316;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600">Mauritel</span>
+          <span style="background:rgba(249,115,22,0.15);color:#F97316;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600">Société Générale</span>
+          <span style="background:rgba(249,115,22,0.15);color:#F97316;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600">PNUD</span>
+          <span style="background:rgba(249,115,22,0.15);color:#F97316;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600">BCM</span>
+          <span style="background:rgba(249,115,22,0.15);color:#F97316;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600">وأكثر...</span>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap slide-right">
+      <div class="phone">
+        <div class="screen">
+          <div class="j-hdr">
+            <div class="sb"><span>22:37</span><span>⚡🔋</span></div>
+            <div style="margin-top:26px"><div class="j-ttl">💼 فرص العمل</div><div class="j-sub">23 فرصة متاحة</div></div>
+          </div>
+          <div style="padding-top:8px">
+            <div class="j-item"><div class="j-top"><div class="j-logo" style="background:#EDE9FE">🏛️</div><div><div class="j-title">مطور ويب — Junior</div><div class="j-co">Mauritel • نواكشوط</div></div></div><div class="j-chips"><span class="j-chip" style="background:#EDE9FE;color:#7C3AED">تكنولوجيا</span><span class="j-chip" style="background:#D1FAE5;color:#059669">دوام كامل</span><span class="j-chip" style="background:#FEF3C7;color:#D97706">⏰ 5 أيام</span></div></div>
+            <div class="j-item"><div class="j-top"><div class="j-logo" style="background:#D1FAE5">🌐</div><div><div class="j-title">محلل بيانات</div><div class="j-co">Société Générale</div></div></div><div class="j-chips"><span class="j-chip" style="background:#DBEAFE;color:#2563EB">مالية</span><span class="j-chip" style="background:#D1FAE5;color:#059669">دوام كامل</span><span class="j-chip" style="background:#FEF3C7;color:#D97706">⏰ 12 يوم</span></div></div>
+            <div class="j-item"><div class="j-top"><div class="j-logo" style="background:#FCE7F3">🎓</div><div><div class="j-title">مدير مشاريع — تدريب</div><div class="j-co">PNUD Mauritanie</div></div></div><div class="j-chips"><span class="j-chip" style="background:#FCE7F3;color:#EC4899">تنمية</span><span class="j-chip" style="background:#FEF3C7;color:#D97706">تدريب</span></div></div>
+          </div>
+          <div class="ob"><span style="font-size:18px">🏠</span><div class="ob-center">＋</div><span style="font-size:18px">👤</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 8 — PROFILE + BADGES
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-8">
+  <div class="split rev">
+    <div class="copy-panel slide-right" style="padding:0 0 0 60px">
+      <div class="copy-eyebrow">الملف الشخصي والإنجازات</div>
+      <div class="copy-title">تطور<br/>وأنت <span style="color:#A78BFA">تتعلم</span></div>
+      <div class="copy-body">اكسب نقاط XP واصعد في المستويات وتحصّل على الشارات كلما تقدمت في رحلتك التعليمية.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);border-radius:12px;padding:10px 14px">
+          <span style="font-size:13px">📤 ارفع ملفاً</span>
+          <span style="font-size:13px;font-weight:700;color:#A78BFA">+50 XP</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);border-radius:12px;padding:10px 14px">
+          <span style="font-size:13px">🔥 حافظ على سلسلتك</span>
+          <span style="font-size:13px;font-weight:700;color:#FCD34D">+بونص يومي</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);border-radius:12px;padding:10px 14px">
+          <span style="font-size:13px">🧠 أكمل مجموعة بطاقات</span>
+          <span style="font-size:13px;font-weight:700;color:#34D399">+شارة جديدة</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);border-radius:12px;padding:10px 14px">
+          <span style="font-size:13px">⭐ ارقَ في المستوى</span>
+          <span style="font-size:13px;font-weight:700;color:#38BDF8">كل 200 XP</span>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap slide-left">
+      <div class="phone">
+        <div class="screen">
+          <div class="pr-hdr">
+            <div class="sb"><span>22:38</span><span>⚡🔋</span></div>
+            <div style="margin-top:18px">
+              <div class="pr-av">👨‍🎓</div>
+              <div class="pr-name">أحمد ولد محمد</div>
+              <div class="pr-uni">جامعة نواكشوط • علوم</div>
+              <div class="pr-lvl">🥈 متوسط • المستوى 2</div>
+            </div>
+            <div class="xp-wrap"><div class="xp-fill"></div></div>
+            <div class="xp-lbl"><span>350 XP</span><span>← 400 للمستوى 3</span></div>
+          </div>
+          <div class="pr-shortcuts">
+            <div class="pr-short"><div class="ico">🏅</div><div class="lbl">الإنجازات</div></div>
+            <div class="pr-short"><div class="ico">📅</div><div class="lbl">امتحاناتي</div></div>
+            <div class="pr-short"><div class="ico">📁</div><div class="lbl">ملفاتي</div></div>
+          </div>
+          <div class="pr-info">
+            <div class="pi-row"><span class="pi-k">🔥 السلسلة</span><span class="pi-v">7 أيام</span></div>
+            <div class="pi-row"><span class="pi-k">📤 الملفات</span><span class="pi-v">4 ملفات</span></div>
+            <div class="pi-row"><span class="pi-k">🏅 الشارات</span><span class="pi-v">3 / 11</span></div>
+            <div class="pi-row"><span class="pi-k">🧠 البطاقات</span><span class="pi-v">87 بطاقة</span></div>
+          </div>
+          <!-- mini badges row -->
+          <div style="display:flex;gap:5px;padding:0 8px;overflow:hidden">
+            <div class="bg-item" style="flex:1"><div class="bg-em">📤</div><div class="bg-nm">الرافع</div><div class="bg-xp">✅</div></div>
+            <div class="bg-item" style="flex:1"><div class="bg-em">🔥</div><div class="bg-nm">أسبوع</div><div class="bg-xp">✅</div></div>
+            <div class="bg-item" style="flex:1"><div class="bg-em">⭐</div><div class="bg-nm">100 XP</div><div class="bg-xp">✅</div></div>
+            <div class="bg-item locked" style="flex:1"><div class="bg-em">🔒</div><div class="bg-nm">500 XP</div><div class="bg-xp">+100</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 9 — EXAM COUNTDOWN + REMINDERS
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-9">
+  <div class="split">
+    <div class="copy-panel slide-left">
+      <div class="copy-eyebrow">العدّ التنازلي والتذكيرات</div>
+      <div class="copy-title">لا تنسَ<br/><span style="color:#34D399">أي</span> امتحان</div>
+      <div class="copy-body">أضف امتحاناتك وسيخبرك التطبيق بعدد الأيام المتبقية. مع تذكيرات تلقائية تُرسل إليك قبل المواعيد.</div>
+      <div style="display:flex;gap:12px;margin-top:16px">
+        <div style="flex:1;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.2);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:32px;font-weight:900;color:#DC2626">12</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">يوم للرياضيات</div>
+        </div>
+        <div style="flex:1;background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:32px;font-weight:900;color:#2563EB">20</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">يوم للفيزياء</div>
+        </div>
+        <div style="flex:1;background:rgba(5,150,105,0.1);border:1px solid rgba(5,150,105,0.2);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:32px;font-weight:900;color:#059669">27</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">يوم للإحصاء</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap slide-right">
+      <div class="phone">
+        <div class="screen">
+          <div class="ex-hdr">
+            <div class="sb"><span>22:42</span><span>⚡🔋</span></div>
+            <div style="margin-top:26px;display:flex;align-items:center;gap:6px"><span>←</span><div class="ex-ttl">⏳ العدّ التنازلي</div></div>
+          </div>
+          <div style="padding-top:8px">
+            <div class="ex-item" style="border-right:4px solid #DC2626">
+              <div><div class="ex-sub">رياضيات</div><div class="ex-dt">20 أبريل 2026</div></div>
+              <div class="ex-cnt" style="background:#FEE2E2"><div class="ex-num" style="color:#DC2626">12</div><div class="ex-lbl" style="color:#DC2626">يوم</div></div>
+            </div>
+            <div class="ex-item" style="border-right:4px solid #2563EB">
+              <div><div class="ex-sub">فيزياء</div><div class="ex-dt">28 أبريل 2026</div></div>
+              <div class="ex-cnt" style="background:#DBEAFE"><div class="ex-num" style="color:#2563EB">20</div><div class="ex-lbl" style="color:#2563EB">يوم</div></div>
+            </div>
+            <div class="ex-item" style="border-right:4px solid #059669">
+              <div><div class="ex-sub">الإحصاء</div><div class="ex-dt">5 مايو 2026</div></div>
+              <div class="ex-cnt" style="background:#D1FAE5"><div class="ex-num" style="color:#059669">27</div><div class="ex-lbl" style="color:#059669">يوم</div></div>
+            </div>
+            <div style="background:linear-gradient(135deg,#0D9488,#059669);border-radius:12px;padding:10px;text-align:center;color:#fff;font-size:10px;font-weight:700;margin:0 8px">＋ إضافة امتحان</div>
+          </div>
+          <div class="ob" style="bottom:10px"><span style="font-size:18px">🏠</span><div class="ob-center">＋</div><span style="font-size:18px">👤</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCENE 10 — OUTRO
+════════════════════════════════════════════════════ -->
+<div class="scene" id="scene-10">
+  <div class="full-center">
+    <div style="font-size:64px;margin-bottom:16px;animation:floatBadge 3s ease-in-out infinite">📚</div>
+    <div class="outro-title">Studara</div>
+    <div class="outro-sub">منصة الطالب الموريتاني — تعلم، ارتقِ، انجح</div>
+    <div style="display:flex;gap:20px;margin-top:28px;flex-wrap:wrap;justify-content:center">
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:18px 28px;text-align:center">
+        <div style="font-size:36px;font-weight:900;color:#A78BFA">1,240+</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px">ملف دراسي</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:18px 28px;text-align:center">
+        <div style="font-size:36px;font-weight:900;color:#38BDF8">23+</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px">فرصة عمل</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:18px 28px;text-align:center">
+        <div style="font-size:36px;font-weight:900;color:#34D399">11</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px">شارة إنجاز</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:18px 28px;text-align:center">
+        <div style="font-size:36px;font-weight:900;color:#FCD34D">🇲🇷</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px">صُنع في موريتانيا</div>
+      </div>
+    </div>
+    <div style="margin-top:28px;font-size:18px;color:rgba(255,255,255,0.2);letter-spacing:4px">STUDARA.APP</div>
+  </div>
+</div>
+
+<script>
+  const SCENES = 11;
+  const DURATIONS = [4000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]; // ms per scene
+  let current = 0;
+  let paused = false;
+  let timer = null;
+  let elapsed = 0;
+  let startTime = null;
+  let animFrame = null;
+
+  function showScene(idx) {
+    document.querySelectorAll('.scene').forEach((s,i) => {
+      s.classList.toggle('active', i === idx);
+    });
+    document.getElementById('counter').textContent =
+      String(idx+1).padStart(2,'0') + ' / ' + String(SCENES).padStart(2,'0');
+    current = idx;
+    elapsed = 0;
+    startTime = performance.now();
+  }
+
+  function tick(now) {
+    if (paused) return;
+    const dt = now - startTime;
+    const dur = DURATIONS[current];
+    const pct = Math.min(dt / dur, 1);
+    // progress bar = (current + pct) / SCENES * 100
+    document.getElementById('progress-bar').style.width =
+      ((current + pct) / SCENES * 100) + '%';
+
+    if (dt >= dur) {
+      const next = (current + 1) % SCENES;
+      showScene(next);
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  function start() {
+    startTime = performance.now();
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  function togglePause() {
+    paused = !paused;
+    document.getElementById('pause-btn').textContent = paused ? '▶ تشغيل' : '⏸ إيقاف';
+    if (!paused) {
+      startTime = performance.now();
+      animFrame = requestAnimationFrame(tick);
+    }
+  }
+
+  function nextScene() {
+    const next = (current + 1) % SCENES;
+    showScene(next);
+    if (!paused) { cancelAnimationFrame(animFrame); start(); }
+  }
+
+  function prevScene() {
+    const prev = (current - 1 + SCENES) % SCENES;
+    showScene(prev);
+    if (!paused) { cancelAnimationFrame(animFrame); start(); }
+  }
+
+  // keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextScene();
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevScene();
+    if (e.key === ' ') { e.preventDefault(); togglePause(); }
+  });
+
+  start();
+</script>
+</body>
+</html>

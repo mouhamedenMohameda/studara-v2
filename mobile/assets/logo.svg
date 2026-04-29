@@ -1,0 +1,32 @@
+<!-- Studara — Official App Logo · S + orbit · navy bg · 512×512 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="5%" y1="0%" x2="95%" y2="100%">
+      <stop offset="0%"   stop-color="#0e1e30"/>
+      <stop offset="100%" stop-color="#060b12"/>
+    </linearGradient>
+    <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#4facfe"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="55%" y2="100%">
+      <stop offset="0%"   stop-color="white" stop-opacity="0.09"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feComposite in="SourceGraphic" in2="b" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#shine)"/>
+  <ellipse cx="256" cy="256" rx="202" ry="74"
+    fill="none" stroke="#4facfe" stroke-width="3"
+    transform="rotate(-28 256 256)" opacity="0.42"/>
+  <text x="256" y="256"
+    font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+    font-size="300" font-weight="800"
+    fill="url(#sg)" text-anchor="middle" dominant-baseline="middle">S</text>
+  <circle cx="430" cy="162" r="22" fill="#38BDF8" opacity="0.45" filter="url(#glow)"/>
+  <circle cx="430" cy="162" r="12" fill="#e0f2fe"/>
+</svg>

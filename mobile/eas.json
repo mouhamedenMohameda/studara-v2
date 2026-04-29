@@ -1,0 +1,40 @@
+{
+  "cli": {
+    "version": ">= 15.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-medium",
+        "credentialsSource": "remote"
+      },
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "remote"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "learnysr0@gmail.com",
+        "ascAppId": "6762133846",
+        "appleTeamId": "NQQ2F866KP",
+        "language": "fr-FR",
+        "sku": "studara-mr-001"
+      }
+    }
+  }
+}

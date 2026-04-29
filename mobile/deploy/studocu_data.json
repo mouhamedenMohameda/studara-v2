@@ -1,0 +1,243 @@
+{
+  "scraped_at": "2026-04-15T10:04:58.863923Z",
+  "university": "Université de Nouakchott",
+  "source_url": "https://www.studocu.com/row/institution/universite-de-nouakchott/6694",
+  "total": 0,
+  "courses": [
+    {
+      "name": "Biologie\nkrame1996",
+      "slug": "biologie",
+      "id": "3609129",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/biologie/3609129"
+    },
+    {
+      "name": "histologie general\nnouak2019",
+      "slug": "histologie-general",
+      "id": "4352294",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/histologie-general/4352294"
+    },
+    {
+      "name": "English Studies\nEnglish, 8075",
+      "slug": "english-studies",
+      "id": "4528240",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/english-studies/4528240"
+    },
+    {
+      "name": "Biochimie\nbch2020",
+      "slug": "biochimie",
+      "id": "4352299",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/biochimie/4352299"
+    },
+    {
+      "name": "physiologie 1ere année médecine\nPhy2020",
+      "slug": "physiologie-1ere-annee-medecine",
+      "id": "4352324",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/physiologie-1ere-annee-medecine/4352324"
+    },
+    {
+      "name": "Comptabilité",
+      "slug": "comptabilite",
+      "id": "4512622",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/comptabilite/4512622"
+    },
+    {
+      "name": "économie de l'entreprise\nEE12",
+      "slug": "economie-de-lentreprise",
+      "id": "4911026",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/economie-de-lentreprise/4911026"
+    },
+    {
+      "name": "Mécanique des fluides\nPhysique 111",
+      "slug": "mecanique-des-fluides",
+      "id": "6712104",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/mecanique-des-fluides/6712104"
+    },
+    {
+      "name": "Methodological Issues in Literature / Contemporary Civilization\nMaster Program?2020",
+      "slug": "methodological-issues-in-literature-contemporary-civilization",
+      "id": "4351742",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/methodological-issues-in-literature-contemporary-civilization/4351742"
+    },
+    {
+      "name": "Anatomie PCEM1\nANA2020",
+      "slug": "anatomie-pcem1",
+      "id": "4804685",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/anatomie-pcem1/4804685"
+    },
+    {
+      "name": "Data Engineering\nD1024",
+      "slug": "data-engineering",
+      "id": "6716560",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/data-engineering/6716560"
+    },
+    {
+      "name": "analyse\nanalyse3",
+      "slug": "analyse",
+      "id": "7573249",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/analyse/7573249"
+    },
+    {
+      "name": "Chimie organique\nPc100",
+      "slug": "chimie-organique",
+      "id": "7230470",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/chimie-organique/7230470"
+    },
+    {
+      "name": "sciences naturelles, reproduction feminine\n5487896348sc",
+      "slug": "sciences-naturelles-reproduction-feminine",
+      "id": "7089195",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/sciences-naturelles-reproduction-feminine/7089195"
+    },
+    {
+      "name": "Probabilité et Statistique\nMAT4000",
+      "slug": "probabilite-et-statistique",
+      "id": "6990485",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/probabilite-et-statistique/6990485"
+    },
+    {
+      "name": "Reel et rationnel\nSidi 2004",
+      "slug": "reel-et-rationnel",
+      "id": "6835544",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/reel-et-rationnel/6835544"
+    },
+    {
+      "name": "Mécanique du point\nPHY1400",
+      "slug": "mecanique-du-point",
+      "id": "6794847",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/mecanique-du-point/6794847"
+    },
+    {
+      "name": "Algèbre général\nMAT1400",
+      "slug": "algebre-general",
+      "id": "7841440",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/algebre-general/7841440"
+    },
+    {
+      "name": "Base de donné2924",
+      "slug": "base-de-donne",
+      "id": "7855090",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/base-de-donne/7855090"
+    },
+    {
+      "name": "Business WnglishENGL 152",
+      "slug": "business-wnglish",
+      "id": "6678182",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/business-wnglish/6678182"
+    },
+    {
+      "name": "Chapitre1 Anglais ScientifiqueAng 1-2",
+      "slug": "chapitre1-anglais-scientifique",
+      "id": "6892118",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/chapitre1-anglais-scientifique/6892118"
+    },
+    {
+      "name": "CodingBiología",
+      "slug": "coding",
+      "id": "7623964",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/coding/7623964"
+    },
+    {
+      "name": "Contraction musculaireBioch 1-2",
+      "slug": "contraction-musculaire",
+      "id": "6781836",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/contraction-musculaire/6781836"
+    },
+    {
+      "name": "Cours Physiologie de stressPhys 1-2",
+      "slug": "cours-physiologie-de-stress",
+      "id": "6721641",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/cours-physiologie-de-stress/6721641"
+    },
+    {
+      "name": "Creative writingHye22",
+      "slug": "creative-writing",
+      "id": "6932356",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/creative-writing/6932356"
+    },
+    {
+      "name": "Dynamique des écosystèmes",
+      "slug": "dynamique-des-ecosystemes",
+      "id": "7538514",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/dynamique-des-ecosystemes/7538514"
+    },
+    {
+      "name": "E-Marketing001",
+      "slug": "e-marketing",
+      "id": "6488764",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/e-marketing/6488764"
+    },
+    {
+      "name": "Échanges cellulaires001",
+      "slug": "echanges-cellulaires",
+      "id": "7174236",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/echanges-cellulaires/7174236"
+    },
+    {
+      "name": "Français",
+      "slug": "francais",
+      "id": "7811792",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/francais/7811792"
+    },
+    {
+      "name": "GénétiqueGen 24-25",
+      "slug": "genetique",
+      "id": "7221682",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/genetique/7221682"
+    },
+    {
+      "name": "infos",
+      "slug": "infos",
+      "id": "7946899",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/infos/7946899"
+    },
+    {
+      "name": "Optique GéométriqueOG22",
+      "slug": "optique-geometrique",
+      "id": "6794994",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/optique-geometrique/6794994"
+    },
+    {
+      "name": "Organic chemistry",
+      "slug": "organic-chemistry",
+      "id": "7547660",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/organic-chemistry/7547660"
+    },
+    {
+      "name": "Programmation C",
+      "slug": "programmation-c",
+      "id": "6584700",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/programmation-c/6584700"
+    },
+    {
+      "name": "Psycholinguistics",
+      "slug": "psycholinguistics",
+      "id": "7635613",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/psycholinguistics/7635613"
+    },
+    {
+      "name": "Reseau1000",
+      "slug": "reseau",
+      "id": "7556976",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/reseau/7556976"
+    },
+    {
+      "name": "Sciences humainesSHO",
+      "slug": "sciences-humaines",
+      "id": "7728404",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/sciences-humaines/7728404"
+    },
+    {
+      "name": "Sciences industrielles1987",
+      "slug": "sciences-industrielles",
+      "id": "6598379",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/sciences-industrielles/6598379"
+    },
+    {
+      "name": "sciences naturelles, reproduction masculine5487896348sc",
+      "slug": "sciences-naturelles-reproduction-masculine",
+      "id": "7089172",
+      "url": "https://www.studocu.com/row/course/universite-de-nouakchott/sciences-naturelles-reproduction-masculine/7089172"
+    }
+  ],
+  "documents": []
+}

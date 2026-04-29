@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studara — Official Logo</title>
+<style>
+  :root {
+    --bg:      #080d14;
+    --surface: #0d1520;
+    --border:  #1a2e44;
+    --muted:   #3d5a72;
+    --text:    #F2F2F7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    padding: 80px 40px 120px;
+    color: var(--text);
+  }
+
+  /* ── Typography ── */
+  .eyebrow {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 88px;
+  }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    margin: 80px 0 28px;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 88px;
+    flex-wrap: wrap;
+  }
+  .hero-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .tag {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── BG Variants grid ── */
+  .grid3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .card {
+    border-radius: 22px;
+    padding: 52px 28px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    border: 1px solid transparent;
+  }
+  .card.dk  { background: var(--surface); border-color: var(--border); }
+  .card.lt  { background: #f0f9ff;        border-color: #bae6fd; }
+  .card.br  { background: linear-gradient(140deg, #0f1f35, #080d14); border-color: #1e3a5f; }
+  .card-lbl { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+  .card.lt .card-lbl { color: #7dd3fc; }
+
+  /* ── Size scale ── */
+  .sizes-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 48px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 52px 48px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .sz { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .sz span { font-size: 10px; letter-spacing: 2px; color: var(--muted); }
+
+  /* ── Palette ── */
+  .palette {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .sw-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 120px;
+  }
+  .sw      { width: 52px; height: 52px; border-radius: 13px; }
+  .sw-name { font-size: 11px; font-weight: 700; color: var(--text); }
+  .sw-hex  { font-size: 10px; color: var(--muted); font-family: 'SF Mono', 'Fira Code', monospace; }
+
+  /* ── Usage Rules ── */
+  .rules {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .rule-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 36px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .rule-card.do   { border-color: #164e63; }
+  .rule-card.dont { border-color: #450a0a; }
+  .rule-head { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; font-weight: 700; }
+  .rule-card.do   .rule-head { color: #38BDF8; }
+  .rule-card.dont .rule-head { color: #f87171; }
+  .rule-item { font-size: 13px; color: #64748b; padding-left: 18px; position: relative; line-height: 1.9; }
+  .rule-item::before { content: '—'; position: absolute; left: 0; color: #334155; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SHARED SVG DEFS + REUSABLE SYMBOLS
+     All gradient/filter IDs live here; referenced via href="#id"
+     ══════════════════════════════════════════════════════════════ -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     style="position:absolute;width:0;height:0;overflow:hidden"
+     aria-hidden="true">
+  <defs>
+
+    <!-- ── Backgrounds ── -->
+    <linearGradient id="bgDk" x1="5%" y1="0%" x2="95%" y2="100%">
+      <stop offset="0%"   stop-color="#0e1e30"/>
+      <stop offset="100%" stop-color="#060b12"/>
+    </linearGradient>
+    <linearGradient id="bgLt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#f0f9ff"/>
+    </linearGradient>
+    <linearGradient id="bgBr" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+
+    <!-- ── S letterform gradients ── -->
+    <linearGradient id="sBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#4facfe"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="sDpBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+
+    <!-- ── Glass shine ── -->
+    <linearGradient id="shine" x1="0%" y1="0%" x2="55%" y2="100%">
+      <stop offset="0%"   stop-color="white" stop-opacity="0.09"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- ── Planet glow filter ── -->
+    <filter id="pGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feComposite in="SourceGraphic" in2="b" operator="over"/>
+    </filter>
+
+    <!-- ══════════════════════════════════════
+         SYMBOL: Dark  (default — app icon look)
+         ══════════════════════════════════════ -->
+    <symbol id="S-dark" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="112" fill="url(#bgDk)"/>
+      <rect width="512" height="512" rx="112" fill="url(#shine)"/>
+      <!-- Orbit ring -->
+      <ellipse cx="256" cy="256" rx="202" ry="74"
+        fill="none" stroke="#4facfe" stroke-width="3"
+        transform="rotate(-28 256 256)" opacity="0.42"/>
+      <!-- S letterform -->
+      <text x="256" y="256"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="300" font-weight="800"
+        fill="url(#sBlue)"
+        text-anchor="middle"
+        dominant-baseline="middle">S</text>
+      <!-- Planet glow halo -->
+      <circle cx="430" cy="162" r="22" fill="#38BDF8" opacity="0.45" filter="url(#pGlow)"/>
+      <!-- Planet core -->
+      <circle cx="430" cy="162" r="12" fill="#e0f2fe"/>
+    </symbol>
+
+    <!-- ══════════════════════
+         SYMBOL: Light variant
+         ══════════════════════ -->
+    <symbol id="S-light" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="112" fill="url(#bgLt)"/>
+      <ellipse cx="256" cy="256" rx="202" ry="74"
+        fill="none" stroke="#0EA5E9" stroke-width="3"
+        transform="rotate(-28 256 256)" opacity="0.5"/>
+      <text x="256" y="256"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="300" font-weight="800"
+        fill="url(#sDpBlue)"
+        text-anchor="middle"
+        dominant-baseline="middle">S</text>
+      <circle cx="430" cy="162" r="12" fill="#0369a1" opacity="0.6"/>
+    </symbol>
+
+    <!-- ═══════════════════════════
+         SYMBOL: Brand gradient BG
+         ═══════════════════════════ -->
+    <symbol id="S-brand" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="112" fill="url(#bgBr)"/>
+      <ellipse cx="256" cy="256" rx="202" ry="74"
+        fill="none" stroke="white" stroke-width="3"
+        transform="rotate(-28 256 256)" opacity="0.35"/>
+      <text x="256" y="256"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="300" font-weight="800"
+        fill="white"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        opacity="0.95">S</text>
+      <circle cx="430" cy="162" r="12" fill="white" opacity="0.9"/>
+    </symbol>
+
+  </defs>
+</svg>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE HEADER
+     ══════════════════════════════════════════════════════════════ -->
+<p class="eyebrow">Studara &nbsp;·&nbsp; Official Brand Identity &nbsp;·&nbsp; 2026</p>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     HERO  —  App Icon  +  Wordmark
+     ══════════════════════════════════════════════════════════════ -->
+<div class="hero">
+
+  <!-- App Icon — 160 × 160 display -->
+  <div class="hero-block">
+    <svg width="160" height="160" xmlns="http://www.w3.org/2000/svg">
+      <use href="#S-dark"/>
+    </svg>
+    <span class="tag">App Icon</span>
+  </div>
+
+  <!-- Wordmark — gradient "S" + white "tudara" -->
+  <div class="hero-block">
+    <svg width="310" height="70" viewBox="0 0 620 140" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="110"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="116" font-weight="800"
+        fill="url(#sBlue)">S</text>
+      <text x="74" y="110"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="116" font-weight="800"
+        fill="white"
+        letter-spacing="-2">tudara</text>
+    </svg>
+    <span class="tag">Wordmark</span>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     BACKGROUND VARIANTS
+     ══════════════════════════════════════════════════════════════ -->
+<p class="section-label">Background Variants</p>
+<div class="grid3">
+
+  <div class="card dk">
+    <svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+      <use href="#S-dark"/>
+    </svg>
+    <span class="card-lbl">Dark &nbsp;·&nbsp; Default</span>
+  </div>
+
+  <div class="card lt">
+    <svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+      <use href="#S-light"/>
+    </svg>
+    <span class="card-lbl">Light</span>
+  </div>
+
+  <div class="card br">
+    <svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+      <use href="#S-brand"/>
+    </svg>
+    <span class="card-lbl">Brand Gradient</span>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     WORDMARK ON BACKGROUNDS
+     ══════════════════════════════════════════════════════════════ -->
+<p class="section-label">Wordmark on Backgrounds</p>
+<div class="grid3" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+
+  <div class="card dk" style="padding: 44px 36px 32px;">
+    <svg width="240" height="54" viewBox="0 0 620 140" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="110"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="116" font-weight="800"
+        fill="url(#sBlue)">S</text>
+      <text x="74" y="110"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="116" font-weight="800"
+        fill="white" letter-spacing="-2">tudara</text>
+    </svg>
+    <span class="card-lbl">On Dark</span>
+  </div>
+
+  <div class="card lt" style="padding: 44px 36px 32px;">
+    <svg width="240" height="54" viewBox="0 0 620 140" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="110"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="116" font-weight="800"
+        fill="url(#sDpBlue)">S</text>
+      <text x="74" y="110"
+        font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="116" font-weight="800"
+        fill="#0369a1" letter-spacing="-2">tudara</text>
+    </svg>
+    <span class="card-lbl">On Light</span>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SIZE SCALE
+     ══════════════════════════════════════════════════════════════ -->
+<p class="section-label">Size Scale</p>
+<div class="sizes-row">
+
+  <div class="sz">
+    <svg width="96" height="96" xmlns="http://www.w3.org/2000/svg"><use href="#S-dark"/></svg>
+    <span>512 px</span>
+  </div>
+  <div class="sz">
+    <svg width="76" height="76" xmlns="http://www.w3.org/2000/svg"><use href="#S-dark"/></svg>
+    <span>256 px</span>
+  </div>
+  <div class="sz">
+    <svg width="56" height="56" xmlns="http://www.w3.org/2000/svg"><use href="#S-dark"/></svg>
+    <span>128 px</span>
+  </div>
+  <div class="sz">
+    <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><use href="#S-dark"/></svg>
+    <span>64 px</span>
+  </div>
+  <div class="sz">
+    <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg"><use href="#S-dark"/></svg>
+    <span>32 px</span>
+  </div>
+  <div class="sz">
+    <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><use href="#S-dark"/></svg>
+    <span>16 px</span>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     BRAND PALETTE
+     ══════════════════════════════════════════════════════════════ -->
+<p class="section-label">Brand Palette</p>
+<div class="palette">
+
+  <div class="sw-card">
+    <div class="sw" style="background: linear-gradient(135deg,#4facfe,#06B6D4)"></div>
+    <span class="sw-name">Gradient</span>
+    <span class="sw-hex">4facfe→06B6D4</span>
+  </div>
+  <div class="sw-card">
+    <div class="sw" style="background:#0EA5E9"></div>
+    <span class="sw-name">Primary</span>
+    <span class="sw-hex">#0EA5E9</span>
+  </div>
+  <div class="sw-card">
+    <div class="sw" style="background:#06B6D4"></div>
+    <span class="sw-name">Accent</span>
+    <span class="sw-hex">#06B6D4</span>
+  </div>
+  <div class="sw-card">
+    <div class="sw" style="background:#38BDF8"></div>
+    <span class="sw-name">Sky Light</span>
+    <span class="sw-hex">#38BDF8</span>
+  </div>
+  <div class="sw-card">
+    <div class="sw" style="background:#0369A1"></div>
+    <span class="sw-name">Deep Blue</span>
+    <span class="sw-hex">#0369A1</span>
+  </div>
+  <div class="sw-card">
+    <div class="sw" style="background:#080d14;border:1px solid #1a2e44"></div>
+    <span class="sw-name">Background</span>
+    <span class="sw-hex">#080d14</span>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     USAGE RULES
+     ══════════════════════════════════════════════════════════════ -->
+<p class="section-label">Usage Rules</p>
+<div class="rules">
+
+  <div class="rule-card do">
+    <span class="rule-head">✓ Do</span>
+    <p class="rule-item">Use on dark (#080d14) or white backgrounds only</p>
+    <p class="rule-item">Maintain clear space equal to ½ icon height on all sides</p>
+    <p class="rule-item">Use gradient S on dark surfaces, deep-blue S on light surfaces</p>
+    <p class="rule-item">Scale proportionally — always keep the rounded-square shape</p>
+    <p class="rule-item">Use the wordmark when the icon is below 32 px</p>
+  </div>
+
+  <div class="rule-card dont">
+    <span class="rule-head">✗ Don't</span>
+    <p class="rule-item">Don't use any old green / teal / compass / زاد logos</p>
+    <p class="rule-item">Don't recolor the S or orbit to any other hue</p>
+    <p class="rule-item">Don't add drop shadows, outlines, or glows to the mark</p>
+    <p class="rule-item">Don't place the logo on busy or coloured photo backgrounds</p>
+    <p class="rule-item">Don't stretch or distort the icon in any direction</p>
+  </div>
+
+</div>
+
+</body>
+</html>

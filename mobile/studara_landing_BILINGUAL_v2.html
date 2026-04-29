@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Studara — ستودارا | Compagnon académique IA</title>
+  <meta name="description" content="Studara est une super-app académique pour étudiants universitaires mauritaniens : ressources, planning, flashcards, jobs, housing et IA utile." />
+  <style>
+    :root{
+      --violet:#7C3AED; --violet-deep:#5B21B6; --violet-light:#F4EEFF;
+      --green:#1B6B4A; --green-light:#ECFDF5; --cyan:#0891B2; --cyan-light:#ECFEFF;
+      --amber:#F59E0B; --amber-light:#FFFBEB; --red:#DC2626; --red-light:#FEF2F2;
+      --bg:#FAFAFB; --white:#FFFFFF; --text:#0F172A; --muted:#475569; --border:#E5E7EB;
+      --shadow:0 26px 80px rgba(15,23,42,.10); --shadow-soft:0 16px 40px rgba(15,23,42,.07);
+      --radius-xl:32px; --radius-lg:24px; --radius-md:18px; --max:1180px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.55;overflow-x:hidden}
+    html[dir="rtl"] body{font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,Arial,sans-serif;letter-spacing:0}
+    a{text-decoration:none;color:inherit} button,input{font:inherit}.container{width:min(var(--max),calc(100% - 32px));margin-inline:auto}.hide{display:none!important}
+    .nav{position:sticky;top:0;z-index:99;background:rgba(250,250,251,.82);backdrop-filter:saturate(160%) blur(18px);border-bottom:1px solid rgba(229,231,235,.82)}
+    .nav-inner{height:72px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;align-items:center;gap:12px;font-weight:950;letter-spacing:-.045em}.brand small{display:block;color:var(--muted);font-size:12px;font-weight:850;letter-spacing:0;margin-top:-4px}.logo{width:44px;height:44px;border-radius:16px;background:linear-gradient(135deg,#8B5CF6,var(--violet),var(--violet-deep));color:white;display:grid;place-items:center;box-shadow:0 14px 30px rgba(124,58,237,.27)}
+    .links{display:flex;align-items:center;gap:22px;font-size:14px;color:var(--muted);font-weight:850}.links a:hover{color:var(--violet)}.actions{display:flex;align-items:center;gap:10px}.btn,.lang,.menu{border:0;border-radius:999px;padding:12px 18px;font-weight:950;cursor:pointer;transition:.22s ease;background:var(--text);color:white;box-shadow:0 14px 28px rgba(15,23,42,.14)}.btn:hover,.lang:hover,.menu:hover{transform:translateY(-2px)}.btn-primary{background:linear-gradient(135deg,#8B5CF6,var(--violet),var(--violet-deep));color:white}.btn-secondary{background:white;color:var(--text);border:1px solid var(--border);box-shadow:var(--shadow-soft)}.lang{background:white;color:var(--violet-deep);border:1px solid var(--border);box-shadow:none}.menu{display:none;background:white;color:var(--text);border:1px solid var(--border);box-shadow:none;padding:10px 13px}.mobile-panel{display:none;border-top:1px solid var(--border);padding:12px 0 18px}.mobile-panel a{display:block;padding:12px 6px;color:var(--muted);font-weight:850}
+    .hero{position:relative;padding:88px 0 72px;overflow:hidden}.hero::before{content:"";position:absolute;inset:-300px -240px auto auto;width:760px;height:760px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.22),rgba(8,145,178,.08) 35%,transparent 66%);pointer-events:none}.hero::after{content:"";position:absolute;left:-180px;bottom:-280px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(27,107,74,.14),transparent 64%);pointer-events:none}.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}.badge{display:inline-flex;align-items:center;gap:8px;border:1px solid #DDD6FE;background:white;color:var(--violet-deep);padding:9px 14px;border-radius:999px;font-size:13px;font-weight:950;box-shadow:var(--shadow-soft)}.hero h1{font-size:clamp(42px,7vw,86px);line-height:.93;margin:22px 0 20px;letter-spacing:-.075em}.gradient-text{background:linear-gradient(135deg,#8B5CF6,var(--violet),var(--violet-deep));-webkit-background-clip:text;background-clip:text;color:transparent}.hero-lead{font-size:20px;color:var(--muted);max-width:700px;margin:0 0 30px}.hero-actions{display:flex;gap:14px;flex-wrap:wrap}.hero-proof{display:flex;gap:14px;flex-wrap:wrap;margin-top:26px}.proof{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:850;font-size:14px}.dot{width:9px;height:9px;border-radius:50%;background:var(--green)}
+    .visual{background:rgba(255,255,255,.78);border:1px solid var(--border);border-radius:38px;padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden}.visual::before{content:"";position:absolute;inset:-80px -120px auto auto;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.20),transparent 65%)}.phone{position:relative;margin:auto;width:min(355px,84vw);min-height:625px;border:12px solid #111827;border-radius:46px;background:linear-gradient(180deg,#FFFFFF,#F8FAFC);box-shadow:0 35px 90px rgba(15,23,42,.26);padding:22px}.notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:120px;height:28px;background:#111827;border-radius:0 0 18px 18px}.screen-top{margin-top:30px;display:flex;align-items:center;justify-content:space-between}.screen-top h3{margin:0;font-size:21px;letter-spacing:-.03em}.screen-top span{color:var(--green);font-weight:950}.app-card{margin-top:14px;background:white;border:1px solid var(--border);border-radius:23px;padding:16px;box-shadow:0 12px 30px rgba(15,23,42,.055)}.app-row{display:flex;align-items:center;justify-content:space-between;gap:13px}.app-left{display:flex;align-items:center;gap:12px}.icon{width:44px;height:44px;border-radius:16px;display:grid;place-items:center;color:white;font-weight:950;font-size:13px}.i-v{background:var(--violet)}.i-g{background:var(--green)}.i-c{background:var(--cyan)}.i-a{background:var(--amber)}.mini{font-size:12px;color:var(--muted);font-weight:800}.meter{height:8px;background:#F1F5F9;border-radius:999px;overflow:hidden;margin-top:12px}.meter span{height:100%;display:block;background:linear-gradient(90deg,var(--violet),var(--green));width:78%;border-radius:999px}.floating{position:absolute;border:1px solid var(--border);background:white;border-radius:20px;padding:12px 14px;box-shadow:var(--shadow-soft);font-weight:950}.float-1{left:18px;top:64px;color:var(--violet-deep)}.float-2{right:18px;bottom:76px;color:var(--green)}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:46px}.stat{background:white;border:1px solid var(--border);border-radius:24px;padding:21px;box-shadow:var(--shadow-soft)}.stat strong{display:block;font-size:33px;line-height:1;color:var(--violet-deep);letter-spacing:-.055em}.stat span{display:block;margin-top:7px;color:var(--muted);font-weight:850;font-size:13px}
+    section{padding:82px 0}.section-head{max-width:790px;margin:0 auto 38px;text-align:center}.eyebrow{display:inline-flex;color:var(--violet-deep);font-weight:950;font-size:13px;letter-spacing:.09em;text-transform:uppercase}.section-head h2{font-size:clamp(31px,4.6vw,54px);line-height:1.03;letter-spacing:-.058em;margin:13px 0 14px}.section-head p{margin:0;color:var(--muted);font-size:18px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}.card{background:white;border:1px solid var(--border);border-radius:var(--radius-xl);padding:27px;box-shadow:var(--shadow-soft);transition:.25s ease}.card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}.card h3{margin:15px 0 8px;font-size:21px;line-height:1.2;letter-spacing:-.035em}.card p{margin:0;color:var(--muted)}.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:950;border-radius:999px;padding:7px 10px}.v{background:var(--violet-light);color:var(--violet-deep)}.g{background:var(--green-light);color:var(--green)}.c{background:var(--cyan-light);color:var(--cyan)}.a{background:var(--amber-light);color:var(--amber)}.r{background:var(--red-light);color:var(--red)}
+    .solution{background:white;border-block:1px solid var(--border)}.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.step{background:var(--bg);border:1px solid var(--border);border-radius:24px;padding:20px;min-height:166px}.step b{display:grid;place-items:center;width:36px;height:36px;border-radius:14px;background:var(--violet);color:white}.step h3{margin:18px 0 6px;font-size:18px}.step p{margin:0;color:var(--muted);font-size:14px}.product-wrap{display:grid;grid-template-columns:.92fr 1.08fr;gap:22px;align-items:stretch}.demo-card{background:linear-gradient(135deg,#8B5CF6,var(--violet),var(--violet-deep));color:white;border-radius:var(--radius-xl);padding:30px;box-shadow:var(--shadow);overflow:hidden;position:relative}.demo-card::after{content:"";position:absolute;right:-90px;bottom:-90px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.15)}.demo-card h3{font-size:31px;line-height:1.05;margin:14px 0 12px;letter-spacing:-.05em}.demo-card p{color:#EDE9FE;margin:0}.feature-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.mini-card{background:white;border:1px solid var(--border);border-radius:22px;padding:20px;box-shadow:var(--shadow-soft)}.mini-card h3{margin:10px 0 6px;font-size:18px}.mini-card p{color:var(--muted);margin:0;font-size:14px}
+    .ai{background:linear-gradient(135deg,#8B5CF6,var(--violet),var(--violet-deep));color:white;position:relative;overflow:hidden}.ai::before{content:"";position:absolute;right:-160px;bottom:-220px;width:620px;height:620px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.16),transparent 65%)}.ai .section-head,.ai .container{position:relative;z-index:2}.ai .eyebrow,.ai .section-head p{color:#EDE9FE}.ai .card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);box-shadow:none}.ai .card h3{color:white}.ai .card p{color:#EDE9FE}.ai .tag{background:rgba(255,255,255,.15);color:white}.traction-band{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}.metric{background:white;border:1px solid var(--border);border-radius:28px;padding:28px;box-shadow:var(--shadow-soft)}.metric strong{font-size:45px;color:var(--violet-deep);letter-spacing:-.06em;line-height:1}.metric p{color:var(--muted);font-weight:850;margin:10px 0 0}
+    .pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.price{position:relative}.price strong{display:block;font-size:34px;line-height:1;color:var(--violet-deep);letter-spacing:-.05em}.price small{display:block;color:var(--muted);font-weight:800;margin-top:4px}.price ul{list-style:none;padding:0;margin:18px 0 0}.price li{display:flex;gap:8px;color:var(--muted);font-size:14px;margin:10px 0}.price li::before{content:"✓";color:var(--green);font-weight:950}.featured{border:2px solid var(--violet);transform:translateY(-8px)}.featured .recommended{position:absolute;top:16px;right:16px;background:var(--violet);color:white;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:950}html[dir="rtl"] .featured .recommended{right:auto;left:16px}.payg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}.payg .card{border-radius:22px;padding:18px}.payg strong{font-size:21px;color:var(--green);letter-spacing:-.03em}
+    .roadmap{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.phase{background:white;border:1px solid var(--border);border-radius:24px;padding:23px;box-shadow:var(--shadow-soft)}.phase .num{width:38px;height:38px;border-radius:14px;background:var(--violet);color:white;display:grid;place-items:center;font-weight:950}.phase h3{margin:16px 0 8px}.phase p{color:var(--muted);margin:0;font-size:14px}.faq details{background:white;border:1px solid var(--border);border-radius:20px;padding:18px 20px;margin:12px 0;box-shadow:var(--shadow-soft)}.faq summary{cursor:pointer;font-weight:950}.faq p{color:var(--muted);margin:12px 0 0}.cta{padding:96px 0}.cta-box{background:linear-gradient(135deg,#8B5CF6,var(--violet),var(--violet-deep));color:white;border-radius:42px;padding:56px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden}.cta-box h2{font-size:clamp(34px,5vw,60px);line-height:1;letter-spacing:-.06em;margin:0 0 14px}.cta-box p{max-width:720px;margin:0 auto 24px;color:#EDE9FE;font-size:18px}.cta-box .btn{background:white;color:var(--violet-deep)}footer{padding:34px 0;border-top:1px solid var(--border);color:var(--muted);font-weight:800;font-size:14px}.footer-inner{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.reveal{opacity:0;transform:translateY(18px);transition:opacity .65s ease, transform .65s ease}.reveal.visible{opacity:1;transform:none}
+    html[dir="rtl"] .brand{letter-spacing:0}html[dir="rtl"] .hero h1,html[dir="rtl"] .section-head h2,html[dir="rtl"] .demo-card h3,html[dir="rtl"] .cta-box h2{letter-spacing:0}html[dir="rtl"] .price li{flex-direction:row-reverse;justify-content:flex-end}html[dir="rtl"] .app-left{flex-direction:row-reverse}html[dir="rtl"] .app-row{flex-direction:row-reverse}html[dir="rtl"] .hero::before{inset:-300px auto auto -240px}html[dir="rtl"] .hero::after{left:auto;right:-180px}
+    @media(max-width:980px){.hero-grid,.product-wrap,.grid-2{grid-template-columns:1fr}.links,.actions .btn{display:none}.menu{display:inline-grid}.mobile-panel.open{display:block}.stats,.grid-3,.pricing-grid,.payg,.roadmap,.flow,.traction-band{grid-template-columns:repeat(2,1fr)}.hero{padding-top:58px}.featured{transform:none}}
+    @media(max-width:640px){.container{width:min(100% - 22px,var(--max))}.nav-inner{height:66px}.hero h1{font-size:47px}.hero-lead,.section-head p{font-size:16px}.hero-actions .btn{width:100%;text-align:center}.stats,.grid-3,.pricing-grid,.payg,.roadmap,.flow,.traction-band,.feature-list{grid-template-columns:1fr}.phone{min-height:560px}.floating{display:none}.cta-box{padding:36px 22px;border-radius:30px}section{padding:64px 0}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#top" aria-label="Studara home"><span class="logo">✦</span><span>Studara<small>ستودارا</small></span></a>
+      <div class="links" aria-label="navigation">
+        <a href="#problem" data-i18n="nav.problem">Problème</a><a href="#product" data-i18n="nav.product">Produit</a><a href="#ai" data-i18n="nav.ai">IA</a><a href="#pricing" data-i18n="nav.pricing">Prix</a><a href="#roadmap" data-i18n="nav.roadmap">Roadmap</a>
+      </div>
+      <div class="actions"><button class="lang" id="langBtn" aria-label="Changer la langue">AR</button><a class="btn btn-primary" href="#cta" data-i18n="nav.cta">Contacter</a><button class="menu" id="menuBtn" aria-label="Menu">☰</button></div>
+    </div>
+    <div class="container mobile-panel" id="mobilePanel"><a href="#problem" data-i18n="nav.problem">Problème</a><a href="#product" data-i18n="nav.product">Produit</a><a href="#ai" data-i18n="nav.ai">IA</a><a href="#pricing" data-i18n="nav.pricing">Prix</a><a href="#roadmap" data-i18n="nav.roadmap">Roadmap</a></div>
+  </nav>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="reveal">
+          <span class="badge"><span>✦</span><span data-i18n="hero.badge">Super-app académique IA • Mauritanie</span></span>
+          <h1><span data-i18n="hero.title">Le campus dans une seule app.</span><br><span class="gradient-text">Studara</span></h1>
+          <p class="hero-lead" data-i18n="hero.lead">Ressources, planning, rappels, flashcards, jobs, housing et IA académique : une plateforme mobile conçue pour le quotidien des étudiants universitaires mauritaniens.</p>
+          <div class="hero-actions"><a class="btn btn-primary" href="#product" data-i18n="hero.primary">Voir le produit</a><a class="btn btn-secondary" href="#pricing" data-i18n="hero.secondary">Découvrir le modèle</a></div>
+          <div class="hero-proof"><span class="proof"><span class="dot"></span><span data-i18n="hero.proof1">Mobile + API + Admin</span></span><span class="proof"><span class="dot"></span><span data-i18n="hero.proof2">AR/RTL prêt</span></span><span class="proof"><span class="dot"></span><span data-i18n="hero.proof3">IA monétisable</span></span></div>
+          <div class="stats">
+            <div class="stat"><strong data-count="2981">0</strong><span data-i18n="stats.resources">ressources</span></div>
+            <div class="stat"><strong data-count="1328">0</strong><span data-i18n="stats.videos">cours vidéo</span></div>
+            <div class="stat"><strong data-count="4">0</strong><span data-i18n="stats.universities">universités cibles</span></div>
+            <div class="stat"><strong>AI</strong><span data-i18n="stats.workflows">workflows utiles</span></div>
+          </div>
+        </div>
+        <div class="visual reveal">
+          <div class="floating float-1" data-i18n="float.ai">IA → notes propres</div><div class="floating float-2" data-i18n="float.srs">SM‑2 streak</div>
+          <div class="phone"><div class="notch"></div><div class="screen-top"><h3>Studara</h3><span>ستودارا</span></div>
+            <div class="app-card"><div class="app-row"><div class="app-left"><span class="icon i-v">AI</span><div><b data-i18n="mock.whisper">Whisper Studio</b><div class="mini" data-i18n="mock.whisperSub">Audio → notes + flashcards</div></div></div></div><div class="meter"><span></span></div></div>
+            <div class="app-card"><div class="app-row"><div class="app-left"><span class="icon i-g">PDF</span><div><b data-i18n="mock.summary">Résumé intelligent</b><div class="mini" data-i18n="mock.summarySub">Cours compressé, prêt à réviser</div></div></div></div></div>
+            <div class="app-card"><div class="app-row"><div class="app-left"><span class="icon i-c">SRS</span><div><b data-i18n="mock.cards">Flashcards SM‑2</b><div class="mini" data-i18n="mock.cardsSub">Révision espacée + streak</div></div></div></div></div>
+            <div class="app-card"><div class="app-row"><div class="app-left"><span class="icon i-a">⏰</span><div><b data-i18n="mock.deadlines">Deadlines</b><div class="mini" data-i18n="mock.deadlinesSub">Examens, devoirs, rappels</div></div></div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="problem">
+      <div class="container">
+        <div class="section-head reveal"><span class="eyebrow" data-i18n="problem.eye">Problème</span><h2 data-i18n="problem.title">L’étudiant perd du temps avant même d’étudier.</h2><p data-i18n="problem.lead">L’information est dispersée entre WhatsApp, Drive, YouTube, photocopies et annonces informelles.</p></div>
+        <div class="grid-3">
+          <div class="card reveal"><span class="tag v">01</span><h3 data-i18n="problem.c1t">Ressources dispersées</h3><p data-i18n="problem.c1p">PDF, examens, notes et vidéos ne sont pas structurés par université, année, matière et type.</p></div>
+          <div class="card reveal"><span class="tag a">02</span><h3 data-i18n="problem.c2t">Organisation fragile</h3><p data-i18n="problem.c2p">Deadlines, emplois du temps et rappels restent manuels, donc oubliables.</p></div>
+          <div class="card reveal"><span class="tag c">03</span><h3 data-i18n="problem.c3t">IA trop générique</h3><p data-i18n="problem.c3p">Les assistants IA répondent, mais ne transforment pas directement les vrais supports de cours.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="solution" id="solution">
+      <div class="container">
+        <div class="section-head reveal"><span class="eyebrow" data-i18n="solution.eye">Solution</span><h2 data-i18n="solution.title">Studara centralise, organise et transforme.</h2><p data-i18n="solution.lead">Une app locale-first, AR/RTL, pour passer du contenu brut à la révision active.</p></div>
+        <div class="flow">
+          <div class="step reveal"><b>1</b><h3 data-i18n="solution.s1t">Trouver</h3><p data-i18n="solution.s1p">Ressources filtrées par université, faculté, année, matière et type.</p></div>
+          <div class="step reveal"><b>2</b><h3 data-i18n="solution.s2t">Organiser</h3><p data-i18n="solution.s2p">Planning, rappels, notifications et détection de conflits.</p></div>
+          <div class="step reveal"><b>3</b><h3 data-i18n="solution.s3t">Transformer</h3><p data-i18n="solution.s3p">IA pour résumer, transcrire, corriger et créer des cartes.</p></div>
+          <div class="step reveal"><b>4</b><h3 data-i18n="solution.s4t">Réviser</h3><p data-i18n="solution.s4p">Flashcards SM‑2, quiz, streak, import Anki/CSV.</p></div>
+          <div class="step reveal"><b>5</b><h3 data-i18n="solution.s5t">Agir</h3><p data-i18n="solution.s5p">Jobs, stages, forum, housing et partage communautaire.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="product">
+      <div class="container product-wrap">
+        <div class="demo-card reveal"><span class="tag">Démo narrative</span><h3 data-i18n="product.demoTitle">Une journée étudiante, simplifiée.</h3><p data-i18n="product.demoText">L’étudiant trouve un cours, l’ajoute à ses favoris, importe son planning par OCR, enregistre le cours, obtient des notes propres, génère des flashcards, puis reçoit un rappel avant l’examen.</p></div>
+        <div>
+          <div class="section-head reveal" style="text-align:start;margin:0 0 22px"><span class="eyebrow" data-i18n="product.eye">Produit</span><h2 data-i18n="product.title">Les modules qui créent l’usage quotidien.</h2><p data-i18n="product.lead">Chaque brique répond à un besoin réel, fréquent et local.</p></div>
+          <div class="feature-list">
+            <div class="mini-card reveal"><span class="tag v">Resources</span><h3 data-i18n="product.f1t">Bibliothèque académique</h3><p data-i18n="product.f1p">Upload, recherche, filtres, likes, favoris, downloads et modération.</p></div>
+            <div class="mini-card reveal"><span class="tag g">Video</span><h3 data-i18n="product.f2t">Cours vidéo</h3><p data-i18n="product.f2p">Catalogue vidéo avec logique de playlist et lecture WebView.</p></div>
+            <div class="mini-card reveal"><span class="tag c">Timetable</span><h3 data-i18n="product.f3t">Emploi du temps</h3><p data-i18n="product.f3p">Weekly grid, couleurs, add/edit/delete, conflits et synchronisation.</p></div>
+            <div class="mini-card reveal"><span class="tag a">Community</span><h3 data-i18n="product.f4t">Communauté & opportunités</h3><p data-i18n="product.f4p">Jobs, stages, forum Q&A, XP, housing et contacts directs.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ai" id="ai">
+      <div class="container">
+        <div class="section-head reveal"><span class="eyebrow" data-i18n="ai.eye">IA utile</span><h2 data-i18n="ai.title">Pas un chatbot gadget. Des workflows académiques.</h2><p data-i18n="ai.lead">Studara transforme les supports réels de l’étudiant en actions directement exploitables.</p></div>
+        <div class="grid-3">
+          <div class="card reveal"><span class="tag">Whisper Studio</span><h3 data-i18n="ai.c1t">Cours audio → notes propres</h3><p data-i18n="ai.c1p">Enregistrement, transcription multi‑modèles, résumé, réécriture Markdown et flashcards.</p></div>
+          <div class="card reveal"><span class="tag">Scan & Create</span><h3 data-i18n="ai.c2t">Photo → deck de révision</h3><p data-i18n="ai.c2p">OCR/vision sur notes imprimées ou manuscrites pour créer jusqu’à 30 cartes par usage.</p></div>
+          <div class="card reveal"><span class="tag">Correction</span><h3 data-i18n="ai.c3t">Exercice → correction fiable</h3><p data-i18n="ai.c3p">Workflow document → job → résultat, avec confidence score, warnings et export PDF.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="traction">
+      <div class="container">
+        <div class="section-head reveal"><span class="eyebrow" data-i18n="traction.eye">Traction</span><h2 data-i18n="traction.title">Un actif contenu déjà constitué.</h2><p data-i18n="traction.lead">Studara ne démarre pas à zéro : contenu, infrastructure et dashboard opérationnel sont déjà structurés.</p></div>
+        <div class="traction-band">
+          <div class="metric reveal"><strong>2 981</strong><p data-i18n="traction.m1">ressources en base</p></div>
+          <div class="metric reveal"><strong>1 328</strong><p data-i18n="traction.m2">cours vidéo déjà catalogués</p></div>
+          <div class="metric reveal"><strong>3</strong><p data-i18n="traction.m3">briques produit : mobile, API, admin</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing">
+      <div class="container">
+        <div class="section-head reveal"><span class="eyebrow" data-i18n="pricing.eye">Monétisation</span><h2 data-i18n="pricing.title">Abonnement accessible + wallet IA à l’usage.</h2><p data-i18n="pricing.lead">Un modèle hybride pour augmenter la conversion tout en contrôlant les coûts IA.</p></div>
+        <div class="pricing-grid">
+          <div class="card price reveal"><span class="tag v">essential</span><h3 data-i18n="pricing.p1">Essentiel</h3><strong>150 MRU</strong><small data-i18n="pricing.month">/ mois</small><ul><li data-i18n="pricing.li1">Accès renforcé aux ressources</li><li data-i18n="pricing.li2">Quotas IA de base</li><li data-i18n="pricing.li3">Expérience sans friction</li></ul></div>
+          <div class="card price featured reveal"><span class="recommended" data-i18n="pricing.rec">Recommandé</span><span class="tag g">course_pdf</span><h3 data-i18n="pricing.p2">Cours & PDF</h3><strong>250 MRU</strong><small data-i18n="pricing.month">/ mois</small><ul><li data-i18n="pricing.li4">PDF, résumés et flashcards</li><li data-i18n="pricing.li5">Meilleur équilibre valeur/prix</li><li data-i18n="pricing.li6">Pensé pour l’usage régulier</li></ul></div>
+          <div class="card price reveal"><span class="tag a">elite_pass_7d</span><h3 data-i18n="pricing.p3">Elite Hebdo</h3><strong>349 MRU</strong><small data-i18n="pricing.week">/ 7 jours</small><ul><li data-i18n="pricing.li7">Usage intensif court</li><li data-i18n="pricing.li8">Idéal examens</li><li data-i18n="pricing.li9">Quotas élevés encadrés</li></ul></div>
+          <div class="card price reveal"><span class="tag c">elite_monthly</span><h3 data-i18n="pricing.p4">Elite Mensuel</h3><strong>1000 MRU</strong><small data-i18n="pricing.month">/ mois</small><ul><li data-i18n="pricing.li10">Puissance maximale</li><li data-i18n="pricing.li11">Mémoire et documents lourds</li><li data-i18n="pricing.li12">Pour power users</li></ul></div>
+        </div>
+        <div class="payg">
+          <div class="card reveal"><span class="tag v">Whisper</span><h3 data-i18n="payg.w">Transcription</h3><strong>0.054–1.28 MRU/min</strong><p data-i18n="payg.wp">Selon modèle : Groq Whisper, GPT‑4o mini, GPT‑4o, Chirp 2.</p></div>
+          <div class="card reveal"><span class="tag c">Scan</span><h3 data-i18n="payg.s">Scan & Créer</h3><strong>0.62 MRU</strong><p data-i18n="payg.sp">1 photo → deck jusqu’à 30 cartes.</p></div>
+          <div class="card reveal"><span class="tag g">Cours IA</span><h3 data-i18n="payg.c">Cours généré</h3><strong>0.81 MRU</strong><p data-i18n="payg.cp">1 cours d’environ 1 500 mots.</p></div>
+          <div class="card reveal"><span class="tag a">PDF</span><h3 data-i18n="payg.pdf">Résumé PDF</h3><strong>0.96 MRU</strong><p data-i18n="payg.pdfp">1 document jusqu’à 80 pages et 25MB.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <div class="container">
+        <div class="section-head reveal"><span class="eyebrow" data-i18n="road.eye">Roadmap</span><h2 data-i18n="road.title">Passer du produit utile au réseau académique.</h2><p data-i18n="road.lead">Priorité : activation, rétention, monétisation et opérations terrain.</p></div>
+        <div class="roadmap">
+          <div class="phase reveal"><span class="num">1</span><h3 data-i18n="road.r1t">Lancement contrôlé</h3><p data-i18n="road.r1p">Pilotes par université, ambassadeurs, collecte feedback, modération qualité.</p></div>
+          <div class="phase reveal"><span class="num">2</span><h3 data-i18n="road.r2t">IA premium</h3><p data-i18n="road.r2p">Whisper Studio, correction IA, résumé PDF et quotas robustes.</p></div>
+          <div class="phase reveal"><span class="num">3</span><h3 data-i18n="road.r3t">Boucles virales</h3><p data-i18n="road.r3p">Streak, challenges, partage WhatsApp, classements et Q&A.</p></div>
+          <div class="phase reveal"><span class="num">4</span><h3 data-i18n="road.r4t">Scale Mauritanie</h3><p data-i18n="road.r4p">Partenariats, paiements locaux, marketplace tutorat et analytics.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq" id="faq">
+      <div class="container">
+        <div class="section-head reveal"><span class="eyebrow" data-i18n="faq.eye">FAQ</span><h2 data-i18n="faq.title">Questions clés</h2></div>
+        <details class="reveal"><summary data-i18n="faq.q1">Pourquoi Studara peut gagner localement ?</summary><p data-i18n="faq.a1">Parce que le produit combine localisation AR/RTL, contenu ciblé, paiements locaux, modération terrain et IA directement reliée aux vrais supports étudiants.</p></details>
+        <details class="reveal"><summary data-i18n="faq.q2">Comment éviter que l’IA coûte trop cher ?</summary><p data-i18n="faq.a2">Par quotas, wallet PAYG, routing multi‑modèles, cache serveur, limites par usage et monitoring des actions coûteuses.</p></details>
+        <details class="reveal"><summary data-i18n="faq.q3">Quelle est la prochaine priorité ?</summary><p data-i18n="faq.a3">Lancer un pilote mesurable : activation, rétention J7/J30, conversion paywall et usages IA les plus demandés.</p></details>
+      </div>
+    </section>
+
+    <section class="cta" id="cta">
+      <div class="container"><div class="cta-box reveal"><h2 data-i18n="cta.title">Construire la super‑app académique de Mauritanie.</h2><p data-i18n="cta.text">Studara transforme les ressources dispersées en réussite organisée, révision active et opportunités concrètes.</p><a class="btn" href="mailto:contact@studara.app" data-i18n="cta.btn">Contacter l’équipe</a></div></div>
+    </section>
+  </main>
+
+  <footer><div class="container footer-inner"><span>© 2026 Studara — ستودارا</span><span data-i18n="footer.note">Aucun secret technique ou identifiant sensible n’est affiché.</span></div></footer>
+
+  <script>
+    const dict = {
+      fr: {
+        "nav.problem":"Problème","nav.product":"Produit","nav.ai":"IA","nav.pricing":"Prix","nav.roadmap":"Roadmap","nav.cta":"Contacter",
+        "hero.badge":"Super-app académique IA • Mauritanie","hero.title":"Le campus dans une seule app.","hero.lead":"Ressources, planning, rappels, flashcards, jobs, housing et IA académique : une plateforme mobile conçue pour le quotidien des étudiants universitaires mauritaniens.","hero.primary":"Voir le produit","hero.secondary":"Découvrir le modèle","hero.proof1":"Mobile + API + Admin","hero.proof2":"AR/RTL prêt","hero.proof3":"IA monétisable",
+        "stats.resources":"ressources","stats.videos":"cours vidéo","stats.universities":"universités cibles","stats.workflows":"workflows utiles","float.ai":"IA → notes propres","float.srs":"SM‑2 streak",
+        "mock.whisper":"Whisper Studio","mock.whisperSub":"Audio → notes + flashcards","mock.summary":"Résumé intelligent","mock.summarySub":"Cours compressé, prêt à réviser","mock.cards":"Flashcards SM‑2","mock.cardsSub":"Révision espacée + streak","mock.deadlines":"Deadlines","mock.deadlinesSub":"Examens, devoirs, rappels",
+        "problem.eye":"Problème","problem.title":"L’étudiant perd du temps avant même d’étudier.","problem.lead":"L’information est dispersée entre WhatsApp, Drive, YouTube, photocopies et annonces informelles.","problem.c1t":"Ressources dispersées","problem.c1p":"PDF, examens, notes et vidéos ne sont pas structurés par université, année, matière et type.","problem.c2t":"Organisation fragile","problem.c2p":"Deadlines, emplois du temps et rappels restent manuels, donc oubliables.","problem.c3t":"IA trop générique","problem.c3p":"Les assistants IA répondent, mais ne transforment pas directement les vrais supports de cours.",
+        "solution.eye":"Solution","solution.title":"Studara centralise, organise et transforme.","solution.lead":"Une app locale-first, AR/RTL, pour passer du contenu brut à la révision active.","solution.s1t":"Trouver","solution.s1p":"Ressources filtrées par université, faculté, année, matière et type.","solution.s2t":"Organiser","solution.s2p":"Planning, rappels, notifications et détection de conflits.","solution.s3t":"Transformer","solution.s3p":"IA pour résumer, transcrire, corriger et créer des cartes.","solution.s4t":"Réviser","solution.s4p":"Flashcards SM‑2, quiz, streak, import Anki/CSV.","solution.s5t":"Agir","solution.s5p":"Jobs, stages, forum, housing et partage communautaire.",
+        "product.eye":"Produit","product.title":"Les modules qui créent l’usage quotidien.","product.lead":"Chaque brique répond à un besoin réel, fréquent et local.","product.demoTitle":"Une journée étudiante, simplifiée.","product.demoText":"L’étudiant trouve un cours, l’ajoute à ses favoris, importe son planning par OCR, enregistre le cours, obtient des notes propres, génère des flashcards, puis reçoit un rappel avant l’examen.","product.f1t":"Bibliothèque académique","product.f1p":"Upload, recherche, filtres, likes, favoris, downloads et modération.","product.f2t":"Cours vidéo","product.f2p":"Catalogue vidéo avec logique de playlist et lecture WebView.","product.f3t":"Emploi du temps","product.f3p":"Weekly grid, couleurs, add/edit/delete, conflits et synchronisation.","product.f4t":"Communauté & opportunités","product.f4p":"Jobs, stages, forum Q&A, XP, housing et contacts directs.",
+        "ai.eye":"IA utile","ai.title":"Pas un chatbot gadget. Des workflows académiques.","ai.lead":"Studara transforme les supports réels de l’étudiant en actions directement exploitables.","ai.c1t":"Cours audio → notes propres","ai.c1p":"Enregistrement, transcription multi‑modèles, résumé, réécriture Markdown et flashcards.","ai.c2t":"Photo → deck de révision","ai.c2p":"OCR/vision sur notes imprimées ou manuscrites pour créer jusqu’à 30 cartes par usage.","ai.c3t":"Exercice → correction fiable","ai.c3p":"Workflow document → job → résultat, avec confidence score, warnings et export PDF.",
+        "traction.eye":"Traction","traction.title":"Un actif contenu déjà constitué.","traction.lead":"Studara ne démarre pas à zéro : contenu, infrastructure et dashboard opérationnel sont déjà structurés.","traction.m1":"ressources en base","traction.m2":"cours vidéo déjà catalogués","traction.m3":"briques produit : mobile, API, admin",
+        "pricing.eye":"Monétisation","pricing.title":"Abonnement accessible + wallet IA à l’usage.","pricing.lead":"Un modèle hybride pour augmenter la conversion tout en contrôlant les coûts IA.","pricing.p1":"Essentiel","pricing.p2":"Cours & PDF","pricing.p3":"Elite Hebdo","pricing.p4":"Elite Mensuel","pricing.month":"/ mois","pricing.week":"/ 7 jours","pricing.rec":"Recommandé","pricing.li1":"Accès renforcé aux ressources","pricing.li2":"Quotas IA de base","pricing.li3":"Expérience sans friction","pricing.li4":"PDF, résumés et flashcards","pricing.li5":"Meilleur équilibre valeur/prix","pricing.li6":"Pensé pour l’usage régulier","pricing.li7":"Usage intensif court","pricing.li8":"Idéal examens","pricing.li9":"Quotas élevés encadrés","pricing.li10":"Puissance maximale","pricing.li11":"Mémoire et documents lourds","pricing.li12":"Pour power users",
+        "payg.w":"Transcription","payg.wp":"Selon modèle : Groq Whisper, GPT‑4o mini, GPT‑4o, Chirp 2.","payg.s":"Scan & Créer","payg.sp":"1 photo → deck jusqu’à 30 cartes.","payg.c":"Cours généré","payg.cp":"1 cours d’environ 1 500 mots.","payg.pdf":"Résumé PDF","payg.pdfp":"1 document jusqu’à 80 pages et 25MB.",
+        "road.eye":"Roadmap","road.title":"Passer du produit utile au réseau académique.","road.lead":"Priorité : activation, rétention, monétisation et opérations terrain.","road.r1t":"Lancement contrôlé","road.r1p":"Pilotes par université, ambassadeurs, collecte feedback, modération qualité.","road.r2t":"IA premium","road.r2p":"Whisper Studio, correction IA, résumé PDF et quotas robustes.","road.r3t":"Boucles virales","road.r3p":"Streak, challenges, partage WhatsApp, classements et Q&A.","road.r4t":"Scale Mauritanie","road.r4p":"Partenariats, paiements locaux, marketplace tutorat et analytics.",
+        "faq.eye":"FAQ","faq.title":"Questions clés","faq.q1":"Pourquoi Studara peut gagner localement ?","faq.a1":"Parce que le produit combine localisation AR/RTL, contenu ciblé, paiements locaux, modération terrain et IA directement reliée aux vrais supports étudiants.","faq.q2":"Comment éviter que l’IA coûte trop cher ?","faq.a2":"Par quotas, wallet PAYG, routing multi‑modèles, cache serveur, limites par usage et monitoring des actions coûteuses.","faq.q3":"Quelle est la prochaine priorité ?","faq.a3":"Lancer un pilote mesurable : activation, rétention J7/J30, conversion paywall et usages IA les plus demandés.","cta.title":"Construire la super‑app académique de Mauritanie.","cta.text":"Studara transforme les ressources dispersées en réussite organisée, révision active et opportunités concrètes.","cta.btn":"Contacter l’équipe","footer.note":"Aucun secret technique ou identifiant sensible n’est affiché."
+      },
+      ar: {
+        "nav.problem":"المشكلة","nav.product":"المنتج","nav.ai":"الذكاء الاصطناعي","nav.pricing":"الأسعار","nav.roadmap":"الخطة","nav.cta":"تواصل معنا",
+        "hero.badge":"تطبيق جامعي ذكي • موريتانيا","hero.title":"حرمك الجامعي في تطبيق واحد.","hero.lead":"مصادر دراسية، جدول أسبوعي، تذكيرات، بطاقات مراجعة، فرص تدريب وسكن، ومساعد أكاديمي بالذكاء الاصطناعي — منصة موبايل مصممة ليوميات الطالب الجامعي في موريتانيا.","hero.primary":"استكشف المنتج","hero.secondary":"اكتشف نموذج الربح","hero.proof1":"تطبيق + API + لوحة تحكم","hero.proof2":"جاهز للعربية و RTL","hero.proof3":"ذكاء اصطناعي قابل للربح",
+        "stats.resources":"مصدر دراسي","stats.videos":"درس فيديو","stats.universities":"جامعات مستهدفة","stats.workflows":"استخدامات عملية","float.ai":"الذكاء الاصطناعي → ملاحظات مرتبة","float.srs":"استمرارية مراجعة SM‑2",
+        "mock.whisper":"استوديو التفريغ الصوتي","mock.whisperSub":"صوت → ملاحظات + بطاقات","mock.summary":"ملخص ذكي","mock.summarySub":"درس مختصر جاهز للمراجعة","mock.cards":"بطاقات SM‑2","mock.cardsSub":"مراجعة متباعدة + سلسلة يومية","mock.deadlines":"المواعيد المهمة","mock.deadlinesSub":"امتحانات، واجبات، تذكيرات",
+        "problem.eye":"المشكلة","problem.title":"الطالب يضيع وقته قبل أن يبدأ الدراسة.","problem.lead":"المعلومة مبعثرة بين واتساب، درايف، يوتيوب، النسخ الورقية والإعلانات غير الرسمية.","problem.c1t":"مصادر مشتتة","problem.c1p":"الملفات، الامتحانات، الملاحظات والفيديوهات ليست منظمة حسب الجامعة والسنة والمادة والنوع.","problem.c2t":"تنظيم هش","problem.c2p":"المواعيد، الجداول والتذكيرات تبقى يدوية؛ لذلك يسهل نسيانها.","problem.c3t":"ذكاء اصطناعي عام أكثر من اللازم","problem.c3p":"المساعدات العامة تجيب على الأسئلة، لكنها لا تحول ملفات الطالب الحقيقية إلى أدوات مراجعة جاهزة.",
+        "solution.eye":"الحل","solution.title":"Studara يجمع، ينظم، ويحوّل.","solution.lead":"تطبيق محلي أولاً، يدعم العربية و RTL، يحول المحتوى الخام إلى مراجعة نشطة.","solution.s1t":"العثور","solution.s1p":"مصادر مصنفة حسب الجامعة، الكلية، السنة، المادة والنوع.","solution.s2t":"التنظيم","solution.s2p":"جدول، تذكيرات، إشعارات، واكتشاف التعارضات.","solution.s3t":"التحويل","solution.s3p":"ذكاء اصطناعي للتلخيص، التفريغ، التصحيح وإنشاء البطاقات.","solution.s4t":"المراجعة","solution.s4p":"بطاقات SM‑2، اختبارات سريعة، سلسلة يومية، واستيراد Anki/CSV.","solution.s5t":"التحرك","solution.s5p":"فرص تدريب وعمل، منتدى، سكن، ومشاركة مجتمعية.",
+        "product.eye":"المنتج","product.title":"وحدات تصنع استخداماً يومياً.","product.lead":"كل وحدة تحل حاجة واقعية ومتكررة ومحلية.","product.demoTitle":"يوم طالب، لكن أبسط.","product.demoText":"يجد الطالب درساً، يحفظه في المفضلة، يستورد جدوله عبر OCR، يسجل المحاضرة، يحصل على ملاحظات مرتبة، ينشئ بطاقات مراجعة، ثم يتلقى تذكيراً قبل الامتحان.","product.f1t":"مكتبة أكاديمية","product.f1p":"رفع ملفات، بحث، فلاتر، إعجابات، مفضلة، تحميلات، ومراجعة إدارية.","product.f2t":"دروس فيديو","product.f2p":"كتالوج فيديو مع قوائم تشغيل ومشاهدة داخل التطبيق.","product.f3t":"جدول أسبوعي","product.f3p":"شبكة أسبوعية، ألوان، إضافة/تعديل/حذف، تعارضات ومزامنة.","product.f4t":"مجتمع وفرص","product.f4p":"فرص عمل وتدريب، أسئلة وأجوبة، نقاط XP، سكن، وتواصل مباشر.",
+        "ai.eye":"ذكاء اصطناعي عملي","ai.title":"ليس شات بوت للزينة. بل سير عمل أكاديمي.","ai.lead":"Studara يحول ملفات الطالب وصوره وتسجيلاته إلى نتائج قابلة للاستخدام فوراً.","ai.c1t":"صوت المحاضرة → ملاحظات مرتبة","ai.c1p":"تسجيل، تفريغ متعدد النماذج، تلخيص، إعادة صياغة Markdown، وإنشاء بطاقات.","ai.c2t":"صورة → بطاقات مراجعة","ai.c2p":"OCR/رؤية حاسوبية للملاحظات المطبوعة أو اليدوية لإنشاء حتى 30 بطاقة في الاستخدام الواحد.","ai.c3t":"تمرين → تصحيح موثوق","ai.c3p":"سير عمل من المستند إلى النتيجة، مع درجة ثقة، تحذيرات، وتصدير PDF.",
+        "traction.eye":"التقدم","traction.title":"أصل محتوى موجود بالفعل.","traction.lead":"Studara لا يبدأ من الصفر: المحتوى، البنية التقنية ولوحة الإدارة منظمة بالفعل.","traction.m1":"مصدر داخل القاعدة","traction.m2":"درس فيديو مفهرس","traction.m3":"مكونات منتج: تطبيق، API، لوحة تحكم",
+        "pricing.eye":"نموذج الربح","pricing.title":"اشتراك مناسب + محفظة ذكاء اصطناعي حسب الاستخدام.","pricing.lead":"نموذج هجين يرفع التحويل ويضبط تكلفة الذكاء الاصطناعي.","pricing.p1":"الأساسي","pricing.p2":"الدروس والـ PDF","pricing.p3":"Elite أسبوعي","pricing.p4":"Elite شهري","pricing.month":"/ شهرياً","pricing.week":"/ 7 أيام","pricing.rec":"الأكثر توازناً","pricing.li1":"وصول أقوى إلى الموارد","pricing.li2":"حصص ذكاء اصطناعي أساسية","pricing.li3":"تجربة أكثر سلاسة","pricing.li4":"PDF، ملخصات وبطاقات","pricing.li5":"أفضل توازن قيمة/سعر","pricing.li6":"مصمم للاستخدام المنتظم","pricing.li7":"استخدام مكثف قصير","pricing.li8":"مثالي لفترة الامتحانات","pricing.li9":"حصص عالية لكن مضبوطة","pricing.li10":"أقصى قوة","pricing.li11":"ذاكرة وملفات كبيرة","pricing.li12":"للمستخدمين المكثفين",
+        "payg.w":"تفريغ صوتي","payg.wp":"حسب النموذج: Groq Whisper، GPT‑4o mini، GPT‑4o، Chirp 2.","payg.s":"امسح وأنشئ","payg.sp":"صورة واحدة → مجموعة حتى 30 بطاقة.","payg.c":"درس مولّد","payg.cp":"درس واحد بحوالي 1500 كلمة.","payg.pdf":"ملخص PDF","payg.pdfp":"مستند واحد حتى 80 صفحة و25MB.",
+        "road.eye":"الخطة","road.title":"من منتج مفيد إلى شبكة أكاديمية.","road.lead":"الأولوية: التفعيل، الاحتفاظ، الربح، والعمليات الميدانية.","road.r1t":"إطلاق مضبوط","road.r1p":"تجارب جامعية، سفراء، جمع ملاحظات، وضبط جودة المحتوى.","road.r2t":"ذكاء اصطناعي Premium","road.r2p":"Whisper Studio، تصحيح IA، تلخيص PDF وحصص قوية.","road.r3t":"حلقات انتشار","road.r3p":"Streak، تحديات، مشاركة واتساب، ترتيبات ومنتدى Q&A.","road.r4t":"توسع في موريتانيا","road.r4p":"شراكات، مدفوعات محلية، سوق للدروس الخصوصية وتحليلات.",
+        "faq.eye":"أسئلة","faq.title":"أسئلة أساسية","faq.q1":"لماذا يمكن أن ينجح Studara محلياً؟","faq.a1":"لأنه يجمع بين دعم العربية و RTL، محتوى محلي، مدفوعات محلية، إدارة ميدانية، وذكاء اصطناعي مرتبط مباشرة بملفات الطلاب.","faq.q2":"كيف لا تصبح تكلفة الذكاء الاصطناعي خطراً؟","faq.a2":"عبر الحصص، محفظة PAYG، اختيار النموذج المناسب، التخزين المؤقت، حدود الاستخدام ومراقبة العمليات المكلفة.","faq.q3":"ما الأولوية التالية؟","faq.a3":"إطلاق تجربة قابلة للقياس: التفعيل، الاحتفاظ بعد 7 و30 يوماً، التحويل للخطط المدفوعة، وأكثر استخدامات IA طلباً.","cta.title":"نبني السوبر آب الأكاديمي لموريتانيا.","cta.text":"Studara يحول المصادر المشتتة إلى نجاح منظم، مراجعة نشطة، وفرص ملموسة.","cta.btn":"تواصل مع الفريق","footer.note":"لا يتم عرض أي سر تقني أو معرف حساس."
+      }
+    };
+
+    const html = document.documentElement;
+    const langBtn = document.getElementById('langBtn');
+    const menuBtn = document.getElementById('menuBtn');
+    const panel = document.getElementById('mobilePanel');
+    const saved = localStorage.getItem('studara-lang') || 'fr';
+
+    function applyLang(lang){
+      html.lang = lang;
+      html.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.body.dir = html.dir;
+      langBtn.textContent = lang === 'ar' ? 'FR' : 'AR';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if(dict[lang][key]) el.textContent = dict[lang][key];
+      });
+      localStorage.setItem('studara-lang', lang);
+    }
+    langBtn.addEventListener('click', () => applyLang(html.lang === 'ar' ? 'fr' : 'ar'));
+    menuBtn.addEventListener('click', () => panel.classList.toggle('open'));
+    panel.querySelectorAll('a').forEach(a => a.addEventListener('click', () => panel.classList.remove('open')));
+    applyLang(saved);
+
+    const io = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); } }), {threshold:.14});
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    let counted = false;
+    const counterIO = new IntersectionObserver(entries => entries.forEach(entry => {
+      if(entry.isIntersecting && !counted){ counted = true; document.querySelectorAll('[data-count]').forEach(el => {
+        const target = +el.dataset.count; let current = 0; const steps = 42; const inc = target / steps;
+        const tick = () => { current += inc; if(current >= target){ el.textContent = target.toLocaleString(html.lang === 'ar' ? 'ar-MR' : 'fr-FR'); } else { el.textContent = Math.floor(current).toLocaleString(html.lang === 'ar' ? 'ar-MR' : 'fr-FR'); requestAnimationFrame(tick); } };
+        tick();
+      }); }
+    }), {threshold:.25});
+    counterIO.observe(document.querySelector('.stats'));
+  </script>
+</body>
+</html>

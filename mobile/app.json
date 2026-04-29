@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Studara",
+    "slug": "studara",
+    "version": "1.0.0",
+    "scheme": "studara",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#080d14"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.studara.mr",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "استخدام Face ID لتسجيل الدخول بسرعة وأمان — Used for quick and secure login with Face ID.",
+        "NSUserNotificationsUsageDescription": "لإرسال تذكيرات الدراسة ومواعيد الامتحانات وتنبيهات فرص العمل الجديدة.",
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ]
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d1520"
+      },
+      "edgeToEdgeEnabled": false,
+      "predictiveBackGestureEnabled": false,
+      "package": "app.studara.mr",
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#064E3B",
+          "sounds": []
+        }
+      ],
+      "expo-local-authentication",
+      "expo-audio"
+    ],
+    "extra": {
+      "privacyPolicyUrl": "https://api.radar-mr.com/privacy",
+      "eas": {
+        "projectId": "1a5d6e2e-5455-42c9-b3a9-08081ad0ad49"
+      }
+    },
+    "owner": "usernamem",
+    "locales": {
+      "ar": "./locales/ar.json",
+      "fr": "./locales/fr.json"
+    }
+  }
+}

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>سياسة الخصوصية — Politique de Confidentialité | Studara ستوداره</title>
+  <style>
+    :root {
+      --green: #064E3B;
+      --green-light: #D1FAE5;
+      --green-mid: #059669;
+      --text: #1F2937;
+      --muted: #6B7280;
+      --border: #E5E7EB;
+      --bg: #F9FAFB;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.8;
+    }
+    header {
+      background: var(--green);
+      color: white;
+      padding: 40px 24px;
+      text-align: center;
+    }
+    header .logo {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    header p {
+      font-size: 15px;
+      opacity: 0.8;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 99px;
+      margin-top: 12px;
+      font-weight: 600;
+    }
+    main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    .lang-switch {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      justify-content: center;
+    }
+    .lang-switch a {
+      padding: 6px 18px;
+      border: 1.5px solid var(--green);
+      border-radius: 99px;
+      text-decoration: none;
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 600;
+      transition: all .2s;
+    }
+    .lang-switch a:hover, .lang-switch a.active {
+      background: var(--green);
+      color: white;
+    }
+    .section {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .section-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    h2 {
+      font-size: 20px;
+      color: var(--green);
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    h3 {
+      font-size: 16px;
+      color: var(--text);
+      margin: 16px 0 6px;
+      font-weight: 600;
+    }
+    p { margin-bottom: 10px; font-size: 15px; color: #374151; }
+    ul { padding-right: 20px; margin-bottom: 10px; }
+    ul li { margin-bottom: 6px; font-size: 15px; color: #374151; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    th {
+      background: var(--green-light);
+      color: var(--green);
+      padding: 10px 14px;
+      text-align: right;
+      font-weight: 600;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    .highlight {
+      background: var(--green-light);
+      border-right: 4px solid var(--green-mid);
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 14px 0;
+      font-size: 14px;
+      color: var(--green);
+      font-weight: 600;
+    }
+    .contact-card {
+      background: var(--green);
+      color: white;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    .contact-card a {
+      color: #A7F3D0;
+      text-decoration: none;
+    }
+    .contact-card a:hover { text-decoration: underline; }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* LTR section for French */
+    .fr { direction: ltr; text-align: left; }
+    .fr ul { padding-left: 20px; padding-right: 0; }
+    .fr th, .fr td { text-align: left; }
+    .fr h2, .fr h3 { text-align: left; }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 22px; }
+      main { padding: 24px 16px 60px; }
+      .section { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📚</div>
+  <h1>Studara — ستوداره</h1>
+  <p>منصة الطالب الموريتاني | Plateforme de l'étudiant mauritanien</p>
+  <span class="badge">سياسة الخصوصية · Politique de Confidentialité</span>
+</header>
+
+<main>
+
+  <div class="lang-switch">
+    <a href="#ar" class="active">العربية</a>
+    <a href="#fr">Français</a>
+  </div>
+
+  <!-- ===== ARABIC VERSION ===== -->
+  <div id="ar">
+
+    <div class="section">
+      <div class="section-icon">📋</div>
+      <h2>مقدمة</h2>
+      <p>مرحباً بك في تطبيق <strong>Studara</strong>، المنصة التعليمية المخصصة للطلاب الموريتانيين. نحن نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية. توضح هذه السياسة كيفية جمع البيانات واستخدامها وحفظها.</p>
+      <div class="highlight">آخر تحديث: 13 أبريل 2026</div>
+    </div>
+
+    <div class="section">
+      <div class="section-icon">📦</div>
+      <h2>البيانات التي نجمعها</h2>
+      <table>
+        <tr>
+          <th>نوع البيانات</th>
+          <th>الغرض</th>
+          <th>مكان التخزين</th>
+        </tr>
+        <tr>
+          <td><strong>الاسم والبريد الإلكتروني</strong></td>
+          <td>إنشاء الحساب وتسجيل الدخول</td>
+          <td>خوادمنا الآمنة</td>
+        </tr>
+        <tr>
+          <td><strong>الفصل الدراسي / التخصص</strong></td>
+          <td>تخصيص المحتوى والموارد</td>
+          <td>خوادمنا الآمنة</td>
+        </tr>
+        <tr>
+          <td><strong>بيانات الجلسات الدراسية</strong></td>
+          <td>تتبع التقدم وحساب الـ Streak</td>
+          <td>الجهاز + الخادم</td>
+        </tr>
+        <tr>
+          <td><strong>الملفات المرفوعة</strong></td>
+          <td>مشاركة الموارد الدراسية</td>
+          <td>خوادمنا الآمنة</td>
+        </tr>
+        <tr>
+          <td><strong>درجات التحدي اليومي</strong></td>
+          <td>لوحة المتصدرين</td>
+          <td>خوادمنا الآمنة</td>
+        </tr>
+        <tr>
+          <td><strong>بيانات محلية (AsyncStorage)</strong></td>
+          <td>الوضع دون اتصال، الإعدادات، التقييمات</td>
+          <td>جهازك فقط</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-icon">🔐</div>
+      <h2>الصلاحيات المطلوبة</h2>
+
+      <h3>🔔 الإشعارات</h3>
+      <p>نستخدم الإشعارات لإرسال تذكيرات الامتحانات ومواعيد الدروس وتنبيهات فرص العمل. يمكنك تعطيلها في أي وقت من إعدادات الجهاز.</p>
+
+      <h3>🔒 Face ID / التعرف البيومتري</h3>
+      <p>تُستخدم هذه الميزة <strong>فقط</strong> لتسجيل الدخول السريع. لا يتم إرسال أي بيانات بيومترية إلى خوادمنا — تبقى على جهازك دائماً.</p>
+
+      <h3>📄 الوصول إلى الملفات</h3>
+      <p>نطلب الوصول إلى الملفات فقط عند رغبتك في رفع مورد دراسي (PDF، DOCX، PPTX). لا نقرأ أي ملف دون إذن صريح منك.</p>
+
+      <div class="highlight">⚠️ لا نطلب الوصول إلى الكاميرا أو الموقع الجغرافي أو جهات الاتصال.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-icon">🔄</div>
+      <h2>كيف نستخدم بياناتك</h2>
+      <ul>
+        <li>تقديم الخدمة وتحسين تجربة المستخدم</li>
+        <li>عرض الموارد الدراسية المناسبة لتخصصك</li>
+        <li>حساب تقدمك الدراسي وإرسال التذكيرات</li>
+        <li>إدارة لوحة المتصدرين في التحدي اليومي</li>
+        <li>معالجة برنامج الإحالة (مكافآت الأيام المجانية)</li>
+      </ul>
+      <div class="highlight">🚫 لا نبيع بياناتك لأي طرف ثالث. لا نستخدمها لأغراض إعلانية.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-icon">🛡️</div>
+      <h2>أمان البيانات</h2>
+      <ul>
+        <li>التواصل مشفّر بـ HTTPS (قريباً مع شهادة Let's Encrypt)</li>
+        <li>كلمات المرور مشفرة بـ bcrypt</li>
+        <li>رموز JWT مع تدوير تلقائي كل 3 أشهر</li>
+        <li>بيانات Face ID محفوظة في Keychain الجهاز فقط</li>
+        <li>الخادم محمي بـ Rate Limiting وسجلات أمنية</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <div class="section-icon">📅</div>
+      <h2>الاحتفاظ بالبيانات وحذفها</h2>
+      <p>يمكنك طلب حذف حسابك وجميع بياناتك في أي وقت عبر التواصل معنا. سيتم الحذف خلال 30 يوماً من الطلب.</p>
+      <p>البيانات المحلية (AsyncStorage) محفوظة على جهازك ويمكن مسحها عبر إعدادات التطبيق أو حذفه.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-icon">👶</div>
+      <h2>الأطفال</h2>
+      <p>التطبيق موجّه للطلاب الجامعيين (18 سنة فأكثر). لا نجمع بيانات الأطفال دون إذن الوالدين. إذا اكتشفنا حساباً لطفل دون سن 13، سنحذفه فوراً.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-icon">✉️</div>
+      <h2>تواصل معنا</h2>
+      <div class="contact-card">
+        <p style="color:white; margin-bottom: 8px;">لأي استفسار حول خصوصيتك:</p>
+        <p><a href="mailto:support@studara.app">support@studara.app</a></p>
+        <p style="font-size:13px; opacity:0.7; margin-top: 8px;">نرد خلال 48 ساعة</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== FRENCH VERSION ===== -->
+  <div id="fr" class="fr">
+
+    <div class="section fr">
+      <div class="section-icon">📋</div>
+      <h2>Introduction</h2>
+      <p>Bienvenue sur <strong>Studara</strong>, la plateforme éducative dédiée aux étudiants mauritaniens. Nous respectons votre vie privée et nous nous engageons à protéger vos données personnelles. Cette politique explique comment nous collectons, utilisons et stockons vos données.</p>
+      <div class="highlight" style="direction:ltr; text-align:left;">Dernière mise à jour : 13 avril 2026</div>
+    </div>
+
+    <div class="section fr">
+      <div class="section-icon">📦</div>
+      <h2>Données collectées</h2>
+      <table>
+        <tr>
+          <th>Type de données</th>
+          <th>Finalité</th>
+          <th>Stockage</th>
+        </tr>
+        <tr>
+          <td><strong>Nom et e-mail</strong></td>
+          <td>Création de compte et connexion</td>
+          <td>Nos serveurs sécurisés</td>
+        </tr>
+        <tr>
+          <td><strong>Filière / Spécialité</strong></td>
+          <td>Personnalisation du contenu</td>
+          <td>Nos serveurs sécurisés</td>
+        </tr>
+        <tr>
+          <td><strong>Sessions d'étude</strong></td>
+          <td>Suivi de la progression et streak</td>
+          <td>Appareil + serveur</td>
+        </tr>
+        <tr>
+          <td><strong>Fichiers uploadés</strong></td>
+          <td>Partage de ressources pédagogiques</td>
+          <td>Nos serveurs sécurisés</td>
+        </tr>
+        <tr>
+          <td><strong>Scores défi quotidien</strong></td>
+          <td>Classement (leaderboard)</td>
+          <td>Nos serveurs sécurisés</td>
+        </tr>
+        <tr>
+          <td><strong>Données locales (AsyncStorage)</strong></td>
+          <td>Mode hors-ligne, préférences, notes</td>
+          <td>Votre appareil uniquement</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section fr">
+      <div class="section-icon">🔐</div>
+      <h2>Autorisations requises</h2>
+
+      <h3>🔔 Notifications</h3>
+      <p>Nous utilisons les notifications pour envoyer des rappels d'examens, de cours et d'offres d'emploi. Vous pouvez les désactiver à tout moment dans les paramètres de l'appareil.</p>
+
+      <h3>🔒 Face ID / Authentification biométrique</h3>
+      <p>Cette fonctionnalité est utilisée <strong>uniquement</strong> pour la connexion rapide. Aucune donnée biométrique n'est envoyée à nos serveurs — tout reste sur votre appareil.</p>
+
+      <h3>📄 Accès aux fichiers</h3>
+      <p>Nous demandons l'accès aux fichiers uniquement lorsque vous souhaitez uploader une ressource (PDF, DOCX, PPTX). Aucun fichier n'est lu sans votre autorisation explicite.</p>
+
+      <div class="highlight" style="direction:ltr; text-align:left;">⚠️ Nous ne demandons pas l'accès à la caméra, à la localisation ou aux contacts.</div>
+    </div>
+
+    <div class="section fr">
+      <div class="section-icon">🔄</div>
+      <h2>Utilisation des données</h2>
+      <ul>
+        <li>Fournir le service et améliorer l'expérience utilisateur</li>
+        <li>Afficher les ressources adaptées à votre filière</li>
+        <li>Calculer votre progression et envoyer des rappels</li>
+        <li>Gérer le classement du défi quotidien</li>
+        <li>Traiter le programme de parrainage (jours Premium offerts)</li>
+      </ul>
+      <div class="highlight" style="direction:ltr; text-align:left;">🚫 Nous ne vendons pas vos données à des tiers. Nous ne les utilisons pas à des fins publicitaires.</div>
+    </div>
+
+    <div class="section fr">
+      <div class="section-icon">🛡️</div>
+      <h2>Sécurité des données</h2>
+      <ul>
+        <li>Communications chiffrées en HTTPS (bientôt avec Let's Encrypt)</li>
+        <li>Mots de passe hashés avec bcrypt</li>
+        <li>Tokens JWT avec rotation automatique tous les 3 mois</li>
+        <li>Données Face ID stockées dans le Keychain de l'appareil uniquement</li>
+        <li>Serveur protégé par Rate Limiting et journaux de sécurité</li>
+      </ul>
+    </div>
+
+    <div class="section fr">
+      <div class="section-icon">📅</div>
+      <h2>Conservation et suppression des données</h2>
+      <p>Vous pouvez demander la suppression de votre compte et de toutes vos données à tout moment en nous contactant. La suppression sera effectuée dans les 30 jours suivant la demande.</p>
+      <p>Les données locales (AsyncStorage) sont stockées sur votre appareil et peuvent être effacées via les paramètres de l'application ou en la désinstallant.</p>
+    </div>
+
+    <div class="section fr">
+      <div class="section-icon">👶</div>
+      <h2>Mineurs</h2>
+      <p>L'application est destinée aux étudiants universitaires (18 ans et plus). Nous ne collectons pas de données d'enfants sans le consentement parental. Si nous découvrons un compte appartenant à un enfant de moins de 13 ans, nous le supprimerons immédiatement.</p>
+    </div>
+
+    <div class="section fr">
+      <div class="section-icon">✉️</div>
+      <h2>Nous contacter</h2>
+      <div class="contact-card">
+        <p style="color:white; margin-bottom: 8px;">Pour toute question concernant votre vie privée :</p>
+        <p><a href="mailto:support@studara.app">support@studara.app</a></p>
+        <p style="font-size:13px; opacity:0.7; margin-top: 8px;">Réponse sous 48h</p>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <p>© 2026 Studara · All rights reserved · <a href="mailto:support@studara.app" style="color:var(--green);">support@studara.app</a></p>
+</footer>
+
+</body>
+</html>

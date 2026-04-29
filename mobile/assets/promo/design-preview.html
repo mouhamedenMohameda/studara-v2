@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Studara — Design Preview</title>
+  <style>
+    /* ── Reset & base ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, 'Segoe UI', 'Noto Naskh Arabic', Arial, sans-serif;
+      background: #F5F5F5;
+      color: #0A0A0A;
+      min-height: 100vh;
+    }
+
+    /* ── Brand tokens ────────────────────────────────────── */
+    :root {
+      --primary:        #0D9488;
+      --primary-light:  #14B8A6;
+      --primary-dark:   #0F766E;
+      --primary-deep:   #0A6B64;
+      --accent:         #F59E0B;
+      --accent-light:   #FCD34D;
+      --surface:        #FFFFFF;
+      --border:         #EFEFEF;
+      --text:           #0A0A0A;
+      --text-muted:     #A3A3A3;
+      --grad-brand:     linear-gradient(135deg, #14B8A6 0%, #0D9488 55%, #0A6B64 100%);
+    }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    .page { max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; }
+    h1 { font-size: 36px; font-weight: 900; letter-spacing: -1px; color: var(--primary); margin-bottom: 4px; }
+    .sub { color: #666; font-size: 14px; margin-bottom: 48px; }
+    h2 { font-size: 18px; font-weight: 800; color: #333; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+    section { margin-bottom: 56px; }
+
+    /* ── Color swatches ──────────────────────────────────── */
+    .swatches { display: flex; flex-wrap: wrap; gap: 14px; }
+    .swatch {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      width: 96px;
+    }
+    .swatch-box {
+      width: 80px; height: 80px; border-radius: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .swatch-name { font-size: 11px; font-weight: 700; color: #555; text-align: center; }
+    .swatch-hex  { font-size: 11px; color: #999; }
+
+    /* ── Logo showcase ───────────────────────────────────── */
+    .logo-showcase {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 32px;
+      padding: 40px 32px;
+      background: var(--grad-brand);
+      border-radius: 24px;
+    }
+    .logo-box {
+      width: 112px; height: 112px; border-radius: 26px;
+      background: var(--grad-brand);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 28px rgba(13,148,136,0.55);
+      position: relative; overflow: hidden;
+      border: 2.5px solid rgba(255,255,255,0.20);
+    }
+    /* Glass shine */
+    .logo-box::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 56%;
+      background: linear-gradient(180deg,rgba(255,255,255,0.17) 0%,rgba(255,255,255,0) 100%);
+    }
+    /* Compass SVG embedded inline */
+    .logo-box svg { position: relative; z-index: 1; }
+
+    .logo-name-group { color: white; }
+    .logo-name { font-size: 52px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+    .logo-ar   { font-size: 18px; font-weight: 700; opacity: 0.75; margin-top: 6px; }
+    .logo-tag  { font-size: 13px; opacity: 0.60; margin-top: 4px; }
+
+    /* small logo variant */
+    .logo-sm { width: 56px; height: 56px; border-radius: 14px; }
+    .logo-md { width: 80px; height: 80px; border-radius: 20px; }
+
+    /* ── Phone mockup ────────────────────────────────────── */
+    .mockups { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
+    .phone {
+      width: 260px; background: white;
+      border-radius: 36px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.14), 0 0 0 2px #E5E5E5;
+      overflow: hidden;
+    }
+    /* Login screen mockup */
+    .phone-login .hero {
+      padding: 28px 20px 28px;
+      background: var(--grad-brand);
+      position: relative; overflow: hidden;
+    }
+    .phone-login .hero::before {
+      content: ''; position: absolute;
+      width: 180px; height: 180px; border-radius: 50%;
+      background: rgba(255,255,255,0.07);
+      top: -60px; right: -50px;
+    }
+    .phone-login .hero::after {
+      content: ''; position: absolute;
+      width: 90px; height: 90px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      bottom: -20px; left: -30px;
+    }
+    .phone .step-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.14);
+      border-radius: 99px; padding: 4px 10px;
+      font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.9);
+      letter-spacing: 1px;
+      margin-bottom: 14px; float: left;
+    }
+    .phone .step-badge::before {
+      content: ''; width: 6px; height: 6px; border-radius: 3px;
+      background: #FCD34D; display: block;
+    }
+    .phone-hero-logo-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+    .phone-logo-icon {
+      width: 60px; height: 60px; border-radius: 14px;
+      background: var(--grad-brand);
+      border: 2px solid rgba(255,255,255,0.22);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(13,148,136,0.4);
+      position: relative; overflow: hidden;
+      flex-shrink: 0;
+    }
+    .phone-logo-icon::before {
+      content: ''; position: absolute; top:0; left:0; right:0; bottom:50%;
+      background: linear-gradient(180deg,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0) 100%);
+    }
+    .phone-logo-icon .gold-dot {
+      position: absolute; top: 7px; right: 7px;
+      width: 10px; height: 10px; border-radius: 5px;
+      background: #FCD34D;
+    }
+    .phone-logo-icon svg { position: relative; }
+    .phone-app-name { font-size: 32px; font-weight: 900; color: white; letter-spacing: -1px; line-height: 1; }
+    .phone-tagline { font-size: 11px; color: rgba(255,255,255,0.62); margin-top: 3px; }
+    .pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+    .feature-pill {
+      display: flex; align-items: center; gap: 4px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 99px; padding: 4px 10px;
+      font-size: 10px; color: rgba(255,255,255,0.80); font-weight: 600;
+    }
+    .phone .sheet {
+      padding: 16px 18px 20px;
+      background: white;
+      border-radius: 24px 24px 0 0;
+      margin-top: -18px; position: relative;
+    }
+    .handle { width: 32px; height: 4px; border-radius: 2px; background: #EFEFEF; margin: 0 auto 12px; }
+    .form-title { font-size: 20px; font-weight: 800; color: #0A0A0A; margin-bottom: 3px; }
+    .form-sub   { font-size: 11px; color: #A3A3A3; margin-bottom: 14px; line-height: 16px; }
+    .input-mock {
+      background: #FAFAFA; border: 1.5px solid #EFEFEF; border-radius: 12px;
+      padding: 10px 12px; font-size: 12px; color: #A3A3A3;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .input-icon { font-size: 14px; opacity: 0.5; }
+    .forgot-link { text-align: left; font-size: 11px; color: var(--primary); font-weight: 600; margin-bottom: 14px; }
+    .btn-login {
+      background: var(--grad-brand);
+      border-radius: 99px; padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 13px; font-weight: 800; color: white;
+    }
+    .btn-arrow {
+      width: 24px; height: 24px; border-radius: 12px;
+      background: white; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--primary);
+    }
+
+    /* Home screen mockup */
+    .phone-home .home-top { background: white; padding-top: 12px; }
+    .focus-card {
+      margin: 10px 14px 0;
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 6px 20px rgba(13,148,136,0.30);
+    }
+    .focus-card-inner {
+      padding: 18px;
+      background: var(--grad-brand);
+    }
+    .fc-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+    .fc-greeting { font-size: 11px; color: rgba(255,255,255,0.68); font-weight: 600; }
+    .fc-name { font-size: 26px; font-weight: 900; color: white; letter-spacing: -0.8px; margin-top: 2px; }
+    .fc-avatar {
+      width: 40px; height: 40px; border-radius: 20px;
+      background: rgba(255,255,255,0.20);
+      border: 2px solid rgba(255,255,255,0.38);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; color: white;
+    }
+    .fc-divider { height: 1px; background: rgba(255,255,255,0.20); margin-bottom: 12px; }
+    .fc-chips { display: flex; }
+    .fc-chip { flex: 1; text-align: center; padding: 6px 0; }
+    .fc-chip-sep { width: 1px; background: rgba(255,255,255,0.20); margin: 4px 0; }
+    .fc-num { font-size: 22px; font-weight: 900; color: white; }
+    .fc-lbl { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.68); margin-top: 2px; }
+    .fc-extra { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .fc-extra-chip {
+      background: rgba(255,255,255,0.17);
+      border-radius: 99px; padding: 4px 10px;
+      font-size: 10px; color: white; font-weight: 700;
+    }
+
+    /* Section header */
+    .sec-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 14px 8px;
+    }
+    .sec-title { font-size: 13px; font-weight: 800; color: #0A0A0A; }
+    .sec-more  { font-size: 11px; color: var(--primary); font-weight: 600; }
+
+    /* Module grid */
+    .module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 14px 14px; }
+    .mod-tile {
+      background: white; border: 1.5px solid #EFEFEF; border-radius: 14px;
+      padding: 12px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .mod-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .mod-label { font-size: 11px; font-weight: 700; color: #0A0A0A; }
+    .mod-badge {
+      display: inline-block; padding: 2px 7px;
+      border-radius: 6px; font-size: 10px; font-weight: 800;
+      align-self: flex-start;
+    }
+
+    /* ── Typography specimens ─────────────────────────────── */
+    .type-grid { display: flex; flex-direction: column; gap: 14px; }
+    .type-row { display: flex; align-items: baseline; gap: 16px; }
+    .type-meta { font-size: 11px; color: #999; width: 100px; flex-shrink: 0; }
+
+    /* ── Module colors ────────────────────────────────────── */
+    .module-swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+    .mod-swatch {
+      display: flex; align-items: center; gap: 8px;
+      background: white; border: 1.5px solid #EFEFEF; border-radius: 12px;
+      padding: 8px 12px;
+    }
+    .mod-swatch-dot { width: 16px; height: 16px; border-radius: 8px; }
+    .mod-swatch-name { font-size: 12px; font-weight: 700; color: #333; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <h1>Studara</h1>
+  <p class="sub">Design System Preview — Brand Identity & UI Components</p>
+
+  <!-- ── Logo ─────────────────────────────────────────────────────────── -->
+  <section>
+    <h2>Logo & Brand Mark</h2>
+    <div class="logo-showcase">
+      <!-- Main logo box with inline compass SVG -->
+      <div class="logo-box" style="width:130px;height:130px;border-radius:30px;">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <defs>
+            <linearGradient id="g1" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#FDE68A"/>
+              <stop offset="100%" stop-color="#F59E0B"/>
+            </linearGradient>
+          </defs>
+          <circle cx="45" cy="45" r="35" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+          <circle cx="45" cy="45" r="26" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1.2"/>
+          <!-- N tick -->
+          <line x1="45" y1="10" x2="45" y2="17" stroke="rgba(255,255,255,0.55)" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- E tick --> <line x1="80" y1="45" x2="73" y2="45" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+          <!-- S tick --> <line x1="45" y1="80" x2="45" y2="73" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+          <!-- W tick --> <line x1="10" y1="45" x2="17" y2="45" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+          <!-- North needle (gold) -->
+          <path d="M45,19 L50,40 L45,44 L40,40 Z" fill="url(#g1)"/>
+          <!-- South needle (white) -->
+          <path d="M45,71 L48.5,50 L45,46 L41.5,50 Z" fill="rgba(255,255,255,0.35)"/>
+          <!-- Hub -->
+          <circle cx="45" cy="45" r="5.5" fill="none" stroke="rgba(255,255,255,0.80)" stroke-width="2"/>
+          <circle cx="45" cy="45" r="2.5" fill="url(#g1)"/>
+        </svg>
+      </div>
+
+      <!-- Name group -->
+      <div class="logo-name-group">
+        <div class="logo-name">Studara</div>
+        <div class="logo-ar">رفيقك الجامعي</div>
+        <div class="logo-tag">رفيقك في المسيرة الجامعية</div>
+      </div>
+
+      <!-- Small variants -->
+      <div style="display:flex;gap:16px;align-items:center;">
+        <div class="logo-box logo-md">
+          <svg width="50" height="50" viewBox="0 0 90 90">
+            <defs><linearGradient id="g2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></linearGradient></defs>
+            <circle cx="45" cy="45" r="35" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+            <line x1="45" y1="10" x2="45" y2="17" stroke="rgba(255,255,255,0.55)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="80" y1="45" x2="73" y2="45" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="45" y1="80" x2="45" y2="73" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="10" y1="45" x2="17" y2="45" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M45,19 L50,40 L45,44 L40,40 Z" fill="url(#g2)"/>
+            <path d="M45,71 L48.5,50 L45,46 L41.5,50 Z" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="45" cy="45" r="5.5" fill="none" stroke="rgba(255,255,255,0.80)" stroke-width="2"/>
+            <circle cx="45" cy="45" r="2.5" fill="url(#g2)"/>
+          </svg>
+        </div>
+        <div class="logo-box logo-sm">
+          <svg width="34" height="34" viewBox="0 0 90 90">
+            <defs><linearGradient id="g3" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></linearGradient></defs>
+            <path d="M45,19 L50,40 L45,44 L40,40 Z" fill="url(#g3)"/>
+            <path d="M45,71 L48.5,50 L45,46 L41.5,50 Z" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="45" cy="45" r="5.5" fill="none" stroke="rgba(255,255,255,0.80)" stroke-width="2"/>
+            <circle cx="45" cy="45" r="2.5" fill="url(#g3)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Color palette ─────────────────────────────────────────────────── -->
+  <section>
+    <h2>Brand Colors</h2>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch-box" style="background:linear-gradient(135deg,#14B8A6,#0A6B64)"></div>
+        <div class="swatch-name">Brand Gradient</div>
+        <div class="swatch-hex">#14B8A6 → #0A6B64</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-box" style="background:#14B8A6"></div>
+        <div class="swatch-name">Primary Light</div>
+        <div class="swatch-hex">#14B8A6</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-box" style="background:#0D9488"></div>
+        <div class="swatch-name">Primary</div>
+        <div class="swatch-hex">#0D9488</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-box" style="background:#0F766E"></div>
+        <div class="swatch-name">Primary Dark</div>
+        <div class="swatch-hex">#0F766E</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-box" style="background:#0A6B64"></div>
+        <div class="swatch-name">Primary Deep</div>
+        <div class="swatch-hex">#0A6B64</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-box" style="background:linear-gradient(135deg,#FDE68A,#F59E0B)"></div>
+        <div class="swatch-name">Gold Accent</div>
+        <div class="swatch-hex">#F59E0B</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-box" style="background:#F0FDFA;border:1.5px solid #EFEFEF"></div>
+        <div class="swatch-name">Primary Surface</div>
+        <div class="swatch-hex">#F0FDFA</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-box" style="background:#0A0A0A"></div>
+        <div class="swatch-name">Text Primary</div>
+        <div class="swatch-hex">#0A0A0A</div>
+      </div>
+    </div>
+
+    <br/>
+    <h2 style="margin-top:24px;">Module Colors</h2>
+    <div class="module-swatches">
+      <div class="mod-swatch"><div class="mod-swatch-dot" style="background:#8B5CF6"></div><span class="mod-swatch-name">Resources</span></div>
+      <div class="mod-swatch"><div class="mod-swatch-dot" style="background:#3B82F6"></div><span class="mod-swatch-name">Timetable</span></div>
+      <div class="mod-swatch"><div class="mod-swatch-dot" style="background:#0EA5E9"></div><span class="mod-swatch-name">Flashcards</span></div>
+      <div class="mod-swatch"><div class="mod-swatch-dot" style="background:#F97316"></div><span class="mod-swatch-name">Jobs</span></div>
+      <div class="mod-swatch"><div class="mod-swatch-dot" style="background:#EC4899"></div><span class="mod-swatch-name">Reminders</span></div>
+      <div class="mod-swatch"><div class="mod-swatch-dot" style="background:#6366F1"></div><span class="mod-swatch-name">Profile</span></div>
+      <div class="mod-swatch"><div class="mod-swatch-dot" style="background:#10B981"></div><span class="mod-swatch-name">Groups</span></div>
+      <div class="mod-swatch"><div class="mod-swatch-dot" style="background:#DC2626"></div><span class="mod-swatch-name">Courses</span></div>
+    </div>
+  </section>
+
+  <!-- ── Screen mockups ────────────────────────────────────────────────── -->
+  <section>
+    <h2>Screen Mockups</h2>
+    <div class="mockups">
+
+      <!-- Login Screen -->
+      <div class="phone phone-login">
+        <div class="hero">
+          <div style="overflow:hidden;position:relative;">
+            <span class="step-badge">٠١ — تسجيل الدخول</span>
+            <div style="clear:both;height:10px;"></div>
+            <div class="phone-hero-logo-row">
+              <div class="phone-logo-icon">
+                <div class="gold-dot"></div>
+                <svg width="36" height="36" viewBox="0 0 90 90">
+                  <defs><linearGradient id="g4" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></linearGradient></defs>
+                  <circle cx="45" cy="45" r="32" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+                  <line x1="45" y1="13" x2="45" y2="20" stroke="rgba(255,255,255,0.55)" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="77" y1="45" x2="70" y2="45" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="45" y1="77" x2="45" y2="70" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="13" y1="45" x2="20" y2="45" stroke="rgba(255,255,255,0.28)" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M45,20 L50,42 L45,46 L40,42 Z" fill="url(#g4)"/>
+                  <path d="M45,70 L48.5,48 L45,44 L41.5,48 Z" fill="rgba(255,255,255,0.35)"/>
+                  <circle cx="45" cy="45" r="5" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.8"/>
+                  <circle cx="45" cy="45" r="2.2" fill="url(#g4)"/>
+                </svg>
+              </div>
+              <div>
+                <div class="phone-app-name">Studara</div>
+                <div class="phone-tagline">رفيقك في المسيرة الجامعية</div>
+              </div>
+            </div>
+            <div class="pill-row">
+              <div class="feature-pill">📚 موارد</div>
+              <div class="feature-pill">📅 جدول</div>
+              <div class="feature-pill">🃏 بطاقات</div>
+            </div>
+          </div>
+        </div>
+        <div class="sheet">
+          <div class="handle"></div>
+          <div class="form-title">أهلاً بعودتك 👋</div>
+          <div class="form-sub">سجّل دخولك للوصول إلى مواردك الأكاديمية.</div>
+          <div class="input-mock"><span class="input-icon">✉️</span> example@una.mr</div>
+          <div class="input-mock"><span class="input-icon">🔒</span> ••••••••</div>
+          <div class="forgot-link">نسيت كلمة المرور؟</div>
+          <div class="btn-login">
+            <span>تسجيل الدخول</span>
+            <div class="btn-arrow">←</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Screen -->
+      <div class="phone phone-home">
+        <div class="home-top">
+          <!-- Focus card -->
+          <div class="focus-card">
+            <div class="focus-card-inner">
+              <div class="fc-top">
+                <div>
+                  <div class="fc-greeting">صباح الخير ☀️</div>
+                  <div class="fc-name">أحمد</div>
+                </div>
+                <div class="fc-avatar">أ</div>
+              </div>
+              <div class="fc-divider"></div>
+              <div class="fc-chips">
+                <div class="fc-chip">
+                  <div class="fc-num">3</div>
+                  <div class="fc-lbl">بطاقات</div>
+                </div>
+                <div class="fc-chip-sep"></div>
+                <div class="fc-chip">
+                  <div class="fc-num">2</div>
+                  <div class="fc-lbl">تذكيرات</div>
+                </div>
+                <div class="fc-chip-sep"></div>
+                <div class="fc-chip">
+                  <div class="fc-num">48</div>
+                  <div class="fc-lbl">موارد</div>
+                </div>
+              </div>
+              <div class="fc-extra">
+                <div class="fc-extra-chip">🔥 7 أيام</div>
+                <div class="fc-extra-chip">⭐ 120 XP</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Module grid -->
+          <div class="sec-header">
+            <span class="sec-title">الأقسام</span>
+          </div>
+          <div class="module-grid">
+            <div class="mod-tile">
+              <div class="mod-icon" style="background:#8B5CF620">📚</div>
+              <div class="mod-label">الموارد</div>
+              <div class="mod-badge" style="background:#8B5CF620;color:#8B5CF6">48</div>
+            </div>
+            <div class="mod-tile">
+              <div class="mod-icon" style="background:#3B82F620">📅</div>
+              <div class="mod-label">الجدول</div>
+            </div>
+            <div class="mod-tile">
+              <div class="mod-icon" style="background:#0EA5E920">🃏</div>
+              <div class="mod-label">البطاقات</div>
+              <div class="mod-badge" style="background:#0EA5E920;color:#0EA5E9">3</div>
+            </div>
+            <div class="mod-tile">
+              <div class="mod-icon" style="background:#F9731620">💼</div>
+              <div class="mod-label">الوظائف</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Typography ────────────────────────────────────────────────────── -->
+  <section>
+    <h2>Typography</h2>
+    <div class="type-grid">
+      <div class="type-row">
+        <span class="type-meta">H1 · 30px · 700</span>
+        <span style="font-size:30px;font-weight:700;letter-spacing:-0.5px;">Studara — رفيقك الجامعي</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">H2 · 26px · 700</span>
+        <span style="font-size:26px;font-weight:700;">الموارد الأكاديمية</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">Body · 15px</span>
+        <span style="font-size:15px;line-height:22px;color:#525252;">رفيقك في المسيرة الجامعية — تصفح الموارد، نظّم جدولك، ذاكر مع البطاقات.</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">Label · 13px · 600</span>
+        <span style="font-size:13px;font-weight:600;color:#525252;">مواعيد الامتحانات</span>
+      </div>
+      <div class="type-row">
+        <span class="type-meta">Caption · 11px</span>
+        <span style="font-size:11px;color:#A3A3A3;">آخر تحديث منذ 5 دقائق</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
