@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.expo/
+.DS_Store
+
+# env / secrets
+.env
+.env.*
+.env*.local
+
+# uploads (keep placeholder if you add one later)
+uploads/*
+!uploads/.gitkeep
+
+# Local notes / scratch
+AMELIORATIONS.txt
+
