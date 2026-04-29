@@ -6,6 +6,8 @@
 .DS_Store
 .vscode/
 .idea/
+.cursor/
+.claude/
 
 # ── Dependencies ────────────────────────────────────────────────────────────
 **/node_modules/
