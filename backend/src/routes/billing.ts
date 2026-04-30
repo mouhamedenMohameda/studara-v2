@@ -712,7 +712,11 @@ router.get('/wallet/:key/transactions', authenticate, async (req: AuthRequest, r
     const wallet = await getWallet(req.user!.id, key);
 
     const { rows: txs } = await pool.query(
-      `SELECT id, amount_mru, type, description, created_at
+      `SELECT
+         id,
+         amount_mru::float8          AS amount_mru,
+         provider_cost_mru::float8   AS provider_cost_mru,
+         type, description, created_at
        FROM feature_transactions
        WHERE user_id = $1 AND feature_key = $2
        ORDER BY created_at DESC
@@ -755,7 +759,11 @@ router.get('/wallet/all-transactions', authenticate, async (req: AuthRequest, re
     // Récupérer toutes les transactions avec les infos de feature
     const { rows: transactions } = await pool.query(
       `SELECT 
-         ft.id, ft.feature_key, ft.amount_mru, ft.type, 
+         ft.id,
+         ft.feature_key,
+         ft.amount_mru::float8        AS amount_mru,
+         ft.provider_cost_mru::float8 AS provider_cost_mru,
+         ft.type, 
          ft.description, ft.created_at,
          pf.label_ar, pf.label_fr
        FROM feature_transactions ft
@@ -788,6 +796,7 @@ router.get('/wallet/all-transactions', authenticate, async (req: AuthRequest, re
       featureGroups[tx.feature_key].transactions.push({
         id: tx.id,
         amount_mru: tx.amount_mru,
+        provider_cost_mru: tx.provider_cost_mru,
         type: tx.type,
         description: tx.description,
         created_at: tx.created_at

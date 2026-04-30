@@ -18,13 +18,14 @@ export async function chargeVoiceStudioUsage(params: {
   walletFeatureKey: string;
   walletCostMru: number;
   walletDescription: string;
+  providerCostMru?: number | null;
 }): Promise<void> {
-  const { userId, userRole, idempotencyKey, walletFeatureKey, walletCostMru, walletDescription } = params;
+  const { userId, userRole, idempotencyKey, walletFeatureKey, walletCostMru, walletDescription, providerCostMru } = params;
   const units = Math.max(1, Math.min(MAX_AI_MESSAGE_UNITS, Math.floor(params.aiMessageUnits)));
 
   const sub = await getActiveSubscription(userId);
   if (!sub) {
-    await deductFromWallet(userId, walletFeatureKey, walletCostMru, walletDescription);
+    await deductFromWallet(userId, walletFeatureKey, walletCostMru, walletDescription, providerCostMru ?? null);
     return;
   }
 

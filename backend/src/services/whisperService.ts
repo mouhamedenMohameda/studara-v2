@@ -31,6 +31,39 @@ export const ENHANCEMENT_MODEL_CHEAP      = 'gpt-4o-mini';
 
 const OPENAI_BASE = 'https://api.openai.com/v1';
 
+// ─── Profit-protection limits (keeps PAYG margin predictable) ────────────────
+// Goal: cap worst-case provider spend per “action” (summary/rewrite/flashcards/course)
+// by limiting input size + output tokens. Mobile UI should reflect these as “fair use”.
+const ENHANCE_INPUT_CHARS_MAX_BY_MODEL: Record<string, number> = {
+  [ENHANCEMENT_MODEL_DEFAULT]: 20_000,
+  [ENHANCEMENT_MODEL_CHEAP]:   25_000,
+};
+const ENHANCE_OUTPUT_TOKENS_MAX_BY_MODEL: Record<string, number> = {
+  [ENHANCEMENT_MODEL_DEFAULT]: 1600,
+  [ENHANCEMENT_MODEL_CHEAP]:   1800,
+};
+
+const FLASHCARDS_INPUT_CHARS_MAX_BY_MODEL: Record<string, number> = {
+  [ENHANCEMENT_MODEL_DEFAULT]: 15_000,
+  [ENHANCEMENT_MODEL_CHEAP]:   18_000,
+};
+const FLASHCARDS_OUTPUT_TOKENS_MAX_BY_MODEL: Record<string, number> = {
+  [ENHANCEMENT_MODEL_DEFAULT]: 900,
+  [ENHANCEMENT_MODEL_CHEAP]:   1100,
+};
+
+const COURSE_INPUT_CHARS_MAX = 18_000;
+const COURSE_WIKI_CHARS_MAX  = 2_500;
+const COURSE_OUTPUT_TOKENS_MAX_BY_MODEL: Record<string, number> = {
+  [ENHANCEMENT_MODEL_DEFAULT]: 2600,
+  [ENHANCEMENT_MODEL_CHEAP]:   2300,
+};
+
+function clampInput(text: string, maxChars: number, suffix: string): string {
+  if (text.length <= maxChars) return text;
+  return text.slice(0, maxChars) + suffix;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type EnhanceMode = 'summary' | 'rewrite' | 'flashcards';
@@ -80,6 +113,14 @@ interface WhisperVerboseResponse {
 export interface EnhanceOptions {
   cheap?:   boolean;
   subject?: string;
+  limits?: {
+    /** Max transcript characters sent to the model */
+    inputCharsMax?: number;
+    /** Max output tokens requested from the model */
+    outputTokensMax?: number;
+    /** For course generation: max Wikipedia/context chars appended */
+    wikiCharsMax?: number;
+  };
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -715,10 +756,16 @@ export async function enhanceTranscriptStructured(
   const key = getKey();
   const model = pickEnhancementModel(opts);
 
-  // Truncate if too long (stay well within context limits)
-  const safeTranscript = transcript.length > 60_000
-    ? transcript.slice(0, 60_000) + '\n\n[...transcript truncated for processing]'
-    : transcript;
+  const inputCharsMax =
+    Math.max(1000, Math.floor(opts.limits?.inputCharsMax ?? (ENHANCE_INPUT_CHARS_MAX_BY_MODEL[model] ?? 20_000)));
+  const outputTokensMax =
+    Math.max(200, Math.floor(opts.limits?.outputTokensMax ?? (ENHANCE_OUTPUT_TOKENS_MAX_BY_MODEL[model] ?? 1600)));
+
+  const safeTranscript = clampInput(
+    transcript,
+    inputCharsMax,
+    '\n\n[...transcript truncated for processing]',
+  );
 
   const userMessage = `Subject: ${subject || 'lecture'}\n\nRAW TRANSCRIPT:\n"""\n${safeTranscript}\n"""`;
 
@@ -737,7 +784,7 @@ export async function enhanceTranscriptStructured(
         { role: 'user',   content: userMessage },
       ],
       temperature: 0.1,
-      max_tokens: 4096,
+      max_tokens: outputTokensMax,
       response_format: { type: 'json_object' },
     }),
   });
@@ -891,7 +938,12 @@ export async function generateCourseFromTranscript(
   opts: EnhanceOptions = {},
 ): Promise<string> {
   const key   = getKey();
-  const model = opts.cheap ? ENHANCEMENT_MODEL_CHEAP : ENHANCEMENT_MODEL_DEFAULT;
+  // Keep quality high when the request is small, but protect margin on long inputs.
+  // - If client forces cheap=true → always mini
+  // - Otherwise: GPT-4o only for short transcripts; mini for long transcripts
+  const model = opts.cheap
+    ? ENHANCEMENT_MODEL_CHEAP
+    : (transcript.length <= 9_000 ? ENHANCEMENT_MODEL_DEFAULT : ENHANCEMENT_MODEL_CHEAP);
 
   // ── Always extract the precise topic + search queries from the transcript ───
   // Even when subject is set (e.g. "biologie"), we need the specific topic
@@ -925,9 +977,14 @@ export async function generateCourseFromTranscript(
     console.warn('[whisper/course] Wikipedia search failed:', e.message);
   }
 
-  const safeTranscript = transcript.length > 50_000
-    ? transcript.slice(0, 50_000) + '\n\n[...transcription tronquée]'
-    : transcript;
+  const courseInputCharsMax =
+    Math.max(2000, Math.floor(opts.limits?.inputCharsMax ?? COURSE_INPUT_CHARS_MAX));
+  const wikiCharsMax =
+    Math.max(0, Math.floor(opts.limits?.wikiCharsMax ?? COURSE_WIKI_CHARS_MAX));
+  const outputTokensMax =
+    Math.max(400, Math.floor(opts.limits?.outputTokensMax ?? (COURSE_OUTPUT_TOKENS_MAX_BY_MODEL[model] ?? 2300)));
+
+  const safeTranscript = clampInput(transcript, courseInputCharsMax, '\n\n[...transcription tronquée]');
 
   // Word count heuristic to calibrate output density
   const wordCount = transcript.split(/\s+/).filter(Boolean).length;
@@ -967,7 +1024,7 @@ Règles STRICTES :
     `=== TRANSCRIPTION BRUTE ===`,
     safeTranscript,
     wikiContext
-      ? `\n=== CONTEXTE ENCYCLOPÉDIQUE (Wikipedia) ===\n${wikiContext.slice(0, 7000)}`
+      ? `\n=== CONTEXTE ENCYCLOPÉDIQUE (Wikipedia) ===\n${wikiContext.slice(0, wikiCharsMax)}`
       : '',
     ``,
     `=== INSTRUCTION ===`,
@@ -990,7 +1047,7 @@ Règles STRICTES :
         { role: 'user',   content: userMessage },
       ],
       temperature: 0.25,
-      max_tokens:  8000,
+      max_tokens:  outputTokensMax,
     }),
   });
 
@@ -1042,9 +1099,16 @@ async function generateFlashcards(
   const key   = getKey();
   const model = pickEnhancementModel(opts);
 
-  const safeTranscript = transcript.length > 60_000
-    ? transcript.slice(0, 60_000) + '\n\n[...truncated]'
-    : transcript;
+  const inputCharsMax =
+    Math.max(1000, Math.floor(opts.limits?.inputCharsMax ?? (FLASHCARDS_INPUT_CHARS_MAX_BY_MODEL[model] ?? 15_000)));
+  const outputTokensMax =
+    Math.max(200, Math.floor(opts.limits?.outputTokensMax ?? (FLASHCARDS_OUTPUT_TOKENS_MAX_BY_MODEL[model] ?? 900)));
+
+  const safeTranscript = clampInput(
+    transcript,
+    inputCharsMax,
+    '\n\n[...truncated]',
+  );
 
   const res = await fetch(`${OPENAI_BASE}/chat/completions`, {
     method: 'POST',
@@ -1056,7 +1120,7 @@ async function generateFlashcards(
       model,
       messages: [{ role: 'user', content: FLASHCARD_ENHANCE_PROMPT(safeTranscript, subject) }],
       temperature: 0.3,
-      max_tokens: 2000,
+      max_tokens: outputTokensMax,
     }),
   });
 
@@ -1071,6 +1135,8 @@ async function generateFlashcards(
   const jsonMatch = content.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('Invalid flashcard response (expected JSON array)');
 
-  return JSON.parse(jsonMatch[0]) as FlashcardPair[];
+  const raw = JSON.parse(jsonMatch[0]) as FlashcardPair[];
+  // Safety: keep output bounded even if model ignores instructions.
+  return Array.isArray(raw) ? raw.slice(0, 15) : [];
 }
 

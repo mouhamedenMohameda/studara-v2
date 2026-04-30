@@ -600,19 +600,15 @@ export default function VoiceNoteDetailScreen() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // Notifier le débit PAYG (exactement selon la grille de prix affichée)
-      // - flashcards → ai_flashcards
-      // - course     → ai_course
-      // - autres actions Whisper (summary/rewrite) restent sur whisper_studio
-      const paygFeatureKey =
-        mode === 'flashcards' ? 'ai_flashcards'
-        : mode === 'course' ? 'ai_course'
-        : 'whisper_studio';
-
-      const chargeMru = computePaygChargeMru({
-        featureKey: paygFeatureKey as any,
-        uses: 1,
-      });
+      // Notifier le débit PAYG (coût RÉEL renvoyé par l’API quand disponible)
+      // - course     → ai_course (per_use)
+      // - autres actions Whisper Studio (summary/rewrite/flashcards) → whisper_studio (au volume)
+      const paygFeatureKey = mode === 'course' ? 'ai_course' : 'whisper_studio';
+      const apiCostMru =
+        typeof (data as any)?.billing?.costMru === 'number'
+          ? (data as any).billing.costMru
+          : null;
+      const chargeMru = apiCostMru ?? computePaygChargeMru({ featureKey: paygFeatureKey as any, uses: 1 });
       if (chargeMru > 0) notifyWalletSpent(paygFeatureKey, chargeMru);
 
       setResultMode(mode);
@@ -1267,11 +1263,9 @@ export default function VoiceNoteDetailScreen() {
                 contentContainerStyle={styles.modelChipsRow}
               >
                 {([
-                  { key: 'gpt-4o-mini',  label: 'GPT-4o mini', sub: isAr ? 'سريع' : 'Rapide',      free: false },
-                  { key: 'gpt-4o',       label: 'GPT-4o',      sub: isAr ? 'الأفضل' : 'Qualité max', free: false },
-                  { key: 'groq-llama',   label: 'LLaMA 3.3',   sub: 'Groq',                        free: true  },
-                  { key: 'gemini-flash', label: 'Gemini Flash',sub: 'Google',                      free: true  },
-                ] as const).map(m => {
+                  { key: 'gpt-4o-mini',  label: 'GPT-4o mini',  sub: isAr ? 'سريع' : 'Rapide' },
+                  { key: 'gpt-4o',       label: 'GPT-4o',       sub: isAr ? 'الأفضل' : 'Qualité max' },
+                ] as const).map((m) => {
                   const active = selectedModel === m.key;
                   return (
                     <TouchableOpacity
@@ -1284,12 +1278,40 @@ export default function VoiceNoteDetailScreen() {
                         {m.label}
                       </Text>
                       <Text style={[styles.modelChipSub, active && styles.modelChipSubActive]}>
-                        {m.sub}{m.free ? ' · ' + (isAr ? 'مجاني' : 'Gratuit') : ''}
+                        {m.sub}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
               </ScrollView>
+            </View>
+
+            <View style={[styles.actionDefinitionBox, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+              <AppIcon name="informationCircleOutline" size={18} color={C.textMuted} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.actionDefinitionTitle, { color: C.textPrimary, textAlign: isAr ? 'right' : 'left' }]}>
+                  {isAr ? 'تعريف "عملية" (Action)' : 'Définition d’une “action”'}
+                </Text>
+                <Text style={[styles.actionDefinitionText, { color: C.textSecondary, textAlign: isAr ? 'right' : 'left' }]}>
+                  {isAr
+                    ? [
+                        '• التسعير: حسب الحجم (عدد الأحرف المُعالجة).',
+                        '• يُحسب على مجموع (أحرف الإدخال + أحرف الإخراج) وبوحدة “لكل 100 حرف”.',
+                        '• الملخص: توليد ملخص واحد.',
+                        '• إعادة الصياغة: توليد نسخة واحدة مرتبة.',
+                        '• الدرس: توليد درس كامل واحد.',
+                        '• البطاقات: توليد مجموعة واحدة (8–15 بطاقة).',
+                      ].join('\n')
+                    : [
+                        '• Tarification : au volume (nombre de caractères traités).',
+                        '• Facturé sur (caractères d’entrée + caractères de sortie), par tranches de “100 caractères”.',
+                        '• Résumé : 1 génération.',
+                        '• Réécriture : 1 génération.',
+                        '• Cours IA : 1 génération.',
+                        '• Flashcards : 1 deck (8–15 cartes).',
+                      ].join('\n')}
+                </Text>
+              </View>
             </View>
 
             <View style={styles.actionsContainer}>
@@ -1999,6 +2021,29 @@ function makeStyles(C: typeof Colors) {
       marginTop: 2,
     },
     modelChipSubActive: { color: WHISPER_COLOR + 'CC' },
+
+    // ── Pricing definition (what counts as one action) ────────────────────
+    actionDefinitionBox: {
+      gap: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 14,
+      backgroundColor: C.surfaceVariant,
+      borderWidth: 1,
+      borderColor: C.border,
+      marginBottom: Spacing.sm,
+    },
+    actionDefinitionTitle: {
+      fontSize: 12,
+      fontWeight: '800',
+      letterSpacing: 0.2,
+      marginBottom: 4,
+    },
+    actionDefinitionText: {
+      fontSize: 12,
+      fontWeight: '600',
+      lineHeight: 18,
+    },
 
     actionRow: {
       flexDirection: 'row', alignItems: 'center', gap: 14,

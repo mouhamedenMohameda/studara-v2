@@ -56,16 +56,16 @@ import { analyzeTranscriptConfidence } from '../services/transcriptConfidenceHeu
 const VALID_TRANSCRIPTION_MODELS = [
   'gpt-4o-transcribe',       // OpenAI — highest quality (default)
   'gpt-4o-mini-transcribe',  // OpenAI — lower-cost
-  'groq-whisper',            // Groq whisper-large-v3 (free)
-  'google-chirp',            // Google Cloud STT v2 — Chirp 2 (GOOGLE_CLOUD_API_KEY required)
+  'groq-whisper',            // Groq whisper-large-v3
+  'google-chirp',            // Google Cloud STT v2 — Chirp 2
 ] as const;
 type TranscriptionModelKey = typeof VALID_TRANSCRIPTION_MODELS[number];
 
 const VALID_ENHANCEMENT_MODELS = [
   'gpt-4o',        // OpenAI — highest quality (default)
   'gpt-4o-mini',   // OpenAI — lower-cost
-  'groq-llama',    // Groq LLaMA-3.3-70B (free)
-  'gemini-flash',  // Google Gemini 2.0 Flash
+  'groq-llama',    // Groq LLaMA-3.3-70B
+  'gemini-flash',  // Google Gemini Flash
 ] as const;
 type EnhancementModelKey = typeof VALID_ENHANCEMENT_MODELS[number];
 
@@ -86,9 +86,168 @@ export let TRANSCRIPTION_PRICE_PER_MIN: Record<TranscriptionModelKey, number> = 
 export let ENHANCEMENT_PRICE_PER_ACTION: Record<EnhancementModelKey, number> = {
   'gpt-4o':       1.50,  // coût API 0.47 MRU → ×3.2
   'gpt-4o-mini':  0.10,  // coût API 0.03 MRU → ×3.3
-  'groq-llama':   0.15,  // coût API 0.00 MRU → frais plateforme
-  'gemini-flash': 0.05,  // coût API 0.01 MRU → ×5.0
+  'groq-llama':   0.15,  // frais plateforme
+  'gemini-flash': 0.05,
 };
+
+// ─── Dynamic “fair use” limits derived from pricing (keeps margin stable) ─────
+// We scale caps linearly with price vs baseline. This keeps cost ~proportional
+// to payload size even when admin changes MRU prices.
+type ActionLimits = { inputCharsMax: number; outputTokensMax: number; wikiCharsMax?: number };
+type EnhancementBilling = {
+  totalChars: number;
+  units100Chars: number;
+  pricePer100CharsMru: number;
+  costMru: number;
+};
+
+function estimateProviderCostFromCharge(chargeMru: number): number {
+  const c = Math.max(0, Number(chargeMru) || 0);
+  if (c < 0.1) return c / 4;  // price = 4× cost
+  if (c < 1)   return c / 3;  // price = 3× cost
+  return c / 2;               // price = 2× cost
+}
+
+function clampInt(n: number, min: number, max: number): number {
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
+function scaleLimit(base: number, factor: number, min: number, max: number): number {
+  return clampInt(Math.round(base * factor), min, max);
+}
+
+const BASELINE_ENHANCEMENT: Record<EnhancementModelKey, {
+  price: number;
+  summary: ActionLimits;
+  rewrite: ActionLimits;
+  flashcards: ActionLimits;
+}> = {
+  'gpt-4o': {
+    price: 1.50,
+    summary:    { inputCharsMax: 20_000, outputTokensMax: 1600 },
+    rewrite:    { inputCharsMax: 20_000, outputTokensMax: 1600 },
+    flashcards: { inputCharsMax: 15_000, outputTokensMax: 900  },
+  },
+  'gpt-4o-mini': {
+    price: 0.10,
+    summary:    { inputCharsMax: 25_000, outputTokensMax: 1800 },
+    rewrite:    { inputCharsMax: 25_000, outputTokensMax: 1800 },
+    flashcards: { inputCharsMax: 18_000, outputTokensMax: 1100 },
+  },
+  'groq-llama': {
+    price: 0.15,
+    summary:    { inputCharsMax: 20_000, outputTokensMax: 900  },
+    rewrite:    { inputCharsMax: 20_000, outputTokensMax: 1400 },
+    flashcards: { inputCharsMax: 15_000, outputTokensMax: 2000 },
+  },
+  'gemini-flash': {
+    price: 0.05,
+    summary:    { inputCharsMax: 20_000, outputTokensMax: 900  },
+    rewrite:    { inputCharsMax: 20_000, outputTokensMax: 1400 },
+    flashcards: { inputCharsMax: 15_000, outputTokensMax: 2000 },
+  },
+};
+
+const BASELINE_COURSE = {
+  price: 0.81,
+  limits: {
+    inputCharsMax: 18_000,
+    wikiCharsMax:  2_500,
+    // Note: OpenAI course tokens differ by model; we keep a single baseline cap
+    // and the service applies it to whichever model is used.
+    outputTokensMax: 2300,
+  } as ActionLimits,
+};
+
+function round4(n: number): number {
+  return Math.round(n * 10_000) / 10_000;
+}
+
+/**
+ * Transparent volume-based pricing:
+ * cost = pricePer100Chars × ceil((inputChars + outputChars) / 100)
+ *
+ * We derive pricePer100Chars from the per-action price and a baseline payload size.
+ * This preserves your margin logic while making small requests cheaper and visible.
+ */
+function computeEnhancementBilling(params: {
+  model: EnhancementModelKey;
+  mode: EnhanceMode;
+  inputChars: number;
+  outputChars: number;
+}): EnhancementBilling {
+  const { model, mode } = params;
+  const totalChars = Math.max(0, Math.floor((params.inputChars ?? 0) + (params.outputChars ?? 0)));
+  const units100Chars = Math.max(1, Math.ceil(totalChars / 100));
+
+  const actionPrice = ENHANCEMENT_PRICE_PER_ACTION[model] ?? 0.5;
+
+  // Baseline payload per action (chars). Roughly: input cap + typical output size.
+  // Output size is estimated; caps still prevent runaway costs.
+  const baselineTotalCharsByModelMode: Record<EnhancementModelKey, Record<EnhanceMode, number>> = {
+    'gpt-4o': {
+      summary:    20_000 + 6_400, // 1600 tokens ≈ 6400 chars
+      rewrite:    20_000 + 6_400,
+      flashcards: 15_000 + 3_600, // 900 tokens ≈ 3600 chars
+    },
+    'gpt-4o-mini': {
+      summary:    25_000 + 7_200, // 1800 tokens ≈ 7200 chars
+      rewrite:    25_000 + 7_200,
+      flashcards: 18_000 + 4_400, // 1100 tokens ≈ 4400 chars
+    },
+    'groq-llama': {
+      summary:    20_000 + 3_600, // 900 tokens
+      rewrite:    20_000 + 5_600, // 1400 tokens
+      flashcards: 15_000 + 8_000, // 2000 tokens
+    },
+    'gemini-flash': {
+      summary:    20_000 + 3_600,
+      rewrite:    20_000 + 5_600,
+      flashcards: 15_000 + 8_000,
+    },
+  };
+
+  const baselineTotalChars = baselineTotalCharsByModelMode[model]?.[mode] ?? 25_000;
+  const pricePer100CharsMru = actionPrice / Math.max(1, baselineTotalChars / 100);
+  const costMru = round4(units100Chars * pricePer100CharsMru);
+
+  return {
+    totalChars,
+    units100Chars,
+    pricePer100CharsMru: round4(pricePer100CharsMru),
+    costMru,
+  };
+}
+
+function getEnhancementLimits(
+  modelKey: EnhancementModelKey,
+  mode: EnhanceMode,
+): ActionLimits {
+  const baseline = BASELINE_ENHANCEMENT[modelKey];
+  const currentPrice = ENHANCEMENT_PRICE_PER_ACTION[modelKey] ?? baseline.price;
+  const factorRaw = baseline.price > 0 ? (currentPrice / baseline.price) : 1;
+  // Don’t let a broken admin value explode limits.
+  const factor = Math.max(0.25, Math.min(4, factorRaw));
+
+  const base = baseline[mode];
+  return {
+    inputCharsMax:   scaleLimit(base.inputCharsMax,   factor, 4000, 60_000),
+    outputTokensMax: scaleLimit(base.outputTokensMax, factor, 300,  8000),
+  };
+}
+
+function getCourseLimits(coursePriceMru: number): ActionLimits {
+  const baselinePrice = BASELINE_COURSE.price;
+  const factorRaw = baselinePrice > 0 ? (coursePriceMru / baselinePrice) : 1;
+  const factor = Math.max(0.25, Math.min(4, factorRaw));
+  const b = BASELINE_COURSE.limits;
+  return {
+    inputCharsMax:   scaleLimit(b.inputCharsMax,   factor, 6000, 60_000),
+    wikiCharsMax:    scaleLimit(b.wikiCharsMax!,   factor, 0,    12_000),
+    outputTokensMax: scaleLimit(b.outputTokensMax, factor, 600,  10_000),
+  };
+}
 
 // Build pricing response dynamically (reflects runtime overrides)
 function buildModelPricingResponse() {
@@ -268,7 +427,7 @@ router.post('/', authenticate, uploadAudio.single('audio'), async (req: AuthRequ
           : 'gpt-4o-transcribe'
   );
   const useGroqTranscription   = resolvedTranscriptionModel === 'groq-whisper';
-  const useGeminiTranscription = false; // google-gemini removed from STT; kept for enhancement only
+  const useGeminiTranscription = false; // gemini STT not used here (inline_data limit); keep enhancement only
   const useChirpTranscription  = resolvedTranscriptionModel === 'google-chirp';
   const useCheap   = resolvedTranscriptionModel === 'gpt-4o-mini-transcribe';
   // Map to OpenAI model constants (ignored for Groq)
@@ -363,6 +522,7 @@ router.post('/', authenticate, uploadAudio.single('audio'), async (req: AuthRequ
             idempotencyKey: `voicetx:${noteId}`,
             walletFeatureKey: 'whisper_studio',
             walletCostMru: costMru,
+            providerCostMru: estimateProviderCostFromCharge(costMru),
             walletDescription:
               `Transcription (${resolvedTranscriptionModel}) — ${minutes} min [${billingSource}] × ${pricePerMin} MRU`,
           });
@@ -593,14 +753,16 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
     }
 
     const subject = subjectOverride || note.subject || 'lecture';
+    const dynamicLimits = getEnhancementLimits(resolvedEnhancementModel, mode);
 
     if (mode === 'flashcards') {
       const result = useGroqEnhancement
-        ? await enhanceTranscriptGroq(note.transcript, mode, subject)
+        ? await enhanceTranscriptGroq(note.transcript, mode, subject, dynamicLimits)
         : useGeminiEnhancement
-          ? await enhanceTranscriptGemini(note.transcript, mode, subject)
-          : await enhanceTranscript(note.transcript, mode, subject, { cheap: useCheap });
-      const cards = result.cards ?? [];
+          ? await enhanceTranscriptGemini(note.transcript, mode, subject, dynamicLimits)
+          : await enhanceTranscript(note.transcript, mode, subject, { cheap: useCheap, limits: dynamicLimits });
+      // Hard cap to keep “1 action” bounded (8–15 cards expected by prompt)
+      const cards = (result.cards ?? []).slice(0, 15);
 
       if (cards.length) {
         const deckTitle = (note.title || note.subject || 'Voice Note').slice(0, 80);
@@ -620,38 +782,50 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
           [mode, deck.id, note.id],
         );
 
-        // ── Billing: catalogue → ai_messages ; sinon portefeuille MRU ─────────
+        // ── Billing: volume-based cost for enhancement (whisper_studio wallet) ─
         try {
-          // Debit the dedicated PAYG wallet for flashcards (aligned with mobile pricing).
-          const { costPerUnitMru } = await getFeaturePricing('ai_flashcards');
-          const costMru = costPerUnitMru; // per_use
+          const outputChars = JSON.stringify(cards).length;
+          const bill = computeEnhancementBilling({
+            model: resolvedEnhancementModel,
+            mode,
+            inputChars: Math.min(note.transcript.length, dynamicLimits.inputCharsMax),
+            outputChars,
+          });
+          const costMru = bill.costMru;
           await chargeVoiceStudioUsage({
             userId: req.user!.id,
             userRole: req.user!.role,
             aiMessageUnits: Math.max(1, Math.min(30, Math.ceil(costMru))),
             idempotencyKey: `voiceenh:${note.id}:${uuidv4()}`,
-            walletFeatureKey: 'ai_flashcards',
+            walletFeatureKey: 'whisper_studio',
             walletCostMru: costMru,
-            walletDescription: `IA (flashcards, ${cards.length} cartes) — ${resolvedEnhancementModel}`,
+            providerCostMru: estimateProviderCostFromCharge(costMru),
+            walletDescription: `IA (flashcards, ${cards.length} cartes) — ${resolvedEnhancementModel} — ${bill.totalChars} chars`,
           });
         } catch (billingErr) {
           console.warn('[voice-notes/enhance] flashcard billing error:', billingErr);
         }
 
-        res.json({ mode, deck, cards });
+        const outputChars = JSON.stringify(cards).length;
+        const billing = computeEnhancementBilling({
+          model: resolvedEnhancementModel,
+          mode,
+          inputChars: Math.min(note.transcript.length, dynamicLimits.inputCharsMax),
+          outputChars,
+        });
+        res.json({ mode, deck, cards, billing });
         return;
       }
 
-      res.json({ mode, cards: [] });
+      res.json({ mode, cards: [], billing: { totalChars: 0, units100Chars: 0, pricePer100CharsMru: 0, costMru: 0 } });
       return;
     }
 
-    // summary or rewrite → structured JSON enhancement (OpenAI) or plain text (Groq)
+    // summary or rewrite → structured JSON enhancement (OpenAI) or plain text (Groq/Gemini)
     if (useGroqEnhancement || useGeminiEnhancement) {
-      // Groq LLaMA / Gemini Flash return plain text (legacy EnhanceResult.text)
       const result = useGeminiEnhancement
-        ? await enhanceTranscriptGemini(note.transcript, mode, subject)
-        : await enhanceTranscriptGroq(note.transcript, mode, subject);
+        ? await enhanceTranscriptGemini(note.transcript, mode, subject, dynamicLimits)
+        : await enhanceTranscriptGroq(note.transcript, mode, subject, dynamicLimits);
       const text = result.text ?? '';
       await pool.query(
         `UPDATE voice_notes SET enhance_mode = $1, enhanced_text = $2, updated_at = now() WHERE id = $3`,
@@ -659,7 +833,13 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
       );
       // Billing
       try {
-        const costMru = ENHANCEMENT_PRICE_PER_ACTION[resolvedEnhancementModel] ?? 0.5;
+        const bill = computeEnhancementBilling({
+          model: resolvedEnhancementModel,
+          mode,
+          inputChars: Math.min(note.transcript.length, dynamicLimits.inputCharsMax),
+          outputChars: text.length,
+        });
+        const costMru = bill.costMru;
         await chargeVoiceStudioUsage({
           userId: req.user!.id,
           userRole: req.user!.role,
@@ -667,12 +847,18 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
           idempotencyKey: `voiceenh:${note.id}:${uuidv4()}`,
           walletFeatureKey: 'whisper_studio',
           walletCostMru: costMru,
-          walletDescription: `IA (${mode}) — ${resolvedEnhancementModel}`,
+          walletDescription: `IA (${mode}) — ${resolvedEnhancementModel} — ${bill.totalChars} chars`,
         });
       } catch (billingErr) {
         console.warn('[voice-notes/enhance] groq billing error:', billingErr);
       }
-      res.json({ mode, text });
+      const billing = computeEnhancementBilling({
+        model: resolvedEnhancementModel,
+        mode,
+        inputChars: Math.min(note.transcript.length, dynamicLimits.inputCharsMax),
+        outputChars: text.length,
+      });
+      res.json({ mode, text, billing });
       return;
     }
 
@@ -680,7 +866,7 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
     const enhanced: EnhancedTranscript = await enhanceTranscriptStructured(
       note.transcript,
       subject,
-      { cheap: useCheap },
+      { cheap: useCheap, limits: dynamicLimits },
     );
 
     await pool.query(
@@ -708,7 +894,19 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
 
     // ── Billing: catalogue → ai_messages ; sinon portefeuille MRU ───────────
     try {
-      const costMru = ENHANCEMENT_PRICE_PER_ACTION[resolvedEnhancementModel] ?? 5.0;
+      const outputChars =
+        (enhanced.clean_transcript?.length ?? 0) +
+        (enhanced.summary?.length ?? 0) +
+        (Array.isArray(enhanced.action_items) ? enhanced.action_items.join('\n').length : 0) +
+        (Array.isArray(enhanced.key_topics) ? enhanced.key_topics.join('\n').length : 0) +
+        (Array.isArray(enhanced.unclear_segments) ? enhanced.unclear_segments.join('\n').length : 0);
+      const bill = computeEnhancementBilling({
+        model: resolvedEnhancementModel,
+        mode,
+        inputChars: Math.min(note.transcript.length, dynamicLimits.inputCharsMax),
+        outputChars,
+      });
+      const costMru = bill.costMru;
       await chargeVoiceStudioUsage({
         userId: req.user!.id,
         userRole: req.user!.role,
@@ -716,13 +914,26 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
         idempotencyKey: `voiceenh:${note.id}:${uuidv4()}`,
         walletFeatureKey: 'whisper_studio',
         walletCostMru: costMru,
-        walletDescription: `IA (${mode}) — ${resolvedEnhancementModel}`,
+          providerCostMru: estimateProviderCostFromCharge(costMru),
+        walletDescription: `IA (${mode}) — ${resolvedEnhancementModel} — ${bill.totalChars} chars`,
       });
     } catch (billingErr) {
       console.warn('[voice-notes/enhance] summary billing error:', billingErr);
     }
 
-    res.json({ mode, text: enhanced.clean_transcript, enhanced });
+    const outputChars =
+      (enhanced.clean_transcript?.length ?? 0) +
+      (enhanced.summary?.length ?? 0) +
+      (Array.isArray(enhanced.action_items) ? enhanced.action_items.join('\n').length : 0) +
+      (Array.isArray(enhanced.key_topics) ? enhanced.key_topics.join('\n').length : 0) +
+      (Array.isArray(enhanced.unclear_segments) ? enhanced.unclear_segments.join('\n').length : 0);
+    const billing = computeEnhancementBilling({
+      model: resolvedEnhancementModel,
+      mode,
+      inputChars: Math.min(note.transcript.length, dynamicLimits.inputCharsMax),
+      outputChars,
+    });
+    res.json({ mode, text: enhanced.clean_transcript, enhanced, billing });
 
   } catch (e: any) {
     console.error('[voice-notes/enhance] error:', e);
@@ -752,7 +963,10 @@ router.post('/:id/generate-course', authenticate, async (req: AuthRequest, res: 
     }
 
     const subject = note.subject || note.title || '';
-    const course = await generateCourseFromTranscript(note.transcript, subject, { cheap: useCheap });
+    // Course is billed via ai_course feature pricing (per_use)
+    const { costPerUnitMru } = await getFeaturePricing('ai_course');
+    const courseLimits = getCourseLimits(costPerUnitMru);
+    const course = await generateCourseFromTranscript(note.transcript, subject, { cheap: useCheap, limits: courseLimits });
 
     await pool.query(
       `UPDATE voice_notes SET ai_course = $1, updated_at = now() WHERE id = $2`,
@@ -761,7 +975,6 @@ router.post('/:id/generate-course', authenticate, async (req: AuthRequest, res: 
 
     // ── Billing: debit ai_course PAYG wallet (aligned with mobile pricing) ───
     try {
-      const { costPerUnitMru } = await getFeaturePricing('ai_course');
       const costMru = costPerUnitMru; // per_use
       await chargeVoiceStudioUsage({
         userId: req.user!.id,

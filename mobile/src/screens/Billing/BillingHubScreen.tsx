@@ -68,6 +68,7 @@ interface FeatureWallet {
 interface Transaction {
   id: string;
   amount_mru: number;
+  provider_cost_mru?: number | null;
   type: 'topup' | 'debit' | 'refund';
   description: string;
   created_at: string;
@@ -139,7 +140,8 @@ function priceUnitLabel(unit: PaygModelPrice['unit'], isAr: boolean): string {
 function formatMru(n: number): string {
   // Keep enough precision for small MRU prices (e.g. 0.054 MRU/min).
   if (Number.isInteger(n)) return String(n);
-  if (n < 0.1) return n.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+  if (n < 0.1) return n.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+  if (n < 1)   return n.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
   return n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 }
 
@@ -149,6 +151,11 @@ export default function BillingHubScreen() {
   const { lang, isAr } = useLanguage();
   const { colors: C, isDark } = useTheme();
   const { refetch: refetchGlobalSub } = useSubscription();
+
+  // MRU formatting:
+  // - show up to 4 decimals for small PAYG charges (e.g. 0.0030 MRU)
+  // - avoid rounding the wallet history to 0.1 MRU (misleading)
+  const fmt = (n: number) => formatMru(Number(n) || 0);
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [loading, setLoading] = useState(true);
@@ -250,6 +257,8 @@ export default function BillingHubScreen() {
         const txData = await txRes.json();
         const items: Transaction[] = (txData.transactions || []).map((t: Transaction) => ({
           ...t,
+          provider_cost_mru:
+            (t as any).provider_cost_mru == null ? null : Number((t as any).provider_cost_mru),
           featureKey: 'wallet_universal',
         }));
         setTransactions(items);
@@ -267,6 +276,8 @@ export default function BillingHubScreen() {
             const txData = await txRes.json();
             const items: Transaction[] = (txData.transactions || []).map((t: Transaction) => ({
               ...t,
+              provider_cost_mru:
+                (t as any).provider_cost_mru == null ? null : Number((t as any).provider_cost_mru),
               featureKey: w.featureKey,
             }));
             txs.push(...items);
@@ -328,7 +339,7 @@ export default function BillingHubScreen() {
     loadAll();
   }, [loadAll]);
 
-  const fmt = (n: number) => n.toLocaleString(isAr ? 'ar-MR' : 'fr-FR', { maximumFractionDigits: 1 });
+  // (fmt is defined above using formatMru)
   const fmtTime = (iso: string) =>
     new Date(iso).toLocaleTimeString(isAr ? 'ar-MR' : 'fr-FR', { hour: '2-digit', minute: '2-digit' });
 

@@ -126,21 +126,30 @@ export async function enhanceTranscript(
   transcript: string,
   mode: EnhanceMode,
   subject: string = 'cours',
+  limits?: { inputCharsMax?: number; outputTokensMax?: number },
 ): Promise<EnhanceResult> {
   const key = getKey();
 
-  const safeTranscript = transcript.length > 60_000
-    ? transcript.slice(0, 60_000) + '\n\n[...transcription tronquée]'
+  // Keep one “action” bounded (protect PAYG margin and latency).
+  const INPUT_CHARS_MAX: Record<EnhanceMode, number> = {
+    summary: 20_000,
+    rewrite: 20_000,
+    flashcards: 15_000,
+  };
+  const maxChars = Math.max(1000, Math.floor(limits?.inputCharsMax ?? (INPUT_CHARS_MAX[mode] ?? 20_000)));
+  const safeTranscript = transcript.length > maxChars
+    ? transcript.slice(0, maxChars) + '\n\n[...transcription tronquée]'
     : transcript;
 
   const prompt = ENHANCE_PROMPTS[mode](safeTranscript, subject);
   const MAX_TOKENS: Record<EnhanceMode, number> = { summary: 900, rewrite: 1400, flashcards: 2000 };
+  const maxTokens = Math.max(200, Math.floor(limits?.outputTokensMax ?? MAX_TOKENS[mode]));
 
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       temperature: mode === 'flashcards' ? 0.3 : 0.1,
-      maxOutputTokens: MAX_TOKENS[mode],
+      maxOutputTokens: maxTokens,
     },
   };
 
