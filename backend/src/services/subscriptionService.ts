@@ -189,6 +189,28 @@ export async function hasPremiumFeature(
   featureKey: string,
   userRole?: string,
 ): Promise<PremiumFeatureInfo> {
+  // Global kill-switch: if the feature is marked inactive in DB, deny for everyone (including admin/moderator).
+  // This keeps "feature flags" semantics consistent across all clients.
+  try {
+    const { rows } = await pool.query<{ is_active: boolean }>(
+      `SELECT is_active FROM premium_features WHERE key = $1 LIMIT 1`,
+      [featureKey],
+    );
+    if (rows.length && rows[0].is_active === false) {
+      return {
+        hasAccess: false,
+        balanceMru: 0,
+        totalToppedUpMru: 0,
+        totalSpentMru: 0,
+        expiresAt: null,
+        daysLeft: 0,
+        includedInCatalogPlan: false,
+      };
+    }
+  } catch {
+    // If the table isn't migrated yet, keep legacy behavior.
+  }
+
   if (userRole === 'admin' || userRole === 'moderator') {
     return {
       hasAccess: true,

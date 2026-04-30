@@ -11,7 +11,7 @@ import { ResourcesStackParamList, ResourceType } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { apiRequest } from '../../utils/api';
+import { apiRequest, SERVER_ORIGIN } from '../../utils/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../utils/queryKeys';
 import * as Haptics from 'expo-haptics';
@@ -22,15 +22,13 @@ import { smoothGoHomeTab } from '../../utils/smoothTabBack';
 type Route = RouteProp<ResourcesStackParamList, 'ResourceDetail'>;
 type Nav   = StackNavigationProp<ResourcesStackParamList, 'ResourceDetail'>;
 
-const SERVER_BASE = 'https://api.radar-mr.com';
-
 const driveId = (url: string): string | null => {
   const m = url.match(/drive\.google\.com\/file\/d\/([^/?]+)/);
   return m ? m[1] : null;
 };
 
 const toAbsolute = (url: string) =>
-  url.startsWith('/') ? `${SERVER_BASE}${url}` : url;
+  url.startsWith('/') ? `${SERVER_ORIGIN}${url}` : url;
 
 const TYPE_GRADIENT: Record<ResourceType, [string, string]> = {
   [ResourceType.Note]:         ['#8B5CF6', '#6D28D9'],
@@ -282,7 +280,7 @@ const ResourceDetailScreen = () => {
           }
           if (raw.startsWith('/uploads/')) {
             // Server upload → open /preview which converts Office → PDF
-            await tryOpen(`${SERVER_BASE}/api/v1/resources/${resource.id}/preview?t=${encodeURIComponent(token || '')}`);
+            await tryOpen(`${SERVER_ORIGIN}/api/v1/resources/${resource.id}/preview?t=${encodeURIComponent(token || '')}`);
             return;
           }
           // Fallback: open the original absolute URL (could be Drive/view or any other host)

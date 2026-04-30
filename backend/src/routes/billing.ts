@@ -201,7 +201,7 @@ router.get('/features', authenticate, async (req: AuthRequest, res: Response) =>
 router.get(
   '/admin/features',
   authenticate,
-  requireRole('admin'),
+  requireRole('admin', 'moderator'),
   async (_req: AuthRequest, res: Response) => {
     try {
       const { rows } = await pool.query(
@@ -220,7 +220,7 @@ router.get(
 router.put(
   '/admin/features/:key',
   authenticate,
-  requireRole('admin'),
+  requireRole('admin', 'moderator'),
   async (req: AuthRequest, res: Response) => {
     const { key } = req.params;
     const { is_active } = req.body as { is_active?: boolean };
@@ -247,7 +247,7 @@ router.put(
 router.post(
   '/admin/features/disable-all',
   authenticate,
-  requireRole('admin'),
+  requireRole('admin', 'moderator'),
   async (_req: AuthRequest, res: Response) => {
     try {
       await pool.query(`UPDATE premium_features SET is_active = false WHERE key <> 'wallet_universal'`);
@@ -279,7 +279,7 @@ router.get('/app-features', authenticate, async (_req: AuthRequest, res: Respons
 router.get(
   '/admin/app-features',
   authenticate,
-  requireRole('admin'),
+  requireRole('admin', 'moderator'),
   async (_req: AuthRequest, res: Response) => {
     try {
       const { rows } = await pool.query(
@@ -295,7 +295,7 @@ router.get(
 router.put(
   '/admin/app-features/:key',
   authenticate,
-  requireRole('admin'),
+  requireRole('admin', 'moderator'),
   async (req: AuthRequest, res: Response) => {
     const { key } = req.params;
     const { is_active } = req.body as { is_active?: boolean };
@@ -323,7 +323,7 @@ router.put(
 router.post(
   '/admin/app-features/disable-all',
   authenticate,
-  requireRole('admin'),
+  requireRole('admin', 'moderator'),
   async (_req: AuthRequest, res: Response) => {
     try {
       await pool.query(`UPDATE app_features SET is_active = false, updated_at = NOW()`);

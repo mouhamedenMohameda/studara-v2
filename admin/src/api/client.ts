@@ -197,25 +197,27 @@ export const api: any = {
   // ───────────────────────────────────────────────────────────────────────────
   // AI usage stats
   // ───────────────────────────────────────────────────────────────────────────
-  aiUsageStats: (days: number) => request(`/admin/ai/usage-stats?days=${encodeURIComponent(String(days))}`),
+  aiUsageStats: (days: number) => request(`/ai/usage-stats?days=${encodeURIComponent(String(days))}`),
 
   // ───────────────────────────────────────────────────────────────────────────
   // Academic structure (new) — universities/faculties/filieres
   // ───────────────────────────────────────────────────────────────────────────
-  academicUniversities: () => request('/academic-structure/admin/universities'),
-  createUniversity: (body: any) => request('/academic-structure/admin/universities', { method: 'POST', body }),
-  updateUniversity: (id: number, body: any) => request(`/academic-structure/admin/universities/${id}`, { method: 'PUT', body }),
-  deleteUniversity: (id: number) => request(`/academic-structure/admin/universities/${id}`, { method: 'DELETE' }),
+  academicUniversities: () => request('/academic-structure/universities'),
+  createUniversity: (body: any) => request('/academic-structure/universities', { method: 'POST', body }),
+  updateUniversity: (id: number, body: any) => request(`/academic-structure/universities/${id}`, { method: 'PUT', body }),
+  deleteUniversity: (id: number) => request(`/academic-structure/universities/${id}`, { method: 'DELETE' }),
 
-  academicFaculties: (universitySlug: string) => request(`/academic-structure/admin/faculties?university=${encodeURIComponent(universitySlug)}`),
-  createFacultyAcad: (body: any) => request('/academic-structure/admin/faculties', { method: 'POST', body }),
-  updateFacultyAcad: (id: number, body: any) => request(`/academic-structure/admin/faculties/${id}`, { method: 'PUT', body }),
-  deleteFacultyAcad: (id: number) => request(`/academic-structure/admin/faculties/${id}`, { method: 'DELETE' }),
+  academicFaculties: (universitySlug: string) =>
+    request(`/academic-structure/faculties?university_slug=${encodeURIComponent(universitySlug)}`),
+  createFacultyAcad: (body: any) => request('/academic-structure/faculties', { method: 'POST', body }),
+  updateFacultyAcad: (id: number, body: any) => request(`/academic-structure/faculties/${id}`, { method: 'PUT', body }),
+  deleteFacultyAcad: (id: number) => request(`/academic-structure/faculties/${id}`, { method: 'DELETE' }),
 
-  academicFilieres: (facultySlug: string) => request(`/academic-structure/admin/filieres?faculty=${encodeURIComponent(facultySlug)}`),
-  createFiliere: (body: any) => request('/academic-structure/admin/filieres', { method: 'POST', body }),
-  updateFiliere: (id: number, body: any) => request(`/academic-structure/admin/filieres/${id}`, { method: 'PUT', body }),
-  deleteFiliere: (id: number) => request(`/academic-structure/admin/filieres/${id}`, { method: 'DELETE' }),
+  academicFilieres: (facultySlug: string) =>
+    request(`/academic-structure/filieres?faculty_slug=${encodeURIComponent(facultySlug)}`),
+  createFiliere: (body: any) => request('/academic-structure/filieres', { method: 'POST', body }),
+  updateFiliere: (id: number, body: any) => request(`/academic-structure/filieres/${id}`, { method: 'PUT', body }),
+  deleteFiliere: (id: number) => request(`/academic-structure/filieres/${id}`, { method: 'DELETE' }),
 
   // ───────────────────────────────────────────────────────────────────────────
   // Premium feature requests (billing)

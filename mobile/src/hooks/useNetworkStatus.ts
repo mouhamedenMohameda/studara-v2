@@ -19,7 +19,13 @@ async function pingServer(): Promise<boolean> {
   try {
     const controller = new AbortController();
     const tid = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    const res = await fetch(HEALTH_URL, { method: 'HEAD', signal: controller.signal });
+    // Some reverse proxies / static dev servers mishandle HEAD on `/health`.
+    // Express supports GET `/health` reliably in this project.
+    const res = await fetch(HEALTH_URL, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
     clearTimeout(tid);
     return res.ok || res.status < 500;
   } catch {

@@ -76,7 +76,7 @@
 
 # ── Local operational notes / deploy secrets ───────────────────────────────
 # Keep this file locally; it may contain operational credentials.
-mobile/AMELIORATIONS.txt
+shared/AMELIORATIONS.txt
 # Local deploy env with secrets (use *.example templates instead)
 mobile/deploy/api.env
 

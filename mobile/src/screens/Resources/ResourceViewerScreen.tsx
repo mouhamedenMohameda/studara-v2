@@ -12,18 +12,17 @@ import { ResourcesStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { smoothGoHomeTab } from '../../utils/smoothTabBack';
+import { SERVER_ORIGIN } from '../../utils/api';
 
 type Route    = RouteProp<ResourcesStackParamList, 'ResourceViewer'>;
 type DlState  = 'checking' | 'downloading' | 'ready' | 'error';
-
-const SERVER_BASE = 'https://api.radar-mr.com';
 
 const normalizeUrl = (url: string): string => {
   const u = (url ?? '').trim();
   if (!u) return '';
   if (u.startsWith('http://') || u.startsWith('https://')) return u;
   if (u.startsWith('//')) return `https:${u}`;
-  if (u.startsWith('/')) return `${SERVER_BASE}${u}`;
+  if (u.startsWith('/')) return `${SERVER_ORIGIN}${u}`;
   // Common backend links sometimes come without protocol
   if (u.startsWith('api.radar-mr.com')) return `https://${u}`;
   if (u.startsWith('5.189.153.144')) return `http://${u}`;
@@ -58,10 +57,23 @@ const buildDriveHtml = (fileId: string): string => `<!DOCTYPE html>
 </body></html>`;
 
 /** Is this URL served by our own backend? */
-const isServerFile = (url: string) =>
-  url.startsWith('/') ||
-  url.includes('5.189.153.144') ||
-  url.includes('api.radar-mr.com');
+const isServerFile = (url: string) => {
+  const u = (url ?? '').trim();
+  if (!u) return false;
+  if (u.startsWith('/')) return true;
+
+  // Legacy absolute URLs in DB / older builds
+  if (u.includes('5.189.153.144') || u.includes('api.radar-mr.com')) return true;
+
+  try {
+    const abs = normalizeUrl(u);
+    const su = new URL(SERVER_ORIGIN);
+    const host = new URL(abs).host;
+    return host === su.host;
+  } catch {
+    return false;
+  }
+};
 
 /** Build a YouTube / Drive video embed URI */
 const toVideoEmbed = (url: string): string => {
@@ -110,7 +122,7 @@ export default function ResourceViewerScreen() {
 
   // Use server preview URL with token in query (works cross-platform via Google Docs viewer).
   const previewUrlWithToken =
-    isServer && token ? `${SERVER_BASE}/api/v1/resources/${resource.id}/preview?t=${encodeURIComponent(token)}` : null;
+    isServer && token ? `${SERVER_ORIGIN}/api/v1/resources/${resource.id}/preview?t=${encodeURIComponent(token)}` : null;
 
   const [dlState,   setDlState]   = useState<DlState>(isServer ? 'checking' : 'ready');
   const [localUri,  setLocalUri]  = useState<string | null>(null);
@@ -151,7 +163,7 @@ export default function ResourceViewerScreen() {
         if (previewUrlWithToken) candidates.push({ label: 'preview?t', url: previewUrlWithToken });
         candidates.push({
           label: 'preview(auth)',
-          url: `${SERVER_BASE}/api/v1/resources/${resource.id}/preview`,
+          url: `${SERVER_ORIGIN}/api/v1/resources/${resource.id}/preview`,
           headers: { Authorization: `Bearer ${token}` },
         });
         // Direct fileUrl (common: /uploads/...)

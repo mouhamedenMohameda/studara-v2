@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, StatusBar, RefreshControl, AppState, type AppStateStatus } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -85,39 +85,64 @@ export default function HomeScreen() {
   // Styles dépendant du thème (récréés uniquement quand les couleurs changent)
   const styles = useMemo(() => makeStyles(C), [C]);
 
-  const { data: summary, isLoading: loading, isRefetching: refreshing, refetch } = useQuery({
+  const { data: summary, isRefetching: refreshing, refetch } = useQuery({
     queryKey: queryKeys.home(),
     queryFn: () => apiRequest<HomeSummary>('/home/summary', { token: token! }),
     enabled: !!token,
+    // Instant UI: never block Home with a full-screen spinner.
+    // Keep previous data while refetching to avoid flashes.
+    placeholderData: (prev) => prev,
   });
 
-  const [paygActiveByKey, setPaygActiveByKey] = useState<Record<string, boolean>>({});
-  useEffect(() => {
-    if (!token) return;
-    apiRequest<any[]>('/billing/features', { token })
-      .then((rows) => {
-        const map: Record<string, boolean> = {};
-        for (const r of Array.isArray(rows) ? rows : []) {
-          map[String(r.key)] = !!r.is_active;
-        }
-        setPaygActiveByKey(map);
-      })
-      .catch(() => {});
-  }, [token]);
+  // Feature flags (instant UI updates): keep in React Query cache + refetch on focus.
+  const { data: paygRows, refetch: refetchPayg } = useQuery({
+    queryKey: queryKeys.billingFeatures(),
+    queryFn: () => apiRequest<any[]>('/billing/features', { token: token! }),
+    enabled: !!token,
+    staleTime: 0,
+    placeholderData: (prev) => prev,
+    // Admin panel toggles should reflect quickly on-device.
+    refetchInterval: 10_000,
+  });
 
-  const [appActiveByKey, setAppActiveByKey] = useState<Record<string, boolean>>({});
+  const { data: appRows, refetch: refetchApp } = useQuery({
+    queryKey: queryKeys.billingAppFeatures(),
+    queryFn: () => apiRequest<any[]>('/billing/app-features', { token: token! }),
+    enabled: !!token,
+    staleTime: 0,
+    placeholderData: (prev) => prev,
+    // Admin panel toggles should reflect quickly on-device.
+    refetchInterval: 10_000,
+  });
+
+  // When the user switches to admin panel and comes back, refresh flags immediately.
   useEffect(() => {
     if (!token) return;
-    apiRequest<any[]>('/billing/app-features', { token })
-      .then((rows) => {
-        const map: Record<string, boolean> = {};
-        for (const r of Array.isArray(rows) ? rows : []) {
-          map[String(r.key)] = !!r.is_active;
-        }
-        setAppActiveByKey(map);
-      })
-      .catch(() => {});
-  }, [token]);
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        refetchPayg();
+        refetchApp();
+        refetch();
+      }
+    });
+    return () => sub.remove();
+  }, [token, refetchPayg, refetchApp, refetch]);
+
+  const paygActiveByKey = useMemo<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {};
+    for (const r of Array.isArray(paygRows) ? paygRows : []) {
+      map[String((r as any).key)] = !!(r as any).is_active;
+    }
+    return map;
+  }, [paygRows]);
+
+  const appActiveByKey = useMemo<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {};
+    for (const r of Array.isArray(appRows) ? appRows : []) {
+      map[String((r as any).key)] = !!(r as any).is_active;
+    }
+    return map;
+  }, [appRows]);
 
   // Load local streak from AsyncStorage on every focus
   useFocusEffect(useCallback(() => {
@@ -132,8 +157,16 @@ export default function HomeScreen() {
     getRecentlyViewedResources().then(setRecentlyViewed).catch(() => {});
     getTodayFocusMinutes().then(setTodayFocus).catch(() => {});
     getLastNDaysActivity(28).then(setHeatmapData).catch(() => {});
-    refetch();
-  }, [refetch]));
+    // Avoid aggressive refetch-on-focus which can cause perceived "reload" loops
+    // and (previously) full-screen loading. Users can still pull-to-refresh.
+    // Keep a light refetch only when we have a token and no summary yet.
+    // Refresh feature flags immediately (no UI blocking).
+    if (token) {
+      refetchPayg();
+      refetchApp();
+    }
+    if (token && !summary) refetch();
+  }, [refetch, token, summary, refetchPayg, refetchApp]));
 
   useEffect(() => {
     if (summary?.dueCards && summary.dueCards > 0) {
@@ -229,8 +262,8 @@ export default function HomeScreen() {
       label: lang === 'ar' ? 'مساعدك الذكي' : 'Assistant IA',
       description: lang === 'ar' ? 'مساعدك الذكي' : 'Ton assistant IA',
       emoji: '🤖',
-      badge: t('common.soon'),
       disabled: !(appActiveByKey.askzad ?? false),
+      badge: !(appActiveByKey.askzad ?? false) ? t('common.soon') : undefined,
       onPress: () => navigation.navigate('AskZad' as any),
     },
     {
@@ -252,8 +285,8 @@ export default function HomeScreen() {
       label: lang === 'ar' ? '✨ ملخص ذكي' : '✨ Résumé intelligent',
       description: lang === 'ar' ? 'PDF/صورة → ملخص + PDF' : 'PDF/image → résumé + PDF',
       emoji: '📄',
-      badge: t('common.soon'),
       disabled: !(appActiveByKey.ai_summary ?? false) || !(paygActiveByKey.ai_summary ?? false),
+      badge: (!(appActiveByKey.ai_summary ?? false) || !(paygActiveByKey.ai_summary ?? false)) ? t('common.soon') : undefined,
       onPress: () => {
         const root = (navigation as any)?.getParent?.()?.getParent?.();
         if (root?.navigate) root.navigate('AISummaryImport');
@@ -268,8 +301,8 @@ export default function HomeScreen() {
       label: lang === 'ar' ? '✅ تصحيح تمارين' : '✅ Correction IA',
       description: lang === 'ar' ? 'صورة/نص → حل مفصل + PDF' : 'Photo/texte → correction + PDF',
       emoji: '✅',
-      badge: t('common.soon'),
       disabled: !(appActiveByKey.ai_exercise_correction ?? false) || !(paygActiveByKey.ai_exercise_correction ?? false),
+      badge: (!(appActiveByKey.ai_exercise_correction ?? false) || !(paygActiveByKey.ai_exercise_correction ?? false)) ? t('common.soon') : undefined,
       onPress: () => {
         const root = (navigation as any)?.getParent?.()?.getParent?.();
         if (root?.navigate) root.navigate('AIExerciseImport');
@@ -305,14 +338,6 @@ export default function HomeScreen() {
     },
   ], [t, goToExplore, lang, navigation, appActiveByKey]);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
@@ -321,7 +346,17 @@ export default function HomeScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refetch} tintColor={Colors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              refetch();
+              if (token) {
+                refetchPayg();
+                refetchApp();
+              }
+            }}
+            tintColor={Colors.primary}
+          />
         }
         showsVerticalScrollIndicator={false}
       >

@@ -9,6 +9,7 @@ import YoutubePlayer from 'react-native-youtube-iframe';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { CoursesStackParamList } from '../../types';
 import { safeBack } from '../../utils/safeBack';
+import { SERVER_ORIGIN } from '../../utils/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PLAYER_HEIGHT = Math.round((SCREEN_WIDTH * 9) / 16);
@@ -38,7 +39,7 @@ const getYouTubePlaylistId = (url: string): string | null => {
 const toWebViewUrl = (url: string): string => {
   const drive = url.match(/drive\.google\.com\/file\/d\/([^/?]+)/);
   if (drive) return `https://drive.google.com/file/d/${drive[1]}/preview`;
-  if (url.startsWith('/')) return `https://api.radar-mr.com${url}`;
+  if (url.startsWith('/')) return `${SERVER_ORIGIN}${url}`;
   return url;
 };
 

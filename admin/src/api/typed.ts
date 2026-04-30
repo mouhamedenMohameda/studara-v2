@@ -408,7 +408,7 @@ export const adminDailyChallengesApi = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const adminAiUsageApi = {
-  usageStats: (days: number) => typedRequest(`/admin/ai/usage-stats?days=${encodeURIComponent(String(days))}`),
+  usageStats: (days: number) => typedRequest(`/ai/usage-stats?days=${encodeURIComponent(String(days))}`),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -467,22 +467,24 @@ export const adminCurriculumApi = {
 
 export const adminAcademicStructureApi = {
   universities: {
-    list: () => typedRequest('/academic-structure/admin/universities'),
-    create: (body: Record<string, unknown>) => typedRequest('/academic-structure/admin/universities', { method: 'POST', body }),
-    update: (id: number, body: Record<string, unknown>) => typedRequest(`/academic-structure/admin/universities/${id}`, { method: 'PUT', body }),
-    delete: (id: number) => typedRequest(`/academic-structure/admin/universities/${id}`, { method: 'DELETE' }),
+    list: () => typedRequest('/academic-structure/universities'),
+    create: (body: Record<string, unknown>) => typedRequest('/academic-structure/universities', { method: 'POST', body }),
+    update: (id: number, body: Record<string, unknown>) => typedRequest(`/academic-structure/universities/${id}`, { method: 'PUT', body }),
+    delete: (id: number) => typedRequest(`/academic-structure/universities/${id}`, { method: 'DELETE' }),
   },
   faculties: {
-    list: (universitySlug: string) => typedRequest(`/academic-structure/admin/faculties?university=${encodeURIComponent(universitySlug)}`),
-    create: (body: Record<string, unknown>) => typedRequest('/academic-structure/admin/faculties', { method: 'POST', body }),
-    update: (id: number, body: Record<string, unknown>) => typedRequest(`/academic-structure/admin/faculties/${id}`, { method: 'PUT', body }),
-    delete: (id: number) => typedRequest(`/academic-structure/admin/faculties/${id}`, { method: 'DELETE' }),
+    list: (universitySlug: string) =>
+      typedRequest(`/academic-structure/faculties?university_slug=${encodeURIComponent(universitySlug)}`),
+    create: (body: Record<string, unknown>) => typedRequest('/academic-structure/faculties', { method: 'POST', body }),
+    update: (id: number, body: Record<string, unknown>) => typedRequest(`/academic-structure/faculties/${id}`, { method: 'PUT', body }),
+    delete: (id: number) => typedRequest(`/academic-structure/faculties/${id}`, { method: 'DELETE' }),
   },
   filieres: {
-    list: (facultySlug: string) => typedRequest(`/academic-structure/admin/filieres?faculty=${encodeURIComponent(facultySlug)}`),
-    create: (body: Record<string, unknown>) => typedRequest('/academic-structure/admin/filieres', { method: 'POST', body }),
-    update: (id: number, body: Record<string, unknown>) => typedRequest(`/academic-structure/admin/filieres/${id}`, { method: 'PUT', body }),
-    delete: (id: number) => typedRequest(`/academic-structure/admin/filieres/${id}`, { method: 'DELETE' }),
+    list: (facultySlug: string) =>
+      typedRequest(`/academic-structure/filieres?faculty_slug=${encodeURIComponent(facultySlug)}`),
+    create: (body: Record<string, unknown>) => typedRequest('/academic-structure/filieres', { method: 'POST', body }),
+    update: (id: number, body: Record<string, unknown>) => typedRequest(`/academic-structure/filieres/${id}`, { method: 'PUT', body }),
+    delete: (id: number) => typedRequest(`/academic-structure/filieres/${id}`, { method: 'DELETE' }),
   },
 };
 

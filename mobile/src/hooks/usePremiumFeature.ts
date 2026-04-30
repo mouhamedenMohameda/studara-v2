@@ -40,20 +40,8 @@ export function usePremiumFeature(featureKey: string, autoRefreshInterval?: numb
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Admins/moderators always have access — no need to call API
-  const isAdmin = user?.role === 'admin' || user?.role === 'moderator';
-
   const check = useCallback(async (silent = false) => {
     if (!token || !featureKey) return;
-
-    if (isAdmin) {
-      setHasAccess(true);
-      setIncludedInCatalogPlan(false);
-      setLoading(false);
-      setBalanceMru(999999);
-      setLastUpdated(new Date());
-      return;
-    }
 
     if (!silent) setLoading(true);
     try {
@@ -81,7 +69,7 @@ export function usePremiumFeature(featureKey: string, autoRefreshInterval?: numb
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [token, featureKey, isAdmin]);
+  }, [token, featureKey]);
 
   // Configuration de l'auto-refresh
   useEffect(() => {

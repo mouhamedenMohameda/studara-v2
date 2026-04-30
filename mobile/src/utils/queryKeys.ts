@@ -45,4 +45,6 @@ export const queryKeys = {
 
   // ── Billing ────────────────────────────────────────────────────────────────
   billing: ()  => ['billing', 'status'] as const,
+  billingFeatures: () => ['billing', 'features'] as const,
+  billingAppFeatures: () => ['billing', 'app-features'] as const,
 } as const;
