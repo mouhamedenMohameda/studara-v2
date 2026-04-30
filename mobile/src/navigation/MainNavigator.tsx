@@ -28,6 +28,7 @@ import ProfileScreen from '../screens/Profile/ProfileScreen';
 import BadgesScreen from '../screens/Profile/BadgesScreen';
 import ExamCountdownScreen from '../screens/Profile/ExamCountdownScreen';
 import WrappedScreen from '../screens/Profile/WrappedScreen';
+import { FeatureGate } from '../components/FeatureGate';
 
 // ─── Home Stack ───────────────────────────────────────────────────────────────
 
@@ -115,13 +116,62 @@ const ProfileNavigator = () => (
 const ExploreStack = createStackNavigator<ExploreStackParamList>();
 const ExploreNavigator = () => (
   <ExploreStack.Navigator screenOptions={{ headerShown: false }}>
-    <ExploreStack.Screen name="Resources"  component={ResourcesNavigator} />
-    <ExploreStack.Screen name="Timetable"  component={TimetableScreen} />
-    <ExploreStack.Screen name="Courses"    component={CoursesNavigator} />
-    <ExploreStack.Screen name="Flashcards" component={FlashcardsNavigator} />
-    <ExploreStack.Screen name="Jobs"       component={JobsNavigator} />
-    <ExploreStack.Screen name="Reminders"  component={RemindersScreen} />
-    <ExploreStack.Screen name="Housing"    component={HousingNavigator} />
+    <ExploreStack.Screen
+      name="Resources"
+      component={() => (
+        <FeatureGate featureKey="resources" defaultEnabled={true}>
+          <ResourcesNavigator />
+        </FeatureGate>
+      )}
+    />
+    <ExploreStack.Screen
+      name="Timetable"
+      component={() => (
+        <FeatureGate featureKey="timetable" defaultEnabled={true}>
+          <TimetableScreen />
+        </FeatureGate>
+      )}
+    />
+    <ExploreStack.Screen
+      name="Courses"
+      component={() => (
+        <FeatureGate featureKey="courses" defaultEnabled={true}>
+          <CoursesNavigator />
+        </FeatureGate>
+      )}
+    />
+    <ExploreStack.Screen
+      name="Flashcards"
+      component={() => (
+        <FeatureGate featureKey="flashcards" defaultEnabled={true}>
+          <FlashcardsNavigator />
+        </FeatureGate>
+      )}
+    />
+    <ExploreStack.Screen
+      name="Jobs"
+      component={() => (
+        <FeatureGate featureKey="jobs" defaultEnabled={true}>
+          <JobsNavigator />
+        </FeatureGate>
+      )}
+    />
+    <ExploreStack.Screen
+      name="Reminders"
+      component={() => (
+        <FeatureGate featureKey="reminders" defaultEnabled={true}>
+          <RemindersScreen />
+        </FeatureGate>
+      )}
+    />
+    <ExploreStack.Screen
+      name="Housing"
+      component={() => (
+        <FeatureGate featureKey="housing" defaultEnabled={true}>
+          <HousingNavigator />
+        </FeatureGate>
+      )}
+    />
   </ExploreStack.Navigator>
 );
 

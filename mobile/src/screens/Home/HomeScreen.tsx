@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
-import { View, StyleSheet, ScrollView, TouchableOpacity, StatusBar, RefreshControl, AppState, type AppStateStatus } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, StatusBar, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -85,7 +85,7 @@ export default function HomeScreen() {
   // Styles dépendant du thème (récréés uniquement quand les couleurs changent)
   const styles = useMemo(() => makeStyles(C), [C]);
 
-  const { data: summary, isRefetching: refreshing, refetch } = useQuery({
+  const { data: summary, refetch } = useQuery({
     queryKey: queryKeys.home(),
     queryFn: () => apiRequest<HomeSummary>('/home/summary', { token: token! }),
     enabled: !!token,
@@ -115,18 +115,22 @@ export default function HomeScreen() {
     refetchInterval: 10_000,
   });
 
-  // When the user switches to admin panel and comes back, refresh flags immediately.
-  useEffect(() => {
-    if (!token) return;
-    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
-      if (state === 'active') {
-        refetchPayg();
-        refetchApp();
-        refetch();
-      }
-    });
-    return () => sub.remove();
-  }, [token, refetchPayg, refetchApp, refetch]);
+  // NOTE: We intentionally avoid tying any auto-refetch to UI "refresh spinners".
+  // Manual pull-to-refresh below controls the RefreshControl indicator.
+
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    if (pullRefreshing) return;
+    setPullRefreshing(true);
+    try {
+      // Run refreshes in parallel (fast) without blocking the UI.
+      const tasks: Promise<any>[] = [refetch()];
+      if (token) tasks.push(refetchPayg(), refetchApp());
+      await Promise.allSettled(tasks);
+    } finally {
+      setPullRefreshing(false);
+    }
+  }, [pullRefreshing, refetch, refetchPayg, refetchApp, token]);
 
   const paygActiveByKey = useMemo<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {};
@@ -347,14 +351,8 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              refetch();
-              if (token) {
-                refetchPayg();
-                refetchApp();
-              }
-            }}
+            refreshing={pullRefreshing}
+            onRefresh={onPullRefresh}
             tintColor={Colors.primary}
           />
         }
