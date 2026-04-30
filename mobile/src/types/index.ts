@@ -136,8 +136,6 @@ export type RootStackParamList = {
   Main: undefined;
   ExploreModal: { screen: keyof ExploreStackParamList; params?: any };
   Paywall: undefined;
-  PremiumRequest: { featureKey?: string } | undefined;
-  Spending: undefined;
   BillingHub: undefined;
   UploadResource: undefined;
   Pomodoro: undefined;

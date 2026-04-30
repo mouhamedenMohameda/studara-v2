@@ -1,6 +1,6 @@
 /**
  * PremiumGate — Full-screen lock overlay (v2 vibrant)
- * Redirects to PremiumRequestScreen on CTA.
+ * Redirects to BillingHub on CTA.
  */
 import React from 'react';
 import { AppIcon } from '@/icons';
@@ -124,7 +124,8 @@ export default function PremiumGate({ featureKey, loading, hasAccess, balanceMru
                 style={styles.ctaBtn}
                 onPress={() => {
                   const nav = navigation.getParent?.() ?? navigation;
-                  nav.navigate('PremiumRequest', { featureKey });
+                  // Centralize PAYG wallet / topup in BillingHub.
+                  nav.navigate('BillingHub');
                 }}
                 activeOpacity={0.85}
               >

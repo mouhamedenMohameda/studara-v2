@@ -8,7 +8,7 @@
  * Usage:
  *   const { hasAccess, loading, balanceMru } = usePremiumFeature('whisper_studio');
  *
- *   if (!hasAccess) → show lock / redirect to PremiumRequest screen
+ *   if (!hasAccess) → show lock / redirect to BillingHub
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';

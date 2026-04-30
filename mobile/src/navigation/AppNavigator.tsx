@@ -9,8 +9,6 @@ import { Colors } from '../theme';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import OnboardingScreen from '../screens/Auth/OnboardingScreen';
-import PremiumRequestScreen   from '../screens/Premium/PremiumRequestScreen';
-import SpendingScreen        from '../screens/Premium/SpendingScreen';
 import UploadResourceScreen   from '../screens/Resources/UploadResourceScreen';
 import PomodoroScreen        from '../screens/Study/PomodoroScreen';
 import DailyChallengeScreen  from '../screens/Home/DailyChallengeScreen';
@@ -181,13 +179,6 @@ const RootNavigator = () => {
       {/* Premium feature subscription (manual bank transfer) */}
       {isAuthenticated && (
         <Stack.Screen
-          name="PremiumRequest"
-          component={PremiumRequestScreen}
-          options={{ animation: 'slide_from_bottom' }}
-        />
-      )}
-      {isAuthenticated && (
-        <Stack.Screen
           name="Paywall"
           component={PaywallScreen}
           options={{ animation: 'slide_from_bottom' }}
@@ -197,14 +188,6 @@ const RootNavigator = () => {
         <Stack.Screen
           name="MyPlan"
           component={MyPlanScreen}
-          options={{ animation: 'slide_from_right' }}
-        />
-      )}
-      {/* Spending history — accessible from Profile and PremiumRequest */}
-      {isAuthenticated && (
-        <Stack.Screen
-          name="Spending"
-          component={SpendingScreen}
           options={{ animation: 'slide_from_right' }}
         />
       )}

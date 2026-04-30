@@ -153,7 +153,7 @@ export default function AIExerciseOptionsScreen({ navigation, route }: any) {
             { text: 'OK', style: 'cancel' },
             {
               text: 'Recharger',
-              onPress: () => navigation.navigate('PremiumRequest', { featureKey: 'ai_exercise_correction' }),
+              onPress: () => navigation.navigate('BillingHub'),
             },
           ],
         );
@@ -201,7 +201,7 @@ export default function AIExerciseOptionsScreen({ navigation, route }: any) {
                 ? 'Calcul du prix en cours…'
                 : null
           }
-          onRecharge={() => navigation.navigate('PremiumRequest', { featureKey: 'ai_exercise_correction' })}
+          onRecharge={() => navigation.navigate('BillingHub')}
         />
 
         {docStatus === 'TEXT_READY' && chargeMru != null && !canPay ? (
