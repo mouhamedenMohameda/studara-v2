@@ -3,6 +3,7 @@ import path from 'path';
 import pool from '../db/pool';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
 import { upload } from '../middleware/upload';
+import fs from 'fs';
 import { scrapeFstStudentData, getYearFromProfile } from '../services/fstScraper';
 import { invalidateResourcesCache } from '../services/resourceService';
 import { startBulkScrape, stopBulkScrape, getBulkStatus } from '../services/fstBulkScraper';
@@ -15,6 +16,97 @@ import { sendError } from '../utils/httpError';
 const router = Router();
 router.use(authenticate);
 router.use(requireRole('admin', 'moderator'));
+
+// ─── Daily Challenge prizes (winner payout workflow) ──────────────────────────
+
+// GET /api/v1/admin/daily-challenge/prizes?status=pending|proof_uploaded|confirmed
+router.get('/daily-challenge/prizes', async (req: AuthRequest, res: Response) => {
+  const status = String((req.query as any)?.status ?? 'pending').toLowerCase();
+  const where =
+    status === 'confirmed'
+      ? `dcp.user_confirmed_at IS NOT NULL`
+      : status === 'proof_uploaded'
+        ? `dcp.admin_proof_url IS NOT NULL AND dcp.user_confirmed_at IS NULL`
+        : `dcp.admin_proof_url IS NULL`; // pending by default
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         dcp.id,
+         dcp.challenge_date,
+         dcp.faculty,
+         dcp.phone,
+         dcp.provider,
+         dcp.account_full_name,
+         dcp.submitted_at,
+         dcp.admin_proof_url,
+         dcp.admin_proof_uploaded_at,
+         dcp.user_confirmed_at,
+         dcp.time_taken_s,
+         dcp.referral_count,
+         u.id AS user_id,
+         u.full_name,
+         u.email
+       FROM daily_challenge_prizes dcp
+       JOIN users u ON u.id = dcp.user_id
+       WHERE ${where}
+       ORDER BY dcp.submitted_at DESC
+       LIMIT 200`,
+    );
+    res.json({ status, items: rows });
+  } catch (err) {
+    console.error('[admin/daily-challenge/prizes:get]', err);
+    sendError(res, 500, 'Server error');
+  }
+});
+
+// POST /api/v1/admin/daily-challenge/prizes/:id/proof (multipart file=PNG/JPEG)
+router.post('/daily-challenge/prizes/:id/proof', upload.single('file'), async (req: AuthRequest, res: Response) => {
+  const file = req.file;
+  if (!file) { sendError(res, 400, 'No file uploaded'); return; }
+  const proofUrl = `/uploads/${file.filename}`;
+  const note = String(req.body?.note ?? '').trim();
+  try {
+    const { rows } = await pool.query(
+      `UPDATE daily_challenge_prizes
+       SET admin_proof_url = $2,
+           admin_proof_uploaded_at = NOW(),
+           admin_note = NULLIF($3, ''),
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, admin_proof_url, admin_proof_uploaded_at`,
+      [req.params.id, proofUrl, note],
+    );
+    if (!rows.length) { sendError(res, 404, 'Not found'); return; }
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error('[admin/daily-challenge/prizes:proof]', err);
+    sendError(res, 500, 'Server error');
+  }
+});
+
+// GET /api/v1/admin/daily-challenge/prizes/:id/proof
+// Returns the proof screenshot as binary (admin/moderator only).
+router.get('/daily-challenge/prizes/:id/proof', async (req: AuthRequest, res: Response) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT admin_proof_url FROM daily_challenge_prizes WHERE id = $1`,
+      [req.params.id],
+    );
+    const proof = rows[0]?.admin_proof_url as string | undefined;
+    if (!proof) { sendError(res, 404, 'No proof'); return; }
+
+    const filename = path.basename(proof);
+    const uploadDir = process.env.UPLOAD_DIR || './uploads';
+    const filePath = path.join(uploadDir, filename);
+    if (!fs.existsSync(filePath)) { sendError(res, 404, 'Proof not found'); return; }
+
+    res.sendFile(path.resolve(filePath));
+  } catch (err) {
+    console.error('[admin/daily-challenge/prizes:proof:get]', err);
+    sendError(res, 500, 'Server error');
+  }
+});
 
 // POST /api/v1/admin/import/fst
 router.post('/import/fst', async (req: AuthRequest, res: Response) => {

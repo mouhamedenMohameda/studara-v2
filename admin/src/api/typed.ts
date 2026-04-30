@@ -404,6 +404,37 @@ export const adminDailyChallengesApi = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Admin: Daily challenge prizes (winner payout workflow)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AdminDailyChallengePrizeRow {
+  id: string;
+  challenge_date: string;
+  faculty: string;
+  phone: string;
+  provider: 'bankily' | 'sedad' | 'masrivi' | string;
+  account_full_name: string;
+  submitted_at: string;
+  admin_proof_url?: string | null;
+  admin_proof_uploaded_at?: string | null;
+  user_confirmed_at?: string | null;
+  time_taken_s?: number | null;
+  referral_count?: number | null;
+  user_id: string;
+  full_name: string;
+  email: string;
+}
+
+export const adminDailyChallengePrizesApi = {
+  list: (status: 'pending' | 'proof_uploaded' | 'confirmed' = 'pending') =>
+    typedRequest<{ status: string; items: AdminDailyChallengePrizeRow[] }>(
+      `/admin/daily-challenge/prizes?status=${encodeURIComponent(status)}`,
+    ),
+  uploadProof: (id: string, formData: FormData) =>
+    typedRequest(`/admin/daily-challenge/prizes/${encodeURIComponent(id)}/proof`, { method: 'POST', body: formData }),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Admin: AI usage stats
 // ─────────────────────────────────────────────────────────────────────────────
 

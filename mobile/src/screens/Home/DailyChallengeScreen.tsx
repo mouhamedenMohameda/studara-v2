@@ -5,7 +5,7 @@
  * seeded server-side by (UTC date + faculty).  Leaderboard resets at midnight.
  *
  * Flow:
- *   Loading → Questions (5 MCQ, 60s global timer) → Result + Leaderboard
+ *   Loading → Questions (5 MCQ, 300s global timer) → Result + Leaderboard
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -22,6 +22,7 @@ import { useLanguage }     from '../../context/LanguageContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { apiRequest }      from '../../utils/api';
 import { scheduleDailyChallengeNotification, cancelDailyChallengeNotification } from '../../utils/notifications';
+import { getPendingDailyChallengeSubmit, setPendingDailyChallengeSubmit } from '../../utils/offlineStorage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, BorderRadius, Gradients } from '../../theme';
 import { safeBack } from '../../utils/safeBack';
@@ -30,7 +31,6 @@ import { safeBack } from '../../utils/safeBack';
 interface ChallengeQuestion {
   id:            string;
   front:         string;
-  correctAnswer: string;
   options:       string[];
   subject?:      string;
 }
@@ -43,8 +43,11 @@ interface ChallengeData {
   myScore:           { score: number; correct: number; total: number; time_taken_s: number } | null;
   timeLimitS:        number;
   notYetAvailable:   boolean;
+  closed?:           boolean;
   showFromHour:      number;
   showFromMinute:    number;
+  startAtUtc?:       string;
+  windowEndUtc?:     string;
   isAdminSet:        boolean;
 }
 
@@ -58,7 +61,7 @@ interface LeaderboardEntry {
   isMe:      boolean;
 }
 
-type Phase = 'loading' | 'ready' | 'playing' | 'result' | 'error' | 'soon';
+type Phase = 'loading' | 'ready' | 'playing' | 'result' | 'error' | 'soon' | 'closed';
 
 const REVEAL_DELAY = 1200; // ms before advancing to next question after answer
 
@@ -83,9 +86,11 @@ export default function DailyChallengeScreen() {
   const [data,        setData]        = useState<ChallengeData | null>(null);
   const [qIndex,      setQIndex]      = useState(0);
   const [selected,    setSelected]    = useState<string | null>(null);
-  const [answered,    setAnswered]    = useState<boolean[]>([]);   // true = correct
-  const [timeLeft,    setTimeLeft]    = useState(60);
+  const [answers,     setAnswers]     = useState<Array<{ id: string; answer: string }>>([]);
+  const [timeLeft,    setTimeLeft]    = useState(300);
   const [finalScore,  setFinalScore]  = useState(0);
+  const [finalCorrect, setFinalCorrect] = useState(0);
+  const [finalTotal,   setFinalTotal]   = useState(5);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [lbLoading,   setLbLoading]   = useState(false);
 
@@ -98,6 +103,21 @@ export default function DailyChallengeScreen() {
   useEffect(() => {
     (async () => {
       try {
+        // Weak connection fairness: if a submit was queued, retry silently first.
+        const pending = await getPendingDailyChallengeSubmit();
+        if (pending?.date) {
+          try {
+            await apiRequest('/daily-challenge/submit', {
+              method: 'POST',
+              body: pending.payload,
+              token: token!,
+            });
+            await setPendingDailyChallengeSubmit(null);
+          } catch {
+            // keep queued; server has a short grace window
+          }
+        }
+
         const d = await apiRequest<ChallengeData>('/daily-challenge', { token: token! });
         setData(d);
         if (d.notYetAvailable) {
@@ -107,15 +127,21 @@ export default function DailyChallengeScreen() {
             d.showFromHour ?? 0,
             d.showFromMinute ?? 0,
           ).catch(() => {});
+        } else if (d.closed) {
+          setPhase('closed');
+          setFinalScore(0);
+          setAnswers([]);
+          loadLeaderboard();
         } else if (d.alreadySubmitted && d.myScore) {
           cancelDailyChallengeNotification().catch(() => {});
           const s = d.myScore;
           setFinalScore(s.score);
-          setAnswered(Array(s.total).fill(null));
+          setFinalCorrect(s.correct);
+          setFinalTotal(s.total);
           setPhase('result');
           loadLeaderboard();
         } else {
-          setTimeLeft(d.timeLimitS ?? 60);
+          setTimeLeft(d.timeLimitS ?? 300);
           setPhase('ready');
         }
       } catch {
@@ -150,76 +176,84 @@ export default function DailyChallengeScreen() {
   // When time hits 0, auto-submit
   useEffect(() => {
     if (timeLeft === 0 && phase === 'playing') {
-      handleFinish(answered);
+      handleFinish(answers);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
   // ── Start playing ──────────────────────────────────────────────────────────
-  const handleStart = useCallback(() => {
-    const tl = data?.timeLimitS ?? 60;
-    setPhase('playing');
-    setQIndex(0);
-    setSelected(null);
-    setAnswered([]);
-    setTimeLeft(tl);
-    startTimer();
-  }, [startTimer, data]);
+  const handleStart = useCallback(async () => {
+    try {
+      const r = await apiRequest<{ timeLimitS: number }>('/daily-challenge/start', { method: 'POST', token: token! });
+      const tl = r?.timeLimitS ?? data?.timeLimitS ?? 300;
+      setPhase('playing');
+      setQIndex(0);
+      setSelected(null);
+      setAnswers([]);
+      setTimeLeft(tl);
+      startTimer();
+    } catch {
+      // If start rejected (closed / not yet), reload state
+      try {
+        const d = await apiRequest<ChallengeData>('/daily-challenge', { token: token! });
+        setData(d);
+        if (d.notYetAvailable) setPhase('soon');
+        else if (d.closed) { setPhase('result'); loadLeaderboard(); }
+      } catch {
+        setPhase('error');
+      }
+    }
+  }, [startTimer, data, token, loadLeaderboard]);
 
   // ── Answer a question ──────────────────────────────────────────────────────
   const handleAnswer = useCallback((option: string) => {
-    if (selected !== null || !data) return; // already answered
-    const q          = data.questions[qIndex];
-    const isCorrect  = option === q.correctAnswer;
+    if (selected !== null || !data) return;
+    const q = data.questions[qIndex];
     setSelected(option);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
-    if (isCorrect) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      // Shake the wrong answer
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 8,  duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 5,  duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0,  duration: 60, useNativeDriver: true }),
-      ]).start();
-    }
-
-    const newAnswered = [...answered, isCorrect];
-
+    const nextAnswers = [...answers, { id: q.id, answer: option }];
     setTimeout(() => {
       setSelected(null);
       if (qIndex + 1 >= data.questions.length) {
         stopTimer();
-        handleFinish(newAnswered);
+        handleFinish(nextAnswers);
       } else {
         setQIndex(qi => qi + 1);
-        setAnswered(newAnswered);
+        setAnswers(nextAnswers);
       }
-    }, REVEAL_DELAY);
-
-    setAnswered(newAnswered);
-  }, [selected, data, qIndex, answered, shakeAnim, stopTimer]);
+    }, 220);
+    setAnswers(nextAnswers);
+  }, [selected, data, qIndex, answers, stopTimer]);
 
   // ── Finish & submit ────────────────────────────────────────────────────────
-  const handleFinish = useCallback(async (finalAnswered: boolean[]) => {
-    const correct   = finalAnswered.filter(Boolean).length;
-    const tl        = timeLeft;
-    const totalTime = data?.timeLimitS ?? 60;
-    const score     = calcScore(correct, tl, totalTime, data?.questions.length ?? 5);
+  const handleFinish = useCallback(async (finalAnswers: Array<{ id: string; answer: string }>) => {
+    const tl = timeLeft;
+    const totalTime = data?.timeLimitS ?? 300;
     const timeTaken = totalTime - tl;
 
-    setFinalScore(score);
     setPhase('result');
 
     try {
-      await apiRequest('/daily-challenge/submit', {
-        method: 'POST',
-        body: { score, correct, total: data?.questions.length ?? 5, time_taken_s: timeTaken },
-        token: token!,
+      const r = await apiRequest<{ ok: true; score: number; correct: number; total: number; timeTakenS: number }>(
+        '/daily-challenge/submit',
+        {
+          method: 'POST',
+          body: { answers: finalAnswers, timeTakenS: timeTaken },
+          token: token!,
+        },
+      );
+      setFinalScore(r.score);
+      setFinalCorrect(r.correct);
+      setFinalTotal(r.total);
+      await setPendingDailyChallengeSubmit(null);
+    } catch {
+      await setPendingDailyChallengeSubmit({
+        date: data?.date ?? new Date().toISOString().slice(0, 10),
+        payload: { answers: finalAnswers, timeTakenS: timeTaken },
+        queuedAt: new Date().toISOString(),
       });
-    } catch {/* silent */}
+    }
 
     loadLeaderboard();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,13 +280,13 @@ export default function DailyChallengeScreen() {
     rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
 
   const scoreLabel = useMemo(() => {
-    const correct = answered.filter(Boolean).length || (data?.myScore?.correct ?? 0);
-    const total   = data?.questions.length ?? data?.myScore?.total ?? 5;
+    const correct = finalCorrect || (data?.myScore?.correct ?? 0);
+    const total   = finalTotal || (data?.questions.length ?? data?.myScore?.total ?? 5);
     if (correct === total)    return isAr ? '🏆 مثالي!' : '🏆 Parfait!';
     if (correct >= total - 1) return isAr ? '🌟 ممتاز!'  : '🌟 Excellent!';
     if (correct >= Math.ceil(total / 2)) return isAr ? '👍 جيد'   : '👍 Bien';
     return isAr ? '📚 حاول مجدداً غداً' : '📚 Réessaie demain';
-  }, [answered, data, isAr]);
+  }, [finalCorrect, finalTotal, data, isAr]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER
@@ -394,6 +428,7 @@ export default function DailyChallengeScreen() {
           {[
             isAr ? '✅ كل إجابة صحيحة = 100 نقطة' : '✅ Bonne réponse = 100 pts',
             isAr ? '⚡ مكافأة السرعة = 40 نقطة إضافية' : '⚡ Bonus vitesse = 40 pts',
+            isAr ? '⏱️ متاح لمدة 5 دقائق فقط (نفس الوقت للجميع)' : '⏱️ Disponible 5 minutes seulement (même temps pour tous)',
             isAr ? '🔄 يتجدد كل يوم منتصف الليل' : '🔄 Renouvellement chaque minuit',
           ].map(rule => (
             <View key={rule} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, alignSelf: 'stretch', paddingHorizontal: 8 }}>
@@ -418,19 +453,59 @@ export default function DailyChallengeScreen() {
         </ScrollView>
       )}
 
+      {/* ── CLOSED ── */}
+      {phase === 'closed' && data && (
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 28 }}>
+          <Text style={{ fontSize: 72 }}>⏳</Text>
+          <Text style={{ color: C.textPrimary, fontWeight: '900', fontSize: fontSize(24), textAlign: 'center', marginTop: 16 }}>
+            {isAr ? 'انتهى تحدي اليوم' : 'Défi du jour terminé'}
+          </Text>
+          <Text style={{ color: C.textSecondary, fontSize: fontSize(14), textAlign: 'center', marginTop: 8, lineHeight: 22 }}>
+            {isAr
+              ? 'كان متاحاً لمدة 5 دقائق فقط.\nعد غداً للمشاركة في نفس الوقت.'
+              : 'Il était disponible pendant 5 minutes seulement.\nReviens demain à la même heure.'}
+          </Text>
+
+          {!!leaderboard.length && (
+            <View style={{ marginTop: 22, alignSelf: 'stretch' }}>
+              <Text style={{ color: C.textSecondary, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase', fontSize: 11, marginBottom: 8, textAlign: isAr ? 'right' : 'left' }}>
+                {isAr ? 'أفضل 5 اليوم' : 'Top 5 du jour'}
+              </Text>
+              <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 16, overflow: 'hidden' }}>
+                {leaderboard.slice(0, 5).map((e) => (
+                  <View key={e.rank} style={{ paddingVertical: 10, paddingHorizontal: 12, flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: e.rank === 5 ? 0 : 1, borderBottomColor: C.border }}>
+                    <Text style={{ color: C.textPrimary, fontWeight: e.isMe ? '900' : '700' }} numberOfLines={1}>
+                      #{e.rank} {e.name}
+                    </Text>
+                    <Text style={{ color: Colors.primary, fontWeight: '900' }}>
+                      {e.correct}/{e.total} · {e.timeTaken}s
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <TouchableOpacity
+            onPress={() => safeBack(navigation)}
+            style={{ marginTop: 26, backgroundColor: '#7C3AED', borderRadius: 14, paddingHorizontal: 28, paddingVertical: 12 }}
+            activeOpacity={0.85}
+          >
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: fontSize(15) }}>
+              {isAr ? '← عودة' : '← Retour'}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
       {/* ── PLAYING ── */}
       {phase === 'playing' && data && (
         <View style={{ flex: 1, padding: Spacing.md }}>
           {/* Progress dots */}
           <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20, justifyContent: 'center' }}>
             {data.questions.map((_, i) => {
-              const state = i < answered.length
-                ? (answered[i] ? 'correct' : 'wrong')
-                : i === qIndex ? 'active' : 'pending';
-              const bg = state === 'correct' ? Colors.primary
-                : state === 'wrong' ? '#EF4444'
-                : state === 'active' ? '#7C3AED'
-                : C.border;
+              const state = i < answers.length ? 'done' : i === qIndex ? 'active' : 'pending';
+              const bg = state === 'done' ? Colors.primary : state === 'active' ? '#7C3AED' : C.border;
               return (
                 <View key={i} style={{
                   width: state === 'active' ? 28 : 10, height: 10,
@@ -467,19 +542,16 @@ export default function DailyChallengeScreen() {
           <View style={{ gap: 10 }}>
             {data.questions[qIndex].options.map((opt, oi) => {
               const isSelected  = selected === opt;
-              const isCorrect   = opt === data.questions[qIndex].correctAnswer;
               const showResult  = selected !== null;
-              const bg = showResult
-                ? isCorrect ? '#10B981' : (isSelected ? '#EF4444' : C.surface)
-                : (isSelected ? '#7C3AED' : C.surface);
-              const textColor = showResult && (isCorrect || isSelected) ? '#fff' : C.textPrimary;
+              const bg = isSelected ? '#7C3AED' : C.surface;
+              const textColor = isSelected ? '#fff' : C.textPrimary;
               const label = ['A', 'B', 'C', 'D'][oi];
 
               return (
                 <Animated.View
                   key={oi}
                   style={[
-                    { transform: [{ translateX: isSelected && !isCorrect && showResult ? shakeAnim : 0 }] },
+                    { transform: [{ translateX: 0 }] },
                   ]}
                 >
                   <TouchableOpacity
@@ -490,9 +562,7 @@ export default function DailyChallengeScreen() {
                       backgroundColor: bg,
                       borderRadius: BorderRadius.lg,
                       borderWidth: 1.5,
-                      borderColor: showResult
-                        ? (isCorrect ? '#10B981' : (isSelected ? '#EF4444' : C.border))
-                        : C.border,
+                      borderColor: isSelected ? '#7C3AED' : C.border,
                       padding: Spacing.md,
                       flexDirection: isAr ? 'row-reverse' : 'row',
                       alignItems: 'center',
@@ -501,12 +571,11 @@ export default function DailyChallengeScreen() {
                   >
                     <View style={{
                       width: 28, height: 28, borderRadius: 14,
-                      backgroundColor: showResult && (isCorrect || isSelected)
-                        ? 'rgba(255,255,255,0.25)' : (C.background),
+                      backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : (C.background),
                       alignItems: 'center', justifyContent: 'center',
                     }}>
                       <Text style={{ fontWeight: '800', color: textColor, fontSize: fontSize(13) }}>
-                        {showResult && isCorrect ? '✓' : showResult && isSelected ? '✗' : label}
+                        {showResult && isSelected ? '✓' : label}
                       </Text>
                     </View>
                     <Text style={{
@@ -538,8 +607,8 @@ export default function DailyChallengeScreen() {
               shadowColor: '#7C3AED', shadowOpacity: 0.45, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 12,
             }}>
             <Text style={{ fontSize: 52 }}>
-              {(answered.filter(Boolean).length || data.myScore?.correct || 0) ===
-               (data.questions.length || data.myScore?.total || 5) ? '🏆' : '🎯'}
+              {(finalCorrect || data.myScore?.correct || 0) ===
+               (finalTotal || data.questions.length || data.myScore?.total || 5) ? '🏆' : '🎯'}
             </Text>
             <Text style={{ color: '#fff', fontWeight: '900', fontSize: fontSize(42), marginTop: 8 }}>
               {finalScore}
@@ -552,8 +621,8 @@ export default function DailyChallengeScreen() {
             </Text>
             <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fontSize(13), marginTop: 6 }}>
               {isAr
-                ? `${answered.filter(Boolean).length || data.myScore?.correct || 0} / ${data.questions.length || data.myScore?.total || 5} صحيح`
-                : `${answered.filter(Boolean).length || data.myScore?.correct || 0} / ${data.questions.length || data.myScore?.total || 5} correctes`}
+                ? `${finalCorrect || data.myScore?.correct || 0} / ${finalTotal || data.questions.length || data.myScore?.total || 5} صحيح`
+                : `${finalCorrect || data.myScore?.correct || 0} / ${finalTotal || data.questions.length || data.myScore?.total || 5} correctes`}
             </Text>
             {data.alreadySubmitted && (
               <View style={{
@@ -637,6 +706,23 @@ export default function DailyChallengeScreen() {
           >
             <Text style={{ color: '#7C3AED', fontWeight: '700', fontSize: fontSize(15) }}>
               {isAr ? '← العودة' : '← Retour'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Winner trophy (winner-only page; others see "reserved") */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('DailyChallengeWinner')}
+            style={{
+              marginTop: 12,
+              borderRadius: 14,
+              backgroundColor: '#7C3AED',
+              paddingVertical: 14,
+              alignItems: 'center',
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: fontSize(15) }}>
+              {isAr ? '🏆 صفحة الكأس' : '🏆 Page du trophée'}
             </Text>
           </TouchableOpacity>
         </ScrollView>

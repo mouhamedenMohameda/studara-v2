@@ -14,6 +14,7 @@ import SpendingScreen        from '../screens/Premium/SpendingScreen';
 import UploadResourceScreen   from '../screens/Resources/UploadResourceScreen';
 import PomodoroScreen        from '../screens/Study/PomodoroScreen';
 import DailyChallengeScreen  from '../screens/Home/DailyChallengeScreen';
+import DailyChallengeWinnerScreen from '../screens/Home/DailyChallengeWinnerScreen';
 import VoiceNoteScreen       from '../screens/VoiceNotes/VoiceNoteScreen';
 import VoiceNoteDetailScreen from '../screens/VoiceNotes/VoiceNoteDetailScreen';
 import AskZadScreen         from '../screens/Home/AskZadScreen';
@@ -228,6 +229,13 @@ const RootNavigator = () => {
         <Stack.Screen
           name="DailyChallenge"
           component={DailyChallengeScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+      )}
+      {isAuthenticated && (
+        <Stack.Screen
+          name="DailyChallengeWinner"
+          component={DailyChallengeWinnerScreen}
           options={{ animation: 'slide_from_right' }}
         />
       )}

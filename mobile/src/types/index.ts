@@ -142,6 +142,7 @@ export type RootStackParamList = {
   UploadResource: undefined;
   Pomodoro: undefined;
   DailyChallenge: undefined;
+  DailyChallengeWinner: undefined;
   VoiceNotes: undefined;
   VoiceNoteDetail: { note: VoiceNote };
   AskZad: undefined;

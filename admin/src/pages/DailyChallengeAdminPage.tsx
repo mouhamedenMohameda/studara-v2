@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { adminDailyChallengesApi } from '../api/typed';
+import { adminDailyChallengesApi, adminDailyChallengePrizesApi, AdminDailyChallengePrizeRow } from '../api/typed';
+import { API_BASE, getToken } from '../api/client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Question {
@@ -143,6 +144,12 @@ export default function DailyChallengeAdminPage() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
   const [saving,  setSaving]  = useState(false);
+  const [tab, setTab] = useState<'sets' | 'prizes'>('sets');
+
+  // Prizes
+  const [prizeStatus, setPrizeStatus] = useState<'pending' | 'proof_uploaded' | 'confirmed'>('pending');
+  const [prizes, setPrizes] = useState<AdminDailyChallengePrizeRow[]>([]);
+  const [prizeLoading, setPrizeLoading] = useState(false);
 
   // Form state
   const [showForm,  setShowForm]  = useState(false);
@@ -170,6 +177,40 @@ export default function DailyChallengeAdminPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadPrizes = useCallback(async () => {
+    setPrizeLoading(true);
+    try {
+      const r = await adminDailyChallengePrizesApi.list(prizeStatus);
+      setPrizes(r.items || []);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setPrizeLoading(false);
+    }
+  }, [prizeStatus]);
+
+  const openProof = async (prizeId: string) => {
+    const token = getToken();
+    if (!token) return;
+    const res = await fetch(`${API_BASE}/admin/daily-challenge/prizes/${encodeURIComponent(prizeId)}/proof`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      alert(t || `HTTP ${res.status}`);
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    // Best-effort cleanup later
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
+
+  useEffect(() => {
+    if (tab === 'prizes') loadPrizes();
+  }, [tab, loadPrizes]);
 
   // ── Open form for new or edit ─────────────────────────────────────────────
   const openNew = () => {
@@ -266,14 +307,38 @@ export default function DailyChallengeAdminPage() {
   return (
     <div dir="rtl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">🎲 التحدي اليومي</h1>
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-purple-700 transition"
-        >
-          <span className="text-lg">＋</span>
-          إضافة تحدي
-        </button>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">🎲 التحدي اليومي</h1>
+          <div className="flex bg-gray-100 rounded-xl p-1">
+            <button
+              onClick={() => setTab('sets')}
+              className={`px-3 py-2 rounded-lg text-sm font-bold ${tab === 'sets' ? 'bg-white shadow text-purple-700' : 'text-gray-600'}`}
+            >
+              التحديات
+            </button>
+            <button
+              onClick={() => setTab('prizes')}
+              className={`px-3 py-2 rounded-lg text-sm font-bold ${tab === 'prizes' ? 'bg-white shadow text-purple-700' : 'text-gray-600'}`}
+            >
+              مكافآت الفائزين
+              {prizes.length > 0 && tab !== 'prizes' && (
+                <span className="mr-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs bg-purple-600 text-white">
+                  {prizes.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {tab === 'sets' && (
+          <button
+            onClick={openNew}
+            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-purple-700 transition"
+          >
+            <span className="text-lg">＋</span>
+            إضافة تحدي
+          </button>
+        )}
       </div>
 
       {error && (
@@ -416,8 +481,123 @@ export default function DailyChallengeAdminPage() {
         </div>
       )}
 
+      {/* ── PRIZES ── */}
+      {tab === 'prizes' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-gray-700">الحالة:</span>
+              <select
+                value={prizeStatus}
+                onChange={(e) => setPrizeStatus(e.target.value as any)}
+                className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white"
+              >
+                <option value="pending">بانتظار الإثبات</option>
+                <option value="proof_uploaded">إثبات مرفوع</option>
+                <option value="confirmed">مؤكد من المستخدم</option>
+              </select>
+              <button
+                onClick={loadPrizes}
+                className="px-3 py-2 rounded-xl text-sm font-bold border border-gray-200 hover:bg-gray-50"
+              >
+                تحديث
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">
+              الفائز يرسل رقم الهاتف + الخدمة + الاسم. هنا ترفع أنت لقطة شاشة الإثبات.
+            </p>
+          </div>
+
+          {prizeLoading ? (
+            <div className="flex items-center justify-center py-20 text-gray-400">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 ml-3" />
+              <span>جارٍ التحميل...</span>
+            </div>
+          ) : prizes.length === 0 ? (
+            <div className="text-center py-20 text-gray-400">
+              <div className="text-5xl mb-4">🏆</div>
+              <p className="text-lg font-medium">لا توجد مكافآت في هذه الحالة</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {prizes.map((p) => (
+                <div key={p.id} className="border border-gray-200 rounded-2xl p-5 bg-white">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-gray-900">{p.challenge_date}</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100">
+                          {p.faculty}
+                        </span>
+                        {p.user_confirmed_at ? (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100">
+                            ✅ مؤكّد
+                          </span>
+                        ) : p.admin_proof_url ? (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                            🧾 إثبات مرفوع
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
+                            ⏳ بانتظار الإثبات
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-700 font-bold">
+                        {p.full_name} — <span className="text-gray-500 font-medium">{p.email}</span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        📞 {p.phone} · 💳 {String(p.provider).toUpperCase()} · 👤 {p.account_full_name}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        ⏱ {p.time_taken_s ?? 0}s · 🔗 referrals: {p.referral_count ?? 0}
+                      </div>
+                      {p.admin_proof_url && (
+                        <button
+                          onClick={() => openProof(p.id)}
+                          className="text-xs text-purple-700 font-bold underline"
+                          type="button"
+                        >
+                          فتح إثبات الإرسال
+                        </button>
+                      )}
+                    </div>
+
+                    {!p.user_confirmed_at && (
+                      <div className="w-full sm:w-auto">
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            const fd = new FormData(e.currentTarget);
+                            const file = fd.get('file');
+                            if (!file || !(file instanceof File) || file.size === 0) return;
+                            await adminDailyChallengePrizesApi.uploadProof(p.id, fd);
+                            await loadPrizes();
+                            (e.currentTarget as any).reset?.();
+                          }}
+                          className="flex items-center gap-2 flex-wrap"
+                        >
+                          <input name="note" placeholder="ملاحظة (اختياري)" className="border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+                          <input name="file" type="file" accept="image/png,image/jpeg" className="text-sm" />
+                          <button
+                            type="submit"
+                            className="px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-700"
+                          >
+                            رفع الإثبات
+                          </button>
+                        </form>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── LIST ── */}
-      {loading ? (
+      {tab === 'sets' && (loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 ml-3" />
           <span>جارٍ التحميل...</span>
@@ -511,7 +691,7 @@ export default function DailyChallengeAdminPage() {
             );
           })}
         </div>
-      )}
+      ))}
     </div>
   );
 }

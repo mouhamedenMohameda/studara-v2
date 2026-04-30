@@ -103,3 +103,46 @@ Il sert `/admin` en statique et proxy `/api/*` + `/health` vers `127.0.0.1:3000`
 - Les endpoints existants restent **inchangés** (`/api/v1/*`).
 - Si tu changes de domaine/URL, fais-le via variables d’environnement côté clients plutôt que de modifier le code.
 
+## Défi du jour — test “50 users” (sans déclencher le rate-limit)
+
+Contexte: l’endpoint `POST /api/v1/auth/login` peut renvoyer `429 Too many requests` si on fait 50 logins d’un coup.
+La stratégie est donc:
+
+- **Warmup**: générer les tokens **lentement** (séquentiel + backoff) et les sauvegarder localement.
+- **Run**: exécuter `start/submit` pour 50 users **sans re-login** pendant la fenêtre.
+- **Grace**: valider la règle “soumission acceptée jusqu’à +15s après `windowEndUtc`”.
+
+### Pré-requis
+
+- Bash + `curl` + `python3`
+- Un fichier d’emails (1 email par ligne), ex: `./tmp/dc_emails.txt`
+
+### Exécution
+
+```bash
+# 1) Warmup tokens (lent, évite 429)
+API_BASE="https://api.radar-mr.com/api/v1" \
+PASSWORD="medn1234" \
+EMAILS_FILE="./tmp/dc_emails.txt" \
+TOKENS_FILE="/tmp/daily_challenge_tokens.jsonl" \
+./scripts/daily-challenge-load-test.sh warmup
+
+# 2) Run: start + submit pour tous les users (sans login)
+API_BASE="https://api.radar-mr.com/api/v1" \
+PASSWORD="medn1234" \
+EMAILS_FILE="./tmp/dc_emails.txt" \
+TOKENS_FILE="/tmp/daily_challenge_tokens.jsonl" \
+./scripts/daily-challenge-load-test.sh run
+
+# 3) Grace test: soumettre à windowEnd+5s (doit passer si grace=15s)
+API_BASE="https://api.radar-mr.com/api/v1" \
+PASSWORD="medn1234" \
+EMAILS_FILE="./tmp/dc_emails.txt" \
+TOKENS_FILE="/tmp/daily_challenge_tokens.jsonl" \
+./scripts/daily-challenge-load-test.sh grace
+```
+
+Notes:
+- Le script est dans `scripts/daily-challenge-load-test.sh`.
+- Tu peux ajuster la vitesse du warmup via `WARMUP_SLEEP_S=2` (ou plus si ton rate-limit est strict).
+

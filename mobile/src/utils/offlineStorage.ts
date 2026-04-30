@@ -80,6 +80,26 @@ export async function getPendingReviews(): Promise<PendingReview[]> {
   return (await get<PendingReview[]>('flashcard:reviewQueue')) ?? [];
 }
 
+// ── Daily Challenge pending submit (weak connection retry) ─────────────────────
+
+export interface PendingDailyChallengeSubmit {
+  date: string; // YYYY-MM-DD (UTC)
+  payload: { score: number; correct: number; total: number; time_taken_s: number };
+  queuedAt: string; // ISO
+}
+
+export async function setPendingDailyChallengeSubmit(value: PendingDailyChallengeSubmit | null): Promise<void> {
+  if (!value) {
+    try { await AsyncStorage.removeItem(PFX + 'daily:challenge:pending'); } catch {}
+    return;
+  }
+  await set('daily:challenge:pending', value);
+}
+
+export async function getPendingDailyChallengeSubmit(): Promise<PendingDailyChallengeSubmit | null> {
+  return get<PendingDailyChallengeSubmit>('daily:challenge:pending');
+}
+
 /** Replace the queue with only the entries that failed to sync. */
 export async function setPendingReviews(queue: PendingReview[]): Promise<void> {
   await set('flashcard:reviewQueue', queue);
