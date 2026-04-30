@@ -171,6 +171,7 @@ export default function BillingHubScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [featureActiveByKey, setFeatureActiveByKey] = useState<Record<string, boolean>>({});
+  const [whisperPricingLive, setWhisperPricingLive] = useState<Record<string, number> | null>(null);
 
   // Topup request (universal)
   const [banks, setBanks] = useState<Bank[]>(FALLBACK_BANKS);
@@ -290,6 +291,25 @@ export default function BillingHubScreen() {
       setWallets([]);
       setTransactions([]);
       setWalletError(isAr ? 'تعذّر تحميل المحفظة.' : 'Impossible de charger le wallet.');
+    }
+
+    // ── Whisper live pricing (server truth) ───────────────────────────────
+    try {
+      const res = await fetch(`${API_BASE}/voice-notes/public-pricing`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const pricing = data?.transcription ?? {};
+        const map: Record<string, number> = {};
+        for (const [k, v] of Object.entries(pricing)) {
+          const price = Number((v as any)?.pricePerMinMru);
+          if (Number.isFinite(price)) map[k] = price;
+        }
+        setWhisperPricingLive(Object.keys(map).length ? map : null);
+      }
+    } catch {
+      // ignore (fallback to local PAYG_FEATURES)
     }
 
     // ── Feature availability (admin-controlled) ───────────────────────────
@@ -628,7 +648,13 @@ export default function BillingHubScreen() {
             <View style={[s.panel, { backgroundColor: C.surface, borderColor: C.border }, Shadows.sm]}>
               {PAYG_FEATURES.map((f) => {
                 const meta = getPaygFeature(f.key);
-                const pricing = meta?.pricing ?? [];
+                const pricing =
+                  f.key === 'whisper_studio' && whisperPricingLive
+                    ? (meta?.pricing ?? []).map((p) => ({
+                        ...p,
+                        priceMru: typeof whisperPricingLive[p.modelKey] === 'number' ? whisperPricingLive[p.modelKey] : p.priceMru,
+                      }))
+                    : (meta?.pricing ?? []);
                 const active = featureActiveByKey[f.key] ?? true;
                 const isSoon = f.status === 'soon' || !active;
                 return (
@@ -655,27 +681,54 @@ export default function BillingHubScreen() {
                     </View>
                     <View style={{ alignItems: 'flex-end', minWidth: 120 }}>
                       {pricing.length ? (
-                        <View style={{ gap: 4, alignItems: 'flex-end' }}>
-                          {pricing.map((p) => {
-                            const unitLbl = priceUnitLabel(p.unit, isAr);
-                            const modelLbl = isAr ? p.labelAr : p.labelFr;
-                            const price = p.priceMru;
-                            const missing = price == null;
-                            return (
-                              <Text
-                                key={p.modelKey}
-                                style={[s.featurePrice, { color: missing ? '#F59E0B' : Colors.primary }]}
-                              >
-                                {modelLbl}:{' '}
-                                {missing
-                                  ? isAr
-                                    ? '— (سعر لاحقاً)'
-                                    : '— (prix à remplir)'
-                                  : `${formatMru(price)} ${isAr ? 'أوقية' : 'MRU'} ${unitLbl}`}
-                              </Text>
-                            );
-                          })}
-                        </View>
+                        f.key === 'whisper_studio' ? (
+                          <View style={{ gap: 6, alignItems: 'flex-end' }}>
+                            {pricing.map((p) => {
+                              const unitLbl = priceUnitLabel(p.unit, isAr);
+                              const modelLbl = isAr ? p.labelAr : p.labelFr;
+                              const price = p.priceMru;
+                              const missing = price == null;
+                              return (
+                                <View
+                                  key={p.modelKey}
+                                  style={[
+                                    s.pricePill,
+                                    { backgroundColor: missing ? '#F59E0B22' : Colors.primary + '18', borderColor: missing ? '#F59E0B55' : Colors.primary + '55' },
+                                  ]}
+                                >
+                                  <Text style={[s.pricePillText, { color: missing ? '#F59E0B' : Colors.primary }]} numberOfLines={1}>
+                                    {modelLbl} ·{' '}
+                                    {missing
+                                      ? '—'
+                                      : `${formatMru(price)} ${isAr ? 'أوقية' : 'MRU'}${unitLbl}`}
+                                  </Text>
+                                </View>
+                              );
+                            })}
+                          </View>
+                        ) : (
+                          <View style={{ gap: 4, alignItems: 'flex-end' }}>
+                            {pricing.map((p) => {
+                              const unitLbl = priceUnitLabel(p.unit, isAr);
+                              const modelLbl = isAr ? p.labelAr : p.labelFr;
+                              const price = p.priceMru;
+                              const missing = price == null;
+                              return (
+                                <Text
+                                  key={p.modelKey}
+                                  style={[s.featurePrice, { color: missing ? '#F59E0B' : Colors.primary }]}
+                                >
+                                  {modelLbl}:{' '}
+                                  {missing
+                                    ? isAr
+                                      ? '— (سعر لاحقاً)'
+                                      : '— (prix à remplir)'
+                                    : `${formatMru(price)} ${isAr ? 'أوقية' : 'MRU'} ${unitLbl}`}
+                                </Text>
+                              );
+                            })}
+                          </View>
+                        )
                       ) : (
                         <Text style={[s.featurePrice, { color: '#F59E0B' }]}>
                           {isAr ? '— (سعر لاحقاً)' : '— (prix à remplir)'}
@@ -949,6 +1002,17 @@ const s = StyleSheet.create({
   featureTitle: { fontWeight: '900', fontSize: 14 },
   featureDesc: { fontSize: 12, fontWeight: '600', marginTop: 4, lineHeight: 18 },
   featurePrice: { fontWeight: '900', fontSize: 12 },
+  pricePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    maxWidth: 220,
+  },
+  pricePillText: {
+    fontWeight: '900',
+    fontSize: 11,
+  },
 
   inputLabel: { fontSize: 12, fontWeight: '900', marginBottom: 6 },
   amountRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

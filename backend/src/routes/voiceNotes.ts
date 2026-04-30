@@ -303,6 +303,18 @@ router.get('/model-pricing', authenticate, (req: AuthRequest, res: Response) => 
   res.json(buildModelPricingResponse());
 });
 
+// ─── GET /api/v1/voice-notes/public-pricing ───────────────────────────────────
+// Authenticated users — expose user-facing PAYG prices (no internal knobs).
+router.get('/public-pricing', authenticate, (_req: AuthRequest, res: Response) => {
+  res.json({
+    transcription: Object.fromEntries(
+      (Object.entries(TRANSCRIPTION_PRICE_PER_MIN) as [TranscriptionModelKey, number][]).map(
+        ([k, v]) => [k, { pricePerMinMru: v, unit: 'per_minute' }],
+      ),
+    ),
+  });
+});
+
 // ─── PUT /api/v1/voice-notes/admin/model-pricing ─────────────────────────────
 // Admin only — update per-model prices (persisted to DB, shared across all workers).
 router.put('/admin/model-pricing', authenticate, async (req: AuthRequest, res: Response) => {
