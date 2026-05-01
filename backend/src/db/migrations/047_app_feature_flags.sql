@@ -22,6 +22,7 @@ INSERT INTO app_features (key, label, is_active) VALUES
   ('daily', 'Défi du jour', TRUE),
   ('profile', 'Mon compte', TRUE),
   ('jobs', 'Emplois', TRUE),
+  ('opportunities', 'Opportunités', TRUE),
   ('housing', 'Logement', TRUE),
   ('courses', 'Cours vidéo', TRUE),
   ('forum', 'Forum Q&A', TRUE),

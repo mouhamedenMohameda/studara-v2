@@ -178,6 +178,7 @@ export type ExploreStackParamList = {
   Courses: undefined;
   Flashcards: undefined;
   Jobs: undefined;
+  Opportunities: undefined;
   Reminders: undefined;
   Housing: undefined;
 };
@@ -194,6 +195,11 @@ export type JobsStackParamList = {
   JobsList: undefined;
   JobDetail: { job: Job };
   MyApplications: undefined;
+};
+
+export type OpportunitiesStackParamList = {
+  OpportunitiesList: undefined;
+  OpportunityDetail: { opportunity: Opportunity };
 };
 
 export type ResourcesStackParamList = {
@@ -250,6 +256,28 @@ export interface Job {
   description?: string;
   requirements?: string;
   applyUrl?: string;
+  deadline?: string;
+  createdAt: string;
+}
+
+export interface Opportunity {
+  id: string;
+  title: string;
+  opportunityType: 'program' | 'scholarship' | 'exchange' | 'internship' | 'fellowship' | 'grant' | 'summer_school' | 'other';
+  providerName?: string;
+  hostCountry?: string;
+  hostCity?: string;
+  hostInstitution?: string;
+  programLevel?: string;
+  programDurationText?: string;
+  programDurationMonths?: number;
+  description?: string;
+  eligibility?: string;
+  benefits?: string;
+  hasScholarship?: boolean;
+  scholarshipDetails?: string;
+  applyUrl?: string;
+  officialUrl?: string;
   deadline?: string;
   createdAt: string;
 }

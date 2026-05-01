@@ -9,6 +9,7 @@ const NAV = [
   { to: '/reminders',  icon: '🔔', label: 'التذكيرات'      },
   { to: '/badges',     icon: '🏅', label: 'الإنجازات'      },
   { to: '/jobs',        icon: '💼', label: 'فرص العمل'       },
+  { to: '/opportunities', icon: '🎓', label: 'الفرص الدراسية' },
   { to: '/curriculum',  icon: '📚', label: 'المناهج'          },
   { to: '/housing',     icon: '🏠', label: 'سكن الطلاب'       },
   { to: '/daily-challenge', icon: '🎲', label: 'التحدي اليومي'    },

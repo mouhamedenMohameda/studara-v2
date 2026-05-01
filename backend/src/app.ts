@@ -15,6 +15,7 @@ import adminRoutes      from './routes/admin';
 import flashcardsRoutes from './routes/flashcards';
 import homeRoutes       from './routes/home';
 import jobsRoutes       from './routes/jobs';
+import opportunitiesRoutes from './routes/opportunities';
 import xpRoutes         from './routes/xp';
 import examRoutes       from './routes/exam-mode';
 import billingRoutes    from './routes/billing';
@@ -91,6 +92,7 @@ if (ENV !== 'test') {
   app.use('/api/v1/resources', rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true, legacyHeaders: false }));
   app.use('/api/v1/flashcards', rateLimit({ windowMs: 15 * 60 * 1000, max: 400, standardHeaders: true, legacyHeaders: false }));
   app.use('/api/v1/jobs', rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
+  app.use('/api/v1/opportunities', rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
   app.use('/api/v1/home', rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
   // Upload endpoint — stricter to prevent abuse (excludes like/bookmark/download/flashcards — not uploads)
   const uploadRateLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: { error: 'حدّ الرفع: 10 ملفات في الساعة' } });
@@ -117,6 +119,7 @@ app.use('/api/v1/admin',      adminRoutes);
 app.use('/api/v1/flashcards', flashcardsRoutes);
 app.use('/api/v1/home',       homeRoutes);
 app.use('/api/v1/jobs',       jobsRoutes);
+app.use('/api/v1/opportunities', opportunitiesRoutes);
 app.use('/api/v1/xp',         xpRoutes);
 app.use('/api/v1/exams',      examRoutes);
 app.use('/api/v1/housing',          housingRoutes);

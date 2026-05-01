@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,6 +42,143 @@ function Box({ title, children }: any) {
   );
 }
 
+function hasLatexMarkers(s: string): boolean {
+  const t = String(s || '');
+  return t.includes('\\(') || t.includes('\\)') || t.includes('\\[') || t.includes('\\]') || t.includes('\\frac') || t.includes('\\sqrt') || t.includes('^') || t.includes('_');
+}
+
+function RenderTextOrMath({
+  text,
+  enableMath,
+}: {
+  text: string;
+  enableMath: boolean;
+}) {
+  const content = sanitizeAiText(String(text || '').trim());
+  if (!content) return null;
+  if (looksLikeJson(content)) {
+    return (
+      <View style={styles.softWarn}>
+        <Text style={styles.softWarnTitle}>Réponse IA non structurée</Text>
+        <Text style={styles.softWarnSub}>
+          Active “Expliquer plus simplement” ou réessaie avec une photo plus nette (recadrée sur l’exercice).
+        </Text>
+      </View>
+    );
+  }
+  if (enableMath && hasLatexMarkers(content)) {
+    return <MathText content={content} />;
+  }
+  return <Text style={styles.p}>{content}</Text>;
+}
+
+function stripCodeFences(s: string): string {
+  let t = String(s || '').trim();
+  // Remove common fenced blocks: ```json ... ``` or ``` ... ```
+  if (t.startsWith('```')) {
+    t = t.replace(/^```[a-zA-Z0-9_-]*\n?/, '');
+    t = t.replace(/```$/m, '');
+    t = t.trim();
+  }
+  return t;
+}
+
+function sanitizeAiText(s: string): string {
+  let t = stripCodeFences(s);
+  // Remove stray trailing fences/backticks
+  t = t.replace(/```+/g, '').trim();
+  // Prevent huge dumps from killing UI
+  if (t.length > 25_000) t = t.slice(0, 25_000) + '…';
+  return t;
+}
+
+function looksLikeJson(s: string): boolean {
+  const t = String(s || '').trim();
+  if (!t) return false;
+  if (t.startsWith('{') && t.includes('"statement"')) return true;
+  if (t.startsWith('{') && t.includes('"correction_step_by_step"')) return true;
+  if (t.startsWith('{') && t.includes('"final_answer"')) return true;
+  return false;
+}
+
+function tryParseJsonObject(s: string): any | null {
+  const t = sanitizeAiText(s);
+  const first = t.indexOf('{');
+  const last = t.lastIndexOf('}');
+  if (first < 0 || last <= first) return null;
+  const sub = t.slice(first, last + 1);
+  try {
+    return JSON.parse(sub);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeExerciseResult(raw: any): ExerciseCorrectionResult | null {
+  if (!raw) return null;
+  if (typeof raw === 'string') {
+    const j = tryParseJsonObject(raw);
+    return j && typeof j === 'object' ? (j as ExerciseCorrectionResult) : null;
+  }
+  if (typeof raw !== 'object') return null;
+
+  // If any major field accidentally contains a JSON dump, try to parse it and salvage.
+  const candidates = [
+    raw?.statement,
+    raw?.correction_step_by_step,
+    raw?.method_explanation,
+    raw?.final_answer,
+  ].filter((x: any) => typeof x === 'string') as string[];
+  for (const c of candidates) {
+    if (!looksLikeJson(c)) continue;
+    const j = tryParseJsonObject(c);
+    if (j && typeof j === 'object' && typeof j.statement === 'string') {
+      return {
+        ...raw,
+        ...j,
+      } as ExerciseCorrectionResult;
+    }
+  }
+
+  // Sanitize string fields (remove ```json fences etc.)
+  return {
+    ...raw,
+    statement: sanitizeAiText(String(raw.statement || '')),
+    correction_step_by_step: sanitizeAiText(String(raw.correction_step_by_step || '')),
+    method_explanation: sanitizeAiText(String(raw.method_explanation || '')),
+    final_answer: sanitizeAiText(String(raw.final_answer || '')),
+    method_summary: sanitizeAiText(String(raw.method_summary || '')),
+    similar_exercise: sanitizeAiText(String(raw.similar_exercise || '')),
+  } as ExerciseCorrectionResult;
+}
+
+function AccordionBox({
+  title,
+  defaultOpen = true,
+  rightHint,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  rightHint?: string | null;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <View style={styles.box}>
+      <TouchableOpacity style={styles.boxHeader} onPress={() => setOpen((v) => !v)} activeOpacity={0.85}>
+        <Text style={styles.boxTitle}>{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {!!rightHint && <Text style={styles.boxHint}>{rightHint}</Text>}
+          <AppIcon name={open ? 'chevronUpOutline' : 'chevronDownOutline'} size={18} color={Colors.textMuted} />
+        </View>
+      </TouchableOpacity>
+      {open ? <View style={{ height: 8 }} /> : null}
+      {open ? children : null}
+    </View>
+  );
+}
+
 export default function AIExerciseResultScreen({ navigation, route }: any) {
   const { token } = useAuth();
   const correctionId: string = route.params.correctionId;
@@ -52,6 +189,7 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [actionLoading, setActionLoading] = useState<'simplify' | 'similar' | null>(null);
+  const [mathMode, setMathMode] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -66,7 +204,7 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
         }>(`/ai/exercise-corrections/${correctionId}`, { token });
         if (!alive) return;
         setStatus(data.status);
-        setResult(data.result || null);
+        setResult(normalizeExerciseResult(data.result) || null);
         setWarnings(Array.isArray(data.warnings) ? data.warnings : []);
         setErrorMessage(data.errorMessage || null);
       } catch {}
@@ -108,7 +246,7 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
         `/ai/exercise-corrections/${correctionId}/simplify`,
         { method: 'POST', token },
       );
-      if (data?.result) setResult(data.result);
+      if (data?.result) setResult(normalizeExerciseResult(data.result) || data.result);
     } catch (e: any) {
       Alert.alert('Simplifier', e.message);
     } finally {
@@ -137,6 +275,9 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
 
   const r = result;
   const confidence = typeof r?.confidence === 'number' ? r.confidence : null;
+  const canMath = !!r?.latex?.enabled;
+  const effectiveMathMode = mathMode && canMath;
+
   const confidenceText = useMemo(() => {
     if (confidence === null) return null;
     const pct = Math.round(confidence * 100);
@@ -144,6 +285,11 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
     if (pct >= 65) return { label: `Confiance: ${pct}%`, color: '#F59E0B' };
     return { label: `Confiance faible: ${pct}%`, color: '#EF4444' };
   }, [confidence]);
+
+  const toggleMath = useCallback(() => {
+    if (!canMath) return;
+    setMathMode((v) => !v);
+  }, [canMath]);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -154,9 +300,18 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
               <AppIcon name="arrowBack" size={22} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Correction</Text>
-            <TouchableOpacity onPress={exportPdf} style={styles.iconBtn} disabled={exporting || status !== 'COMPLETED'}>
-              {exporting ? <ActivityIndicator color="#fff" /> : <AppIcon name="downloadOutline" size={22} color="#fff" />}
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                onPress={toggleMath}
+                style={[styles.iconBtn, !canMath && { opacity: 0.45 }]}
+                disabled={!canMath}
+              >
+                <AppIcon name="calculatorOutline" size={22} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={exportPdf} style={styles.iconBtn} disabled={exporting || status !== 'COMPLETED'}>
+                {exporting ? <ActivityIndicator color="#fff" /> : <AppIcon name="downloadOutline" size={22} color="#fff" />}
+              </TouchableOpacity>
+            </View>
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -180,6 +335,13 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
             ) : (
               <Text style={styles.sub}>Analyse terminée</Text>
             )}
+            {canMath ? (
+              <TouchableOpacity onPress={toggleMath} activeOpacity={0.85} style={styles.mathPill}>
+                <Text style={styles.mathPillText}>
+                  {effectiveMathMode ? 'Mode Math: ON' : 'Mode Math: OFF'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
             {warnings?.length ? (
               <Text style={styles.warn}>{warnings.length} avertissement(s) — voir en bas</Text>
             ) : null}
@@ -205,34 +367,36 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
           </View>
 
           <Box title="Énoncé (reconnu)">
-            <Text style={styles.p}>{r?.statement || ''}</Text>
+            <RenderTextOrMath text={r?.statement || ''} enableMath={effectiveMathMode} />
           </Box>
 
-          <Box title="Correction étape par étape">
-            <Text style={styles.p}>{r?.correction_step_by_step || ''}</Text>
-          </Box>
+          <AccordionBox title="Correction étape par étape" defaultOpen rightHint={effectiveMathMode ? 'Math' : null}>
+            <RenderTextOrMath text={r?.correction_step_by_step || ''} enableMath={effectiveMathMode} />
+          </AccordionBox>
 
-          <Box title="Méthode (explication)">
-            <Text style={styles.p}>{r?.method_explanation || ''}</Text>
-          </Box>
+          <AccordionBox title="Méthode (explication)" defaultOpen={false}>
+            <RenderTextOrMath text={r?.method_explanation || ''} enableMath={effectiveMathMode} />
+          </AccordionBox>
 
           <Box title="Résultat final">
-            <Text style={[styles.p, { fontWeight: '900' }]}>{r?.final_answer || ''}</Text>
+            <View style={styles.finalWrap}>
+              <RenderTextOrMath text={r?.final_answer || ''} enableMath={effectiveMathMode} />
+            </View>
           </Box>
 
-          <Box title="Erreurs fréquentes">
+          <AccordionBox title="Erreurs fréquentes" defaultOpen={false}>
             {(r?.common_errors || []).slice(0, 40).map((t: string, i: number) => (
               <Text key={i} style={styles.li}>• {t}</Text>
             ))}
-          </Box>
+          </AccordionBox>
 
-          <Box title="Résumé de la méthode à retenir">
-            <Text style={styles.p}>{r?.method_summary || ''}</Text>
-          </Box>
+          <AccordionBox title="Résumé de la méthode à retenir" defaultOpen={false}>
+            <RenderTextOrMath text={r?.method_summary || ''} enableMath={effectiveMathMode} />
+          </AccordionBox>
 
-          <Box title="Exercice similaire (pour s’entraîner)">
-            <Text style={styles.p}>{r?.similar_exercise || ''}</Text>
-          </Box>
+          <AccordionBox title="Exercice similaire (pour s’entraîner)" defaultOpen={false}>
+            <RenderTextOrMath text={r?.similar_exercise || ''} enableMath={effectiveMathMode} />
+          </AccordionBox>
 
           {r?.student_answer_feedback ? (
             <Box title="Correction de ta réponse">
@@ -249,9 +413,12 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
             </Box>
           ) : null}
 
-          {r?.latex?.enabled && (r?.correction_step_by_step || '').includes('\\') ? (
-            <Box title="Affichage LaTeX (math)">
-              <MathText content={r?.correction_step_by_step || ''} />
+          {/* Legacy: keep compatibility if server sends LaTeX-heavy content but math mode is off */}
+          {!effectiveMathMode && r?.latex?.enabled && (r?.correction_step_by_step || '').includes('\\') ? (
+            <Box title="Math (aperçu)">
+              <Text style={styles.p}>
+                Astuce: active “Mode Math” pour un rendu propre des équations.
+              </Text>
             </Box>
           ) : null}
 
@@ -262,11 +429,11 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
           ) : null}
 
           {warnings?.length ? (
-            <Box title="Ambiguïtés / avertissements">
+            <AccordionBox title="Ambiguïtés / avertissements" defaultOpen={false} rightHint={`${warnings.length}`}>
               {warnings.slice(0, 80).map((w: string, i: number) => (
                 <Text key={i} style={styles.li}>• {w}</Text>
               ))}
-            </Box>
+            </AccordionBox>
           ) : null}
         </ScrollView>
       )}
@@ -304,6 +471,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '900', color: Colors.textPrimary },
   sub: { fontSize: 12, fontWeight: '800', color: Colors.textMuted, marginTop: 6 },
   warn: { fontSize: 12, fontWeight: '700', color: '#B45309', marginTop: 6 },
+  mathPill: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(124, 58, 237, 0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(124, 58, 237, 0.25)',
+  },
+  mathPillText: { fontSize: 11, fontWeight: '900', color: '#7C3AED' },
   actionsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   secondaryBtn: {
     flex: 1,
@@ -329,7 +507,25 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   boxTitle: { fontSize: 13, fontWeight: '900', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4 },
+  boxHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  boxHint: { fontSize: 11, fontWeight: '900', color: Colors.textMuted },
   p: { fontSize: 14, color: Colors.textPrimary, lineHeight: 22 },
   li: { fontSize: 14, color: Colors.textPrimary, lineHeight: 22, marginBottom: 6 },
+  finalWrap: {
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.18)',
+  },
+  softWarn: {
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.18)',
+  },
+  softWarnTitle: { fontSize: 13, fontWeight: '900', color: '#92400E' },
+  softWarnSub: { marginTop: 4, fontSize: 12, fontWeight: '700', color: '#B45309', lineHeight: 18 },
 });
 

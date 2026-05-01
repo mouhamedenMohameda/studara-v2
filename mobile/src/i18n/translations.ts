@@ -23,6 +23,19 @@ export type TranslationKey =
   | 'jobs.empty.title' | 'jobs.empty.sub'
   | 'jobs.error.title' | 'jobs.error.connection' | 'jobs.retry'
   | 'jobs.myApplications'
+  // ── Opportunities ──
+  | 'opp.title' | 'opp.subtitle' | 'opp.search.placeholder' | 'opp.countLabel'
+  | 'opp.empty.title' | 'opp.empty.sub'
+  | 'opp.error.title' | 'opp.error.connection' | 'opp.retry'
+  | 'opp.nav'
+  | 'opp.type.scholarship' | 'opp.type.exchange' | 'opp.type.internship'
+  | 'opp.type.fellowship' | 'opp.type.grant' | 'opp.type.summer_school' | 'opp.type.other'
+  | 'opp.detail.header' | 'opp.detail.location' | 'opp.detail.deadline' | 'opp.detail.published'
+  | 'opp.detail.scholarship' | 'opp.detail.scholarship_yes' | 'opp.detail.scholarship_no'
+  | 'opp.detail.level' | 'opp.detail.duration'
+  | 'opp.detail.benefits' | 'opp.detail.eligibility' | 'opp.detail.description'
+  | 'opp.detail.apply' | 'opp.detail.official' | 'opp.detail.no_link' | 'opp.detail.open_fail'
+  | 'opp.type.program'
   // ── Job detail ──
   | 'job.detail.header' | 'job.detail.location' | 'job.detail.domain'
   | 'job.detail.deadline' | 'job.detail.published' | 'job.detail.description'
@@ -245,6 +258,41 @@ export const AR: Dict = {
   'jobs.error.connection':        'تعذّر الاتصال بالخادم',
   'jobs.retry':                   'إعادة المحاولة',
   'jobs.myApplications':          'طلباتي',
+  // Opportunities
+  'opp.nav':                     '🌍 الدراسة بالخارج',
+  'opp.title':                   'الدراسة بالخارج',
+  'opp.subtitle':                'تكوينات + فرص + منح',
+  'opp.search.placeholder':      'منحة، جامعة، بلد...',
+  'opp.countLabel':              'فرصة',
+  'opp.empty.title':             'لا توجد فرص حالياً',
+  'opp.empty.sub':               'تحقق مرة أخرى قريباً',
+  'opp.error.title':             'تعذّر تحميل الفرص',
+  'opp.error.connection':        'تعذّر الاتصال بالخادم',
+  'opp.retry':                   'إعادة المحاولة',
+  'opp.type.program':            '📚 تكوين',
+  'opp.type.scholarship':        '🎓 منحة',
+  'opp.type.exchange':           '✈️ تبادل',
+  'opp.type.internship':         '💼 تدريب',
+  'opp.type.fellowship':         '🏅 Fellowship',
+  'opp.type.grant':              '💰 تمويل',
+  'opp.type.summer_school':      '☀️ مدرسة صيفية',
+  'opp.type.other':              '📌 أخرى',
+  'opp.detail.header':           'تفاصيل الفرصة',
+  'opp.detail.location':         'المكان',
+  'opp.detail.level':            'المستوى',
+  'opp.detail.duration':         'المدة',
+  'opp.detail.deadline':         'آخر أجل',
+  'opp.detail.published':        'نُشر',
+  'opp.detail.scholarship':      'منحة',
+  'opp.detail.scholarship_yes':  '✅ نعم',
+  'opp.detail.scholarship_no':   '— لا',
+  'opp.detail.benefits':         'التمويل',
+  'opp.detail.eligibility':      'الشروط',
+  'opp.detail.description':      'الوصف',
+  'opp.detail.apply':            'فتح رابط التقديم',
+  'opp.detail.official':         'فتح المصدر الرسمي',
+  'opp.detail.no_link':          'لا يوجد رابط متاح',
+  'opp.detail.open_fail':        'تعذّر فتح الرابط',
   // Job detail
   'job.detail.header':            'تفاصيل الوظيفة',
   'job.detail.location':          'الموقع',
@@ -755,6 +803,41 @@ export const FR: Dict = {
   'jobs.error.connection':        'Impossible de se connecter au serveur',
   'jobs.retry':                   'Réessayer',
   'jobs.myApplications':          'Mes candidatures',
+  // Opportunities
+  'opp.nav':                     '🌍 Étudier à l’étranger',
+  'opp.title':                   'Étudier à l’étranger',
+  'opp.subtitle':                'Formations + opportunités + bourses',
+  'opp.search.placeholder':      'Bourse, université, pays...',
+  'opp.countLabel':              'offre',
+  'opp.empty.title':             'Aucune opportunité disponible',
+  'opp.empty.sub':               'Revenez bientôt',
+  'opp.error.title':             'Chargement impossible',
+  'opp.error.connection':        'Impossible de se connecter au serveur',
+  'opp.retry':                   'Réessayer',
+  'opp.type.program':            '📚 Formation',
+  'opp.type.scholarship':        '🎓 Bourse',
+  'opp.type.exchange':           '✈️ Échange',
+  'opp.type.internship':         '💼 Stage',
+  'opp.type.fellowship':         '🏅 Fellowship',
+  'opp.type.grant':              '💰 Financement',
+  'opp.type.summer_school':      '☀️ École d’été',
+  'opp.type.other':              '📌 Autre',
+  'opp.detail.header':           'Détails',
+  'opp.detail.location':         'Lieu',
+  'opp.detail.level':            'Niveau',
+  'opp.detail.duration':         'Durée',
+  'opp.detail.deadline':         'Date limite',
+  'opp.detail.published':        'Publié',
+  'opp.detail.scholarship':      'Bourse',
+  'opp.detail.scholarship_yes':  '✅ Oui',
+  'opp.detail.scholarship_no':   '— Non',
+  'opp.detail.benefits':         'Financement',
+  'opp.detail.eligibility':      'Éligibilité',
+  'opp.detail.description':      'Description',
+  'opp.detail.apply':            'Ouvrir le lien',
+  'opp.detail.official':         'Source officielle',
+  'opp.detail.no_link':          'Aucun lien disponible',
+  'opp.detail.open_fail':        'Impossible d’ouvrir le lien',
   // Job detail
   'job.detail.header':            "Détails de l'offre",
   'job.detail.location':          'Localisation',

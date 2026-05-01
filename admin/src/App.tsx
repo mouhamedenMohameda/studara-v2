@@ -8,6 +8,7 @@ import UsersPage      from './pages/UsersPage';
 import RemindersPage  from './pages/RemindersPage';
 import BadgesPage     from './pages/BadgesPage';
 import JobsPage       from './pages/JobsPage';
+import OpportunitiesPage from './pages/OpportunitiesPage';
 import CurriculumPage from './pages/CurriculumPage';
 import HousingPage       from './pages/HousingPage';
 import DailyChallengeAdminPage from './pages/DailyChallengeAdminPage';
@@ -76,6 +77,14 @@ export default function App() {
           element={
             <RequireAuth>
               <Layout><JobsPage /></Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/opportunities"
+          element={
+            <RequireAuth>
+              <Layout><OpportunitiesPage /></Layout>
             </RequireAuth>
           }
         />

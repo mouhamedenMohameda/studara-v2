@@ -281,6 +281,119 @@ export const adminHousingApi = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Admin: Opportunities (Scholarships / Study abroad)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type OpportunityStatus = 'pending' | 'approved' | 'rejected';
+export type OpportunityType = 'program' | 'scholarship' | 'exchange' | 'internship' | 'fellowship' | 'grant' | 'summer_school' | 'other';
+
+export type OpportunityAvailabilityFilter = 'all' | 'available' | 'expired';
+export type OpportunityActiveFilter = 'all' | 'true' | 'false';
+
+export interface AdminOpportunityRow {
+  id: string;
+  title: string;
+  opportunity_type: OpportunityType;
+  provider_name?: string | null;
+  host_country?: string | null;
+  host_city?: string | null;
+  host_institution?: string | null;
+  description?: string | null;
+  eligibility?: string | null;
+  benefits?: string | null;
+  has_scholarship?: boolean;
+  scholarship_details?: string | null;
+  apply_url?: string | null;
+  official_url?: string | null;
+  source_name?: string | null;
+  source_url?: string | null;
+  deadline?: string | null;
+  status: OpportunityStatus;
+  reject_reason?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+  moderated_by?: string | null;
+  moderated_at?: string | null;
+  extracted_by?: string | null;
+  extracted_at?: string | null;
+  [k: string]: any;
+}
+
+export interface AdminOpportunitiesScrapeJob {
+  id: string;
+  status: 'pending' | 'running' | 'done' | 'error' | 'stopped' | string;
+  startedAt: string;
+  finishedAt?: string;
+  logs: string[];
+  summary?: {
+    sources: number;
+    fetched: number;
+    inserted: number;
+    duplicates: number;
+    failed: number;
+  };
+  error?: string;
+}
+
+export type AdminOpportunitiesListFilters = {
+  search?: string;
+  type?: OpportunityType | '';
+  level?: string;
+  institution?: string;
+  city?: string;
+  country?: string;
+  hasScholarship?: 'all' | 'true' | 'false';
+  availability?: OpportunityAvailabilityFilter;
+  deadlineYear?: string;
+  active?: OpportunityActiveFilter;
+};
+
+export const adminOpportunitiesApi = {
+  list: (status: OpportunityStatus, page = 1, filters: AdminOpportunitiesListFilters = {}) => {
+    const params = new URLSearchParams();
+    params.set('status', status);
+    params.set('page', String(page));
+    if (filters.search?.trim()) params.set('search', filters.search.trim());
+    if (filters.type) params.set('type', filters.type);
+    if (filters.level?.trim()) params.set('level', filters.level.trim());
+    if (filters.institution?.trim()) params.set('institution', filters.institution.trim());
+    if (filters.city?.trim()) params.set('city', filters.city.trim());
+    if (filters.country?.trim()) params.set('country', filters.country.trim());
+    if (filters.hasScholarship && filters.hasScholarship !== 'all') params.set('hasScholarship', filters.hasScholarship);
+    if (filters.availability && filters.availability !== 'all') params.set('availability', filters.availability);
+    if (filters.deadlineYear?.trim()) params.set('deadlineYear', filters.deadlineYear.trim());
+    if (filters.active && filters.active !== 'all') params.set('active', filters.active);
+    return typedRequest<{ data: AdminOpportunityRow[]; total: number }>(`/opportunities/admin/list?${params.toString()}`);
+  },
+  scrapeStart: () =>
+    typedRequest<{ jobId: string }>('/opportunities/admin/scrape/start', { method: 'POST' }),
+  scrapeJob: (jobId: string) =>
+    typedRequest<AdminOpportunitiesScrapeJob>(`/opportunities/admin/scrape/${encodeURIComponent(jobId)}`),
+  bulkHide: (body: { ids?: string[]; status?: OpportunityStatus; search?: string }) =>
+    typedRequest<{ ok: true; updated: number }>(
+      '/opportunities/admin/bulk-hide',
+      { method: 'POST', body },
+    ),
+  bulkDelete: (body: { ids?: string[]; status?: OpportunityStatus; search?: string }) =>
+    typedRequest<{ ok: true; deleted: number }>(
+      '/opportunities/admin/bulk-delete',
+      { method: 'POST', body },
+    ),
+  moderate: (id: string, action: 'approve' | 'reject', reason?: string) =>
+    typedRequest<AdminOpportunityRow>(`/opportunities/admin/${encodeURIComponent(id)}/moderate`, {
+      method: 'PUT',
+      body: { action, ...(reason ? { reason } : {}) },
+    }),
+  update: (id: string, body: Record<string, unknown>) =>
+    typedRequest<AdminOpportunityRow>(`/opportunities/admin/${encodeURIComponent(id)}`, { method: 'PUT', body }),
+  create: (body: Record<string, unknown>) =>
+    typedRequest<AdminOpportunityRow>('/opportunities/admin', { method: 'POST', body }),
+  delete: (id: string) =>
+    typedRequest(`/opportunities/admin/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Admin: Reminders
 // ─────────────────────────────────────────────────────────────────────────────
 

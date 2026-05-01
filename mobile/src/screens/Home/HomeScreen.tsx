@@ -190,7 +190,7 @@ export default function HomeScreen() {
     [user?.fullName, lang],
   );
 
-  const goToExplore = useCallback((screen: 'Resources' | 'Timetable' | 'Courses' | 'Flashcards' | 'Jobs' | 'Reminders' | 'Housing') => {
+  const goToExplore = useCallback((screen: 'Resources' | 'Timetable' | 'Courses' | 'Flashcards' | 'Jobs' | 'Opportunities' | 'Reminders' | 'Housing') => {
     // Open as a root-stack push (animated), not by switching tabs (brusque).
     const root = (navigation as any)?.getParent?.()?.getParent?.();
     if (root?.navigate) {
@@ -321,6 +321,12 @@ export default function HomeScreen() {
       label: t('tab.jobs'),
       disabled: !(appActiveByKey.jobs ?? true),
       onPress: () => goToExplore('Jobs'),
+    },
+    {
+      key: 'opportunities', icon: 'schoolOutline' as const, color: '#7C3AED',
+      label: t('opp.nav'),
+      disabled: !(appActiveByKey.opportunities ?? true),
+      onPress: () => goToExplore('Opportunities'),
     },
     {
       key: 'housing', icon: 'homeOutline' as const, color: '#F59E0B',

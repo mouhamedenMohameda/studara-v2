@@ -104,6 +104,36 @@ router.get('/history', async (req: AuthRequest, res) => {
 // In-memory background runner (PM2 single instance). If you need multi-instance, switch to a queue.
 const running: Record<string, boolean> = {};
 
+// ─── PAYG pricing for "extra" exercise actions ───────────────────────────────
+// Groq on-demand pricing (USD per 1M tokens) — see https://home.cloud.groq.io/pricing (2026)
+const GROQ_LLAMA_33_70B_USD_PER_M_INPUT = 0.59;
+const GROQ_LLAMA_33_70B_USD_PER_M_OUTPUT = 0.79;
+// Approx USD→MRU conversion. Override on server if needed.
+const USD_TO_MRU = Number(process.env.USD_TO_MRU ?? 40);
+
+function approxTokensFromText(s: string): number {
+  // rough heuristic: ~1 token per 4 chars for latin text
+  const t = String(s || '');
+  return Math.max(1, Math.ceil(t.length / 4));
+}
+
+function groqCostMruForTokens(promptTokens: number, completionTokens: number): number {
+  const p = Math.max(0, Number(promptTokens) || 0);
+  const c = Math.max(0, Number(completionTokens) || 0);
+  const usd =
+    (p / 1_000_000) * GROQ_LLAMA_33_70B_USD_PER_M_INPUT +
+    (c / 1_000_000) * GROQ_LLAMA_33_70B_USD_PER_M_OUTPUT;
+  const rate = Number.isFinite(USD_TO_MRU) && USD_TO_MRU > 0 ? USD_TO_MRU : 40;
+  return usd * rate;
+}
+
+function applyUserMultiplier(realCostMru: number): number {
+  const x = Math.max(0, Number(realCostMru) || 0);
+  if (x < 0.01) return x * 4;
+  if (x <= 0.1) return x * 3;
+  return x * 2;
+}
+
 function entitlementTruthy(value: unknown): boolean {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'number') return value > 0;
@@ -601,12 +631,14 @@ async function groqExerciseOcrFromImage(imageBase64: string, mimeType: 'image/jp
   return { text, confidence, warnings };
 }
 
+type GroqUsage = { promptTokens: number; completionTokens: number; totalTokens: number };
+
 async function groqExerciseCorrection(params: {
   subject: ExerciseSubject;
   statementText: string;
   studentAnswer?: string;
   outputLanguage: OutputLanguage;
-}): Promise<{ result: any; warnings: string[]; confidence: number; model: string }> {
+}): Promise<{ result: any; warnings: string[]; confidence: number; model: string; usage: GroqUsage }> {
   const requireLatex = params.subject === 'mathematiques';
   const medical = params.subject === 'medecine';
 
@@ -618,6 +650,14 @@ async function groqExerciseCorrection(params: {
     "- Donne une correction étape par étape, méthode, résultat final, erreurs fréquentes, résumé, exercice similaire.",
     "- Si une réponse étudiant est fournie: identifier erreurs, pourquoi c'est faux, et proposer correction propre.",
     medical ? "- Médecine: rappeler que c'est pédagogique, pas un avis médical." : "",
+    "",
+    "FORMATAGE (très important):",
+    "- Respecte et UTILISE les sauts de ligne pour rendre la réponse lisible.",
+    "- Dans les champs texte, structure toujours avec des blocs séparés par une ligne vide (\\n\\n).",
+    "- Dans `correction_step_by_step`, utilise une liste d'étapes numérotées (1), (2), (3)... et mets chaque étape sur son propre paragraphe.",
+    "- Évite les gros paragraphes: maximum ~3 lignes par paragraphe, sinon insère un saut de ligne.",
+    "- Pour les listes (erreurs fréquentes, etc.), une idée par ligne.",
+    requireLatex ? "- Pour les maths: utilise LaTeX entre \\( ... \\) (inline) et \\[ ... \\] (display) et mets les formules display sur une ligne dédiée." : "",
     "",
     "Retourne UNIQUEMENT un JSON valide avec les clés:",
     "{",
@@ -647,20 +687,96 @@ async function groqExerciseCorrection(params: {
   ].filter(Boolean).join('\n');
 
   const model = 'llama-3.3-70b-versatile';
-  const raw = await groqChat(
+  const detailed = await groqChatDetailed(
     [{ role: 'system', content: sys }, { role: 'user', content: user }],
     model,
     2200,
   );
 
-  const json = parseJsonObjectFromText(raw);
+  let json = parseJsonObjectFromText(detailed.content);
   if (!json) {
+    // ── Repair pass: convert unstructured text → strict JSON (product-grade UX) ──
+    const repairSys = [
+      "Tu es un post-processeur strict.",
+      "Ta tâche: convertir la réponse IA brute en un JSON valide ExerciseCorrectionResult.",
+      "Contraintes:",
+      "- Ne jamais inventer une donnée absente de l'énoncé ou du brut.",
+      "- Si une partie est inconnue, mets une chaîne vide '' ou un tableau vide [].",
+      "- Respecte EXACTEMENT les clés demandées.",
+      "- Retourne UNIQUEMENT un JSON (pas de markdown, pas de ```).",
+      "",
+      "FORMATAGE (très important):",
+      "- Préserve les sauts de ligne utiles.",
+      "- Dans `correction_step_by_step` et `method_explanation`, structure en paragraphes séparés par \\n\\n.",
+      "- Chaque étape doit être sur sa/son paragraphe et commencer par un numéro (ex: \"1) ...\").",
+      "- Évite le texte tout sur une seule ligne: insère des \\n si nécessaire.",
+      "- Pour `common_errors`, 1 erreur par élément (pas une phrase géante).",
+      "- Si LaTeX est activé, garde les formules avec \\( \\) et \\[ \\] sans les casser.",
+      "",
+      "Schéma attendu:",
+      "{",
+      '  "statement": string,',
+      '  "confidence": number,',
+      '  "correction_step_by_step": string,',
+      '  "method_explanation": string,',
+      '  "final_answer": string,',
+      '  "common_errors": string[],',
+      '  "method_summary": string,',
+      '  "similar_exercise": string,',
+      '  "student_answer_feedback"?: { "errors": { "excerpt": string, "why_wrong": string, "fix": string }[], "corrected_solution": string },',
+      '  "latex"?: { "enabled": boolean },',
+      '  "medical_disclaimer"?: string',
+      "}",
+    ].join('\n');
+
+    const repairUser = [
+      `Matière: ${params.subject}`,
+      `Langue: ${params.outputLanguage}`,
+      requireLatex ? "LaTeX: active (latex.enabled=true)." : "LaTeX: désactivé (latex.enabled=false).",
+      medical ? "Médecine: ajoute medical_disclaimer pédagogique." : "",
+      "",
+      "Énoncé (canonique):",
+      params.statementText,
+      "",
+      "Réponse IA brute à restructurer:",
+      detailed.content,
+    ].filter(Boolean).join('\n');
+
+    const repaired = await groqChatDetailed(
+      [{ role: 'system', content: repairSys }, { role: 'user', content: repairUser }],
+      model,
+      1200,
+      undefined,
+      0.1,
+    );
+
+    json = parseJsonObjectFromText(repaired.content);
+    if (json) {
+      // Merge usages (initial + repair) so billing can charge exact cost.
+      const mergedUsage: GroqUsage = {
+        promptTokens: detailed.usage.promptTokens + repaired.usage.promptTokens,
+        completionTokens: detailed.usage.completionTokens + repaired.usage.completionTokens,
+        totalTokens: detailed.usage.totalTokens + repaired.usage.totalTokens,
+      };
+
+      const confidence = typeof json.confidence === 'number' ? Math.max(0, Math.min(1, json.confidence)) : 0.55;
+      const warnings: string[] = ['Réponse restructurée automatiquement (post-traitement).'];
+      if (confidence < 0.65) warnings.push('Confiance faible — énoncé possiblement flou/incomplet.');
+      if (medical && typeof json.medical_disclaimer !== 'string') {
+        json.medical_disclaimer = "Usage pédagogique uniquement — pas un avis médical.";
+      }
+      json.statement = params.statementText;
+      if (!json.latex) json.latex = { enabled: requireLatex };
+      if (json?.latex && typeof json.latex.enabled !== 'boolean') json.latex.enabled = requireLatex;
+      return { result: json, warnings, confidence, model, usage: mergedUsage };
+    }
+
     return {
       model,
       result: {
         statement: params.statementText,
         confidence: 0.35,
-        correction_step_by_step: raw,
+        correction_step_by_step: detailed.content,
         method_explanation: '',
         final_answer: '',
         common_errors: [],
@@ -671,6 +787,7 @@ async function groqExerciseCorrection(params: {
       },
       warnings: ['Réponse non structurée (fallback).'],
       confidence: 0.35,
+      usage: detailed.usage,
     };
   }
 
@@ -684,7 +801,7 @@ async function groqExerciseCorrection(params: {
   json.statement = params.statementText;
   if (!json.latex) json.latex = { enabled: requireLatex };
   if (json?.latex && typeof json.latex.enabled !== 'boolean') json.latex.enabled = requireLatex;
-  return { result: json, warnings, confidence, model };
+  return { result: json, warnings, confidence, model, usage: detailed.usage };
 }
 
 router.post('/exercise-corrections/documents/text', async (req: AuthRequest, res) => {
@@ -1079,6 +1196,14 @@ router.post('/exercise-corrections/:id/simplify', async (req: AuthRequest, res) 
       "Tu es un correcteur d'exercices universitaire.",
       "Ta tâche: réexpliquer PLUS SIMPLEMENT la solution, sans perdre la rigueur.",
       "Contraintes: ne pas inventer de données absentes.",
+      "",
+      "FORMATAGE (très important):",
+      "- Respecte et UTILISE les sauts de ligne pour rendre la réponse lisible.",
+      "- Dans les champs texte, structure toujours avec des blocs séparés par une ligne vide (\\n\\n).",
+      "- Dans `correction_step_by_step`, utilise des étapes numérotées (1), (2), (3)... et mets chaque étape sur son propre paragraphe.",
+      "- Évite les gros paragraphes: maximum ~3 lignes par paragraphe.",
+      "- Une idée par ligne pour les listes; pas de paragraphes en une seule ligne.",
+      requireLatex ? "- Pour les maths: utilise LaTeX entre \\( ... \\) et \\[ ... \\] et mets les formules display sur une ligne dédiée." : "",
       "Retourne UNIQUEMENT un JSON valide ExerciseCorrectionResult (mêmes clés).",
     ].join('\n');
 
@@ -1095,7 +1220,23 @@ router.post('/exercise-corrections/:id/simplify', async (req: AuthRequest, res) 
       JSON.stringify(row.result_json),
     ].filter(Boolean).join('\n');
 
-    const raw = await groqChat(
+    // ── Pre-check: must have >= 1 MRU to launch + enough for an estimate ──
+    const estIn = approxTokensFromText(sys) + approxTokensFromText(user);
+    const estOut = 1400;
+    const estRealMru = groqCostMruForTokens(estIn, estOut);
+    const estChargeMru = applyUserMultiplier(estRealMru);
+    const startOk = await ensureExerciseCorrectionWalletHasEnough({ userId, requiredMru: Math.max(1, estChargeMru) });
+    if (!startOk.ok) {
+      return res.status(402).json({
+        error: 'wallet_insufficient',
+        code: 'wallet_insufficient',
+        feature_key: 'ai_exercise_correction',
+        required_mru: Math.max(1, estChargeMru),
+        balance_mru: startOk.balanceMru,
+      });
+    }
+
+    const detailed = await groqChatDetailed(
       [{ role: 'system', content: sys }, { role: 'user', content: user }],
       'llama-3.3-70b-versatile',
       2200,
@@ -1103,31 +1244,57 @@ router.post('/exercise-corrections/:id/simplify', async (req: AuthRequest, res) 
       0.2,
     );
 
-    const json = parseJsonObjectFromText(raw);
-    const out = !json
-      ? await groqExerciseCorrection({
-          subject: row.subject,
-          statementText: originalStatement,
-          studentAnswer: row.student_answer ?? undefined,
-          outputLanguage: row.output_language,
-        })
-      : {
-          model: 'llama-3.3-70b-versatile',
-          confidence: typeof json.confidence === 'number' ? Math.max(0, Math.min(1, json.confidence)) : 0.6,
-          warnings: [],
-          result: {
-            ...json,
-            statement: originalStatement,
-            latex: { enabled: requireLatex },
-            medical_disclaimer: medical ? "Usage pédagogique uniquement — pas un avis médical." : json.medical_disclaimer,
-          },
-        };
+    const json = parseJsonObjectFromText(detailed.content);
+
+    let resultJson: any;
+    let modelUsed: string;
+    let confidenceUsed: number;
+    let extraUsage: GroqUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+
+    if (!json) {
+      const fb = await groqExerciseCorrection({
+        subject: row.subject,
+        statementText: originalStatement,
+        studentAnswer: row.student_answer ?? undefined,
+        outputLanguage: row.output_language,
+      });
+      resultJson = fb.result;
+      modelUsed = fb.model;
+      confidenceUsed = fb.confidence;
+      extraUsage = fb.usage;
+    } else {
+      resultJson = {
+        ...json,
+        statement: originalStatement,
+        latex: { enabled: requireLatex },
+        medical_disclaimer: medical ? "Usage pédagogique uniquement — pas un avis médical." : json.medical_disclaimer,
+      };
+      modelUsed = 'llama-3.3-70b-versatile';
+      confidenceUsed = typeof json.confidence === 'number' ? Math.max(0, Math.min(1, json.confidence)) : 0.6;
+    }
+
+    // ── Charge user based on real token usage (this request) ─────────────────
+    const totalPromptTokens = detailed.usage.promptTokens + extraUsage.promptTokens;
+    const totalCompletionTokens = detailed.usage.completionTokens + extraUsage.completionTokens;
+    const realCostMru = groqCostMruForTokens(totalPromptTokens, totalCompletionTokens);
+    const chargeMru = applyUserMultiplier(realCostMru);
+    try {
+      await deductFromWallet(
+        userId,
+        'ai_exercise_correction',
+        chargeMru,
+        `Correction IA: simplifier (tokens in=${totalPromptTokens} out=${totalCompletionTokens})`,
+        realCostMru,
+      );
+    } catch (e) {
+      console.error('[exercise-corrections/simplify] wallet debit failed', e);
+    }
 
     await pool.query(
       `UPDATE ai_exercise_corrections SET result_json=$1::jsonb, confidence=$2, model=$3 WHERE id=$4 AND user_id=$5`,
-      [JSON.stringify(out.result), out.confidence, out.model, id, userId],
+      [JSON.stringify(resultJson), confidenceUsed, modelUsed, id, userId],
     );
-    return res.json({ result: out.result });
+    return res.json({ result: resultJson });
   } catch (e: any) {
     return res.status(500).json({ error: e?.message ?? 'Erreur serveur' });
   }
@@ -1146,6 +1313,24 @@ router.post('/exercise-corrections/:id/similar-exercise', async (req: AuthReques
     if (!row) return res.status(404).json({ error: 'Not found' });
     if (row.status !== 'COMPLETED' || !row.result_json) return res.status(400).json({ error: 'Not ready' });
 
+    // ── Pre-check: must have >= 1 MRU to launch + enough for an estimate ──
+    const estSys = "Génère un exercice similaire (sans solution). Retourne un JSON.";
+    const estUser = String(row.result_json.statement || '');
+    const estIn = approxTokensFromText(estSys) + approxTokensFromText(estUser);
+    const estOut = 900;
+    const estRealMru = groqCostMruForTokens(estIn, estOut);
+    const estChargeMru = applyUserMultiplier(estRealMru);
+    const startOk = await ensureExerciseCorrectionWalletHasEnough({ userId, requiredMru: Math.max(1, estChargeMru) });
+    if (!startOk.ok) {
+      return res.status(402).json({
+        error: 'wallet_insufficient',
+        code: 'wallet_insufficient',
+        feature_key: 'ai_exercise_correction',
+        required_mru: Math.max(1, estChargeMru),
+        balance_mru: startOk.balanceMru,
+      });
+    }
+
     const out = await groqExerciseCorrection({
       subject: row.subject,
       statementText: String(row.result_json.statement || '') + '\n\nGénère uniquement un exercice similaire (sans solution).',
@@ -1158,6 +1343,22 @@ router.post('/exercise-corrections/:id/similar-exercise', async (req: AuthReques
       `UPDATE ai_exercise_corrections SET result_json=$1::jsonb WHERE id=$2 AND user_id=$3`,
       [JSON.stringify(merged), id, userId],
     );
+
+    // Charge: exact tokens from Groq usage.
+    const realCostMru = groqCostMruForTokens(out.usage.promptTokens, out.usage.completionTokens);
+    const chargeMru = applyUserMultiplier(realCostMru);
+    try {
+      await deductFromWallet(
+        userId,
+        'ai_exercise_correction',
+        chargeMru,
+        `Correction IA: exercice similaire (tokens in=${out.usage.promptTokens} out=${out.usage.completionTokens})`,
+        realCostMru,
+      );
+    } catch (e) {
+      console.error('[exercise-corrections/similar] wallet debit failed', e);
+    }
+
     return res.json({ similar_exercise: similar });
   } catch (e: any) {
     return res.status(500).json({ error: e?.message ?? 'Erreur serveur' });
@@ -1230,6 +1431,17 @@ async function groqChat(
   bearerKey?: string,
   temperature = 0.3,
 ): Promise<string> {
+  const out = await groqChatDetailed(messages, model, maxTokens, bearerKey, temperature);
+  return out.content;
+}
+
+async function groqChatDetailed(
+  messages: any[],
+  model = 'llama-3.3-70b-versatile',
+  maxTokens = 2000,
+  bearerKey?: string,
+  temperature = 0.3,
+): Promise<{ content: string; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
   const key = bearerKey ?? resolveGroqApiKey();
   const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -1244,7 +1456,14 @@ async function groqChat(
     throw new Error(`Groq error ${resp.status}: ${err}`);
   }
   const data = await resp.json() as any;
-  return data.choices?.[0]?.message?.content ?? '';
+  const usage = data?.usage ?? {};
+  const promptTokens = Number(usage.prompt_tokens ?? 0) || 0;
+  const completionTokens = Number(usage.completion_tokens ?? 0) || 0;
+  const totalTokens = Number(usage.total_tokens ?? (promptTokens + completionTokens)) || (promptTokens + completionTokens);
+  return {
+    content: data.choices?.[0]?.message?.content ?? '',
+    usage: { promptTokens, completionTokens, totalTokens },
+  };
 }
 
 // ─── Helper DeepSeek ──────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AppIcon } from '@/icons';
-import { MainTabParamList, ResourcesStackParamList, CoursesStackParamList, FlashcardsStackParamList, HomeStackParamList, JobsStackParamList, ProfileStackParamList, HousingStackParamList, ExploreStackParamList } from '../types';
+import { MainTabParamList, ResourcesStackParamList, CoursesStackParamList, FlashcardsStackParamList, HomeStackParamList, JobsStackParamList, OpportunitiesStackParamList, ProfileStackParamList, HousingStackParamList, ExploreStackParamList } from '../types';
 import { Colors } from '../theme';
 
 // Screens
@@ -10,6 +10,8 @@ import HomeScreen from '../screens/Home/HomeScreen';
 import JobsScreen from '../screens/Jobs/JobsScreen';
 import JobDetailScreen from '../screens/Jobs/JobDetailScreen';
 import MyApplicationsScreen from '../screens/Jobs/MyApplicationsScreen';
+import OpportunitiesScreen from '../screens/Opportunities/OpportunitiesScreen';
+import OpportunityDetailScreen from '../screens/Opportunities/OpportunityDetailScreen';
 import HousingScreen from '../screens/Housing/HousingScreen';
 import ResourcesScreen from '../screens/Resources/ResourcesScreen';
 import ResourceDetailScreen from '../screens/Resources/ResourceDetailScreen';
@@ -48,6 +50,14 @@ const JobsNavigator = () => (
     <JobsStack.Screen name="JobDetail"       component={JobDetailScreen} />
     <JobsStack.Screen name="MyApplications" component={MyApplicationsScreen} />
   </JobsStack.Navigator>
+);
+
+const OpportunitiesStack = createStackNavigator<OpportunitiesStackParamList>();
+const OpportunitiesNavigator = () => (
+  <OpportunitiesStack.Navigator screenOptions={{ headerShown: false }}>
+    <OpportunitiesStack.Screen name="OpportunitiesList" component={OpportunitiesScreen} />
+    <OpportunitiesStack.Screen name="OpportunityDetail" component={OpportunityDetailScreen} />
+  </OpportunitiesStack.Navigator>
 );
 
 // ─── Resources Stack ──────────────────────────────────────────────────────────
@@ -153,6 +163,14 @@ const ExploreNavigator = () => (
       component={() => (
         <FeatureGate featureKey="jobs" defaultEnabled={true}>
           <JobsNavigator />
+        </FeatureGate>
+      )}
+    />
+    <ExploreStack.Screen
+      name="Opportunities"
+      component={() => (
+        <FeatureGate featureKey="opportunities" defaultEnabled={true}>
+          <OpportunitiesNavigator />
         </FeatureGate>
       )}
     />

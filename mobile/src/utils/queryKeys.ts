@@ -33,6 +33,9 @@ export const queryKeys = {
   // ── Jobs ──────────────────────────────────────────────────────────────────
   jobs: (domain: string, search: string) => ['jobs', { domain, search }] as const,
 
+  // ── Opportunities ─────────────────────────────────────────────────────────
+  opportunities: (search: string) => ['opportunities', { search }] as const,
+
   // ── Gamification ─────────────────────────────────────────────────────────────
   xp:      ()  => ['xp']     as const,
   badges:  ()  => ['badges'] as const,

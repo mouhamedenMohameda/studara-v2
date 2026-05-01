@@ -6,6 +6,7 @@ import {
   CoursesStackParamList,
   FlashcardsStackParamList,
   JobsStackParamList,
+  OpportunitiesStackParamList,
   HousingStackParamList,
 } from '../types';
 
@@ -13,6 +14,8 @@ import {
 import JobsScreen from '../screens/Jobs/JobsScreen';
 import JobDetailScreen from '../screens/Jobs/JobDetailScreen';
 import MyApplicationsScreen from '../screens/Jobs/MyApplicationsScreen';
+import OpportunitiesScreen from '../screens/Opportunities/OpportunitiesScreen';
+import OpportunityDetailScreen from '../screens/Opportunities/OpportunityDetailScreen';
 import HousingScreen from '../screens/Housing/HousingScreen';
 import ResourcesScreen from '../screens/Resources/ResourcesScreen';
 import ResourceDetailScreen from '../screens/Resources/ResourceDetailScreen';
@@ -37,6 +40,14 @@ const JobsNavigator = () => (
     <JobsStack.Screen name="JobDetail"       component={JobDetailScreen} />
     <JobsStack.Screen name="MyApplications" component={MyApplicationsScreen} />
   </JobsStack.Navigator>
+);
+
+const OpportunitiesStack = createStackNavigator<OpportunitiesStackParamList>();
+const OpportunitiesNavigator = () => (
+  <OpportunitiesStack.Navigator screenOptions={{ headerShown: false }}>
+    <OpportunitiesStack.Screen name="OpportunitiesList" component={OpportunitiesScreen} />
+    <OpportunitiesStack.Screen name="OpportunityDetail" component={OpportunityDetailScreen} />
+  </OpportunitiesStack.Navigator>
 );
 
 const ResourcesStack = createStackNavigator<ResourcesStackParamList>();
@@ -88,6 +99,7 @@ export default function ExploreModalNavigator() {
       <ExploreModalStack.Screen name="Courses"    component={CoursesNavigator} />
       <ExploreModalStack.Screen name="Flashcards" component={FlashcardsNavigator} />
       <ExploreModalStack.Screen name="Jobs"       component={JobsNavigator} />
+      <ExploreModalStack.Screen name="Opportunities" component={OpportunitiesNavigator} />
       <ExploreModalStack.Screen name="Reminders"  component={RemindersScreen} />
       <ExploreModalStack.Screen name="Housing"    component={HousingNavigator} />
     </ExploreModalStack.Navigator>

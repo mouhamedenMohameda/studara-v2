@@ -123,6 +123,22 @@ export const api: any = {
   deleteJob: (id: string) => request(`/jobs/admin/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   // ───────────────────────────────────────────────────────────────────────────
+  // Admin opportunities (moderation + CRUD)
+  // ───────────────────────────────────────────────────────────────────────────
+  adminOpportunities: (status = 'pending', page = 1, search = '') => {
+    const params = new URLSearchParams();
+    params.set('status', status);
+    params.set('page', String(page));
+    if (search) params.set('search', search);
+    return request(`/opportunities/admin/list?${params.toString()}`);
+  },
+  moderateOpportunity: (id: string, action: 'approve' | 'reject', reason?: string) =>
+    request(`/opportunities/admin/${encodeURIComponent(id)}/moderate`, { method: 'PUT', body: { action, ...(reason ? { reason } : {}) } }),
+  createOpportunity: (body: any) => request('/opportunities/admin', { method: 'POST', body }),
+  updateOpportunity: (id: string, body: any) => request(`/opportunities/admin/${encodeURIComponent(id)}`, { method: 'PUT', body }),
+  deleteOpportunity: (id: string) => request(`/opportunities/admin/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  // ───────────────────────────────────────────────────────────────────────────
   // Admin housing moderation
   // ───────────────────────────────────────────────────────────────────────────
   adminHousing: () => request('/housing/admin'),
