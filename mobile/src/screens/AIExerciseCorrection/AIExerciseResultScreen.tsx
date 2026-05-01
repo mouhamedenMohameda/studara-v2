@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '@/theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { apiRequest, API_BASE } from '@/utils/api';
 import { MathText } from '@/components/latex/MathText';
 import type { ExerciseCorrectionResult, JobStatus } from './types';
@@ -181,6 +181,7 @@ function AccordionBox({
 
 export default function AIExerciseResultScreen({ navigation, route }: any) {
   const { token } = useAuth();
+  const { colors: C, isDark } = useTheme();
   const correctionId: string = route.params.correctionId;
 
   const [status, setStatus] = useState<JobStatus>('PENDING');
@@ -292,33 +293,36 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
   }, [canMath]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <LinearGradient colors={Gradients.brand as any} style={styles.header}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-              <AppIcon name="arrowBack" size={22} color="#fff" />
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}>
+            <AppIcon name="arrowBack" size={22} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Correction</Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity
+              onPress={toggleMath}
+              style={[styles.iconBtn, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }, !canMath && { opacity: 0.45 }]}
+              disabled={!canMath}
+            >
+              <AppIcon name="calculatorOutline" size={22} color={C.primary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Correction</Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity
-                onPress={toggleMath}
-                style={[styles.iconBtn, !canMath && { opacity: 0.45 }]}
-                disabled={!canMath}
-              >
-                <AppIcon name="calculatorOutline" size={22} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={exportPdf} style={styles.iconBtn} disabled={exporting || status !== 'COMPLETED'}>
-                {exporting ? <ActivityIndicator color="#fff" /> : <AppIcon name="downloadOutline" size={22} color="#fff" />}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={exportPdf}
+              style={[styles.iconBtn, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }]}
+              disabled={exporting || status !== 'COMPLETED'}
+            >
+              {exporting ? <ActivityIndicator color={C.primary} /> : <AppIcon name="downloadOutline" size={22} color={C.primary} />}
+            </TouchableOpacity>
           </View>
-        </SafeAreaView>
-      </LinearGradient>
+        </View>
+      </SafeAreaView>
 
       {status !== 'COMPLETED' ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#7C3AED" />
+          <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.centerText}>
             {status === 'FAILED' ? 'Échec génération' : 'Génération en cours…'}
           </Text>
@@ -350,17 +354,17 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
           <View style={styles.actionsRow}>
             <TouchableOpacity style={styles.secondaryBtn} onPress={simplify} disabled={actionLoading !== null}>
               {actionLoading === 'simplify' ? (
-                <ActivityIndicator color="#7C3AED" />
+                <ActivityIndicator color="Colors.primary" />
               ) : (
-                <AppIcon name="sparklesOutline" size={18} color="#7C3AED" />
+                <AppIcon name="sparklesOutline" size={18} color="Colors.primary" />
               )}
               <Text style={styles.secondaryText}>Expliquer plus simplement</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryBtn} onPress={regenerateSimilar} disabled={actionLoading !== null}>
               {actionLoading === 'similar' ? (
-                <ActivityIndicator color="#7C3AED" />
+                <ActivityIndicator color="Colors.primary" />
               ) : (
-                <AppIcon name="refresh" size={18} color="#7C3AED" />
+                <AppIcon name="refresh" size={18} color="Colors.primary" />
               )}
               <Text style={styles.secondaryText}>Exercice similaire</Text>
             </TouchableOpacity>
@@ -442,20 +446,22 @@ export default function AIExerciseResultScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 18, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 10 },
-  headerTitle: { fontSize: 19, fontWeight: '900', color: '#fff' },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg, paddingTop: 8, paddingBottom: 14,
+  },
+  headerTitle: { fontSize: 19, fontWeight: '900' },
   backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
   iconBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12 },
   centerText: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary, textAlign: 'center' },
@@ -477,11 +483,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: 'rgba(124, 58, 237, 0.10)',
+    backgroundColor: 'rgba(22, 101, 52, 0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(124, 58, 237, 0.25)',
+    borderColor: 'rgba(22, 101, 52, 0.22)',
   },
-  mathPillText: { fontSize: 11, fontWeight: '900', color: '#7C3AED' },
+  mathPillText: { fontSize: 11, fontWeight: '900', color: Colors.primary },
   actionsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   secondaryBtn: {
     flex: 1,
@@ -496,7 +502,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     ...Shadows.xs,
   },
-  secondaryText: { fontSize: 12, fontWeight: '800', color: '#7C3AED' },
+  secondaryText: { fontSize: 12, fontWeight: '800', color: Colors.primary },
   box: {
     backgroundColor: '#fff',
     borderRadius: BorderRadius.xl,

@@ -3,8 +3,8 @@ import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
 import { View, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Share, Platform, Linking, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/theme';
 
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ResourcesStackParamList, ResourceType } from '../../types';
@@ -306,13 +306,9 @@ const ResourceDetailScreen = () => {
 
   return (
     <View style={styles.root}>
-      {/* Ambient background */}
-      <LinearGradient
-        colors={[`${gradient[0]}22`, `${gradient[1]}12`, `${C.background}`]}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
-        style={styles.ambient}
-      />
+      <View style={[styles.ambient, { backgroundColor: C.background }]}>
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: `${gradient[0]}14` }]} pointerEvents="none" />
+      </View>
 
       {/* Glass header overlay (appears on scroll) */}
       <SafeAreaView edges={['top']} style={styles.glassHeaderSafe}>
@@ -344,22 +340,16 @@ const ResourceDetailScreen = () => {
       >
         {/* ── Hero header (parallax) ── */}
         <Animated.View style={[styles.heroWrap, { transform: [{ scale: heroScale }], opacity: heroFade }]}>
-          <LinearGradient colors={gradient} style={styles.hero}>
-            {/* Decorative blobs */}
+          <View style={[styles.hero, { backgroundColor: gradient[0] }]}>
             <View style={[styles.blob, styles.blobA]} />
             <View style={[styles.blob, styles.blobB]} />
             <View style={[styles.blob, styles.blobC]} />
 
             <View style={styles.heroBody}>
               <View style={styles.iconWrap}>
-                <LinearGradient
-                  colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0.10)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.iconGlass}
-                >
+                <View style={[styles.iconGlass, { backgroundColor: 'rgba(255,255,255,0.22)' }]}>
                   <AppIcon name={TYPE_ICONS[resource.type]} size={40} color="#fff" />
-                </LinearGradient>
+                </View>
               </View>
               <Text style={styles.heroTitle} numberOfLines={2}>
                 {resource.titleAr || resource.title}
@@ -375,21 +365,21 @@ const ResourceDetailScreen = () => {
                 </View>
               </View>
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
         {/* ── Meta pills ── */}
         <View style={styles.metaCard}>
           <View style={styles.pillsRow}>
-            <View style={styles.pill}>
+            <View style={[styles.pill, { backgroundColor: `${gradient[0]}18` }]}>
               <AppIcon name="bookOutline" size={13} color={gradient[0]} />
               <Text style={[styles.pillText, { color: gradient[0] }]} numberOfLines={1}>{resource.subject}</Text>
             </View>
-            <View style={styles.pill}>
+            <View style={[styles.pill, { backgroundColor: `${gradient[0]}18` }]}>
               <AppIcon name="layersOutline" size={13} color={gradient[0]} />
               <Text style={[styles.pillText, { color: gradient[0] }]} numberOfLines={1}>{'السنة ' + resource.year}</Text>
             </View>
             {resource.fileType && (
-              <View style={styles.pill}>
+              <View style={[styles.pill, { backgroundColor: `${gradient[0]}18` }]}>
                 <AppIcon name="documentOutline" size={13} color={gradient[0]} />
                 <Text style={[styles.pillText, { color: gradient[0] }]} numberOfLines={1}>{resource.fileType.toUpperCase()}</Text>
               </View>
@@ -423,8 +413,8 @@ const ResourceDetailScreen = () => {
             onPress={() => token ? bookmarkMutation.mutate() : Alert.alert('', 'يرجى تسجيل الدخول')}
             activeOpacity={0.75}
           >
-            <AppIcon name={bookmarked ? 'bookmark' : 'bookmarkOutline'} size={20} color={bookmarked ? '#7C3AED' : '#9CA3AF'} />
-            <Text style={[styles.actionBtnText, bookmarked && { color: '#7C3AED' }]}>
+            <AppIcon name={bookmarked ? 'bookmark' : 'bookmarkOutline'} size={20} color={bookmarked ? Colors.primary : '#9CA3AF'} />
+            <Text style={[styles.actionBtnText, bookmarked && { color: Colors.primary }]}>
               {bookmarked ? 'محفوظ' : 'حفظ'}
             </Text>
           </TouchableOpacity>
@@ -473,12 +463,7 @@ const ResourceDetailScreen = () => {
           onPress={openFile}
           activeOpacity={0.85}
         >
-          <LinearGradient
-            colors={[gradient[0], gradient[1]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.openBtnGrad}
-          >
+          <View style={[styles.openBtnGrad, { backgroundColor: gradient[1] }]}>
             <View style={styles.openBtnLeft}>
               <View style={styles.openBtnIcon}>
                 <AppIcon name={resource.type === ResourceType.VideoCourse ? 'play' : 'documentTextOutline'} size={20} color="#fff" />
@@ -496,7 +481,7 @@ const ResourceDetailScreen = () => {
               <Text style={styles.openBtnHintText}>عرض</Text>
               <AppIcon name={isAr ? 'chevronBack' : 'chevronForward'} size={16} color="rgba(255,255,255,0.9)" />
             </View>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
 
         {/* ── Auto-generate flashcards (Soon) ── */}
@@ -691,7 +676,6 @@ const makeStyles = (C: typeof import('../../theme').Colors) => StyleSheet.create
   pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   pill: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(139,92,246,0.10)',
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
     maxWidth: '100%',
   },

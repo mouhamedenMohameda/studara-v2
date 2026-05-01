@@ -1,139 +1,130 @@
 /**
- * Studara — Vibrant Gen-Z Palette (v2)
+ * Studara — Education-app inspired palette (référence maquette utilisateur)
  *
- * Design language: bold gradients (violet → pink → sunset), colored shadows,
- * playful chips, creamy warm neutrals, generous contrast. Inspired by
- * Duolingo / Cal AI / Linear-vibrant.
- *
- * All existing keys are preserved so no screen needs to be updated to compile.
+ * Vert forêt profond (CTA / barre d’état), verts sauge et citron pour les accents,
+ * fonds blanc cassé très doux, cartes très arrondies (tokens radius/shadow séparément).
  */
 
 export const Colors = {
-  // ─── Brand (electric violet) ────────────────────────────────────────────────
-  primary:        '#7C3AED', // violet-600 — main brand
-  primaryLight:   '#A78BFA', // violet-400
-  primaryDark:    '#5B21B6', // violet-800
-  primaryDeep:    '#3B0764', // violet-950
-  primarySurface: '#F5F3FF', // violet-50 — surfaces / chips
-  primarySoft:    '#EDE9FE', // violet-100 — soft hover / rings
+  // ─── Brand — vert forêt (primary buttons, FAB, barre d’onglets) ──────────────
+  primary:        '#166534', // green-800 — forêt lisible sur blanc
+  primaryLight:   '#22C55E', // green-500 — accents / icônes actives sur barre sombre
+  primaryDark:    '#14532D', // green-900
+  primaryDeep:    '#052E16',
+  primarySurface: '#DCFCE7', // green-100 — pastilles actives sur fond clair
+  primarySoft:    '#BBF7D0', // green-200
 
-  // ─── Accent (hot pink / magenta) ────────────────────────────────────────────
-  accent:         '#EC4899', // pink-500
-  accentLight:    '#F472B6', // pink-400
-  accentDark:     '#BE185D', // pink-700
-  accentSurface:  '#FDF2F8', // pink-50
+  // ─── Accent — citron sauge — petits badges / mise en évidence ──────────────
+  accent:         '#84CC16', // lime-500
+  accentLight:    '#D9F99D',
+  accentDark:     '#65A30D',
+  accentSurface:  '#F7FEE7',
 
-  // ─── Secondary (sunset orange) ──────────────────────────────────────────────
-  secondary:        '#F97316', // orange-500
-  secondaryLight:   '#FB923C', // orange-400
-  secondaryDark:    '#C2410C', // orange-700
-  secondarySurface: '#FFF7ED', // orange-50
+  // ─── Secondary (ambre pour contraste chaud rare) ─────────────────────────────
+  secondary:        '#F59E0B',
+  secondaryLight:   '#FCD34D',
+  secondaryDark:    '#D97706',
+  secondarySurface: '#FFFBEB',
 
-  // ─── Hero gradient (purple → pink → sunset) ────────────────────────────────
-  heroFrom: '#8B5CF6', // violet-500
-  heroMid:  '#EC4899', // pink-500
-  heroTo:   '#F97316', // orange-500
+  // ─── Hero gradient — sauge lumineux → forêt ───────────────────────────────────
+  heroFrom: '#4ADE80', // green-400
+  heroMid:  '#22C55E', // green-500
+  heroTo:   '#14532D', // green-900
 
-  // ─── Semantic ──────────────────────────────────────────────────────────────
-  success:        '#10B981', // emerald-500
-  successSurface: '#ECFDF5', // emerald-50
-  warning:        '#F59E0B', // amber-500
-  warningSurface: '#FFFBEB', // amber-50
-  error:          '#F43F5E', // rose-500
-  errorSurface:   '#FFF1F2', // rose-50
-  info:           '#0EA5E9', // sky-500
-  infoSurface:    '#F0F9FF', // sky-50
+  // ─── Semantic ────────────────────────────────────────────────────────────────
+  success:        '#16A34A',
+  successSurface: '#DCFCE7',
+  warning:        '#D97706',
+  warningSurface: '#FFFBEB',
+  error:          '#DC2626',
+  errorSurface:   '#FEF2F2',
+  info:           '#0EA5E9',
+  infoSurface:    '#F0F9FF',
 
-  // ─── Neutrals (warm, creamy) ───────────────────────────────────────────────
+  // ─── Neutrals — blanc cassé type “education app” ─────────────────────────────
   white:          '#FFFFFF',
   black:          '#000000',
-  background:     '#FAFAFB', // off-white, warm
+  background:     '#FAFAF9',
   surface:        '#FFFFFF',
-  surfaceWarm:    '#FAF7FF', // violet-tinted white
-  surfaceVariant: '#F4F1FA', // subtle lavender-grey
-  border:         '#ECE7F5', // faint violet-grey
-  borderLight:    '#F4F1FA',
-  divider:        '#EFEBF7',
+  surfaceWarm:    '#F5F9F7',
+  surfaceVariant: '#ECFDF3',
+  border:         '#E2E8E4',
+  borderLight:    '#F1F5F4',
+  divider:        '#E7EEEA',
 
-  // ─── Text ──────────────────────────────────────────────────────────────────
-  textPrimary:    '#0F0A1F', // near-black, deep ink
-  textSecondary:  '#4A4458', // muted ink
-  textMuted:      '#8C8599', // soft grey
-  textLight:      '#CFC9D9',
+  // ─── Text ────────────────────────────────────────────────────────────────────
+  textPrimary:    '#14221A',
+  textSecondary:  '#52635A',
+  textMuted:      '#8FA398',
+  textLight:      '#CBD5D0',
   textInverse:    '#FFFFFF',
 
-  // ─── Module tags (vibrant, distinct) ───────────────────────────────────────
+  // ─── Module tags — pastels harmonisés au vert ───────────────────────────────
   modules: {
-    resources:  '#7C3AED', // violet
-    timetable:  '#0EA5E9', // sky
-    flashcards: '#06B6D4', // cyan
-    jobs:       '#F97316', // orange
-    reminders:  '#EC4899', // pink
-    profile:    '#8B5CF6', // violet-500
-    groups:     '#10B981', // emerald
-    housing:    '#F59E0B', // amber
-    news:       '#6366F1', // indigo
+    resources:  '#15803D',
+    timetable:  '#0369A1',
+    flashcards: '#059669',
+    jobs:       '#CA8A04',
+    reminders:  '#DB2777',
+    profile:    '#7C3AED',
+    groups:     '#22C55E',
+    housing:    '#EA580C',
+    news:       '#4F46E5',
   },
 
-  // ─── Tab bar ───────────────────────────────────────────────────────────────
-  tabActive:     '#7C3AED',
-  tabInactive:   '#8C8599',
-  tabBackground: '#FFFFFF',
+  // ─── Tab bar — barre flottante foncée (maquette) ─────────────────────────────
+  tabActive:     '#DCFCE7',
+  tabInactive:   'rgba(255,255,255,0.48)',
+  tabBackground: '#14532D',
 
-  // ─── Overlays ──────────────────────────────────────────────────────────────
-  overlay:       'rgba(15,10,31,0.55)',
-  overlayLight:  'rgba(15,10,31,0.22)',
+  // ─── Overlays ────────────────────────────────────────────────────────────────
+  overlay:       'rgba(5,46,22,0.48)',
+  overlayLight:  'rgba(5,46,22,0.10)',
 };
 
 export const DarkColors: typeof Colors = {
   ...Colors,
-  background:     '#0A0714', // very deep violet-black
-  surface:        '#14102A', // elevated
-  surfaceWarm:    '#1A1535', // warmer elevated
-  surfaceVariant: '#231C42',
-  border:         '#2D2654',
-  borderLight:    '#231C42',
-  divider:        '#231C42',
-  textPrimary:    '#F5F2FF',
-  textSecondary:  '#BFB8D4',
-  textMuted:      '#827C96',
-  textLight:      '#4A4458',
-  textInverse:    '#0F0A1F',
-  tabBackground:  '#0A0714',
-  overlay:        'rgba(0,0,0,0.78)',
-  overlayLight:   'rgba(0,0,0,0.42)',
-  primarySurface: '#1E1340',
-  primarySoft:    '#2A1B54',
-  accentSurface:  '#2A0F1F',
-  successSurface: '#0A2218',
-  warningSurface: '#2A1F00',
-  errorSurface:   '#2A0D14',
-  infoSurface:    '#061528',
-  secondarySurface: '#2A1608',
+  background:     '#07140D',
+  surface:        '#0F2318',
+  surfaceWarm:    '#0F2318',
+  surfaceVariant: '#142E20',
+  border:         '#1F4D32',
+  borderLight:    '#163827',
+  divider:        '#1F4D32',
+  textPrimary:    '#ECFDF5',
+  textSecondary:  '#ADC4B9',
+  textMuted:      '#759385',
+  textLight:      '#3D5E4C',
+  textInverse:    '#052E16',
+  tabBackground:  '#0A1F13',
+  tabActive:      '#BBF7D0',
+  tabInactive:    'rgba(255,255,255,0.40)',
+  overlay:        'rgba(0,0,0,0.76)',
+  overlayLight:   'rgba(0,0,0,0.40)',
+  primarySurface: '#052E14',
+  primarySoft:    '#14532D',
+  accentSurface:  '#1A2E05',
+  successSurface: '#052E14',
+  warningSurface: '#2A2105',
+  errorSurface:   '#2A0F0F',
+  infoSurface:    '#082636',
+  secondarySurface: '#2A2108',
 };
 
 // ─── Gradients ─────────────────────────────────────────────────────────────────
 export const Gradients = {
-  /** Main hero gradient — purple → pink → sunset (Gen-Z signature) */
-  brand:       ['#8B5CF6', '#EC4899', '#F97316'] as const,
-  /** Softer hero — violet → pink only */
-  brandSoft:   ['#F5F3FF', '#FDF2F8'] as const,
-  /** Violet monochrome */
-  violet:      ['#A78BFA', '#7C3AED', '#5B21B6'] as const,
-  /** Sunrise — warm yellow → pink */
-  sunrise:     ['#FDE68A', '#F472B6'] as const,
-  /** Sunset — pink → deep orange */
-  sunset:      ['#F472B6', '#F97316', '#DC2626'] as const,
-  /** Ocean — teal → sky */
-  ocean:       ['#22D3EE', '#0EA5E9', '#6366F1'] as const,
-  /** Emerald — green shades */
-  emerald:     ['#34D399', '#10B981', '#047857'] as const,
-  /** Gold — premium tier */
-  gold:        ['#FDE68A', '#F59E0B', '#B45309'] as const,
-  /** Dark — bottom scrim for photo overlays */
-  dark:        ['rgba(0,0,0,0)', 'rgba(15,10,31,0.78)'] as const,
-  /** Glass — for cards over hero */
-  glass:       ['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.08)'] as const,
-  /** Card highlight — subtle violet lift */
-  cardLift:    ['#FFFFFF', '#F5F3FF'] as const,
+  /** Bannières / héros — citron sauge vers forêt */
+  brand:       ['#86EFAC', '#22C55E', '#14532D'] as const,
+  /** Surfaces douces sous cartes */
+  brandSoft:   ['#FFFFFF', '#ECFDF3'] as const,
+  /** Monochrome hero (liste “violet” historique du code) */
+  violet:      ['#BBF7D0', '#166534', '#14532D'] as const,
+  sunrise:     ['#FDE68A', '#84CC16'] as const,
+  sunset:      ['#FACC15', '#EA580C', '#BE123C'] as const,
+  ocean:       ['#22C55E', '#0EA5E9', '#1D4ED8'] as const,
+  emerald:     ['#86EFAC', '#16A34A', '#14532D'] as const,
+  gold:        ['#FDE68A', '#D97706', '#92400E'] as const,
+  dark:        ['rgba(0,0,0,0)', 'rgba(5,46,22,0.82)'] as const,
+  glass:       ['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.06)'] as const,
+  cardLift:    ['#FFFFFF', '#F5F9F7'] as const,
 };

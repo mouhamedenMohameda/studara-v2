@@ -14,8 +14,7 @@ import { Text } from '@/ui/Text';
 import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
-import { Spacing, BorderRadius, Gradients } from '../../theme';
+import { Spacing, BorderRadius } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
 
 interface ScreenHeaderProps {
@@ -24,6 +23,7 @@ interface ScreenHeaderProps {
   onBack?: () => void;
   rightIcon?: AppIconName;
   onRightPress?: () => void;
+  /** @deprecated utilise le chrome clair; traité comme `plain`. */
   variant?: 'plain' | 'gradient' | 'solid';
   rtl?: boolean;
   style?: ViewStyle;
@@ -49,16 +49,14 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={[
             styles.iconBtn,
-            variant === 'gradient'
-              ? { backgroundColor: 'rgba(255,255,255,0.22)', borderColor: 'rgba(255,255,255,0.32)' }
-              : { backgroundColor: C.surfaceVariant, borderColor: C.border },
+            { backgroundColor: C.surfaceVariant, borderColor: C.border },
           ]}
           activeOpacity={0.8}
         >
           <AppIcon
             name={rtl ? 'chevronForward' : 'chevronBack'}
             size={22}
-            color={variant === 'gradient' ? '#FFFFFF' : C.textPrimary}
+            color={C.textPrimary}
           />
         </TouchableOpacity>
       ) : (
@@ -71,7 +69,7 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
           style={[
             styles.title,
             {
-              color: variant === 'gradient' ? '#FFFFFF' : C.textPrimary,
+              color: C.textPrimary,
               textAlign: rtl ? 'right' : 'left',
             },
           ]}
@@ -84,7 +82,7 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
             style={[
               styles.subtitle,
               {
-                color: variant === 'gradient' ? 'rgba(255,255,255,0.85)' : C.textSecondary,
+                color: C.textSecondary,
                 textAlign: rtl ? 'right' : 'left',
               },
             ]}
@@ -100,16 +98,14 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={[
             styles.iconBtn,
-            variant === 'gradient'
-              ? { backgroundColor: 'rgba(255,255,255,0.22)', borderColor: 'rgba(255,255,255,0.32)' }
-              : { backgroundColor: C.surfaceVariant, borderColor: C.border },
+            { backgroundColor: C.surfaceVariant, borderColor: C.border },
           ]}
           activeOpacity={0.8}
         >
           <AppIcon
             name={rightIcon}
             size={20}
-            color={variant === 'gradient' ? '#FFFFFF' : C.textPrimary}
+            color={C.textPrimary}
           />
         </TouchableOpacity>
       ) : (
@@ -117,19 +113,6 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
       )}
     </View>
   );
-
-  if (variant === 'gradient') {
-    return (
-      <LinearGradient
-        colors={Gradients.brand as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[{ paddingBottom: Spacing.base }, style]}
-      >
-        <SafeAreaView edges={['top']}>{content}</SafeAreaView>
-      </LinearGradient>
-    );
-  }
 
   if (variant === 'solid') {
     return (
@@ -139,8 +122,9 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
     );
   }
 
+  // plain + ancien gradient = chrome clair
   return (
-    <SafeAreaView edges={['top']} style={[{ backgroundColor: C.background }, style]}>
+    <SafeAreaView edges={['top']} style={[{ backgroundColor: C.background, paddingBottom: Spacing.sm }, style]}>
       {content}
     </SafeAreaView>
   );

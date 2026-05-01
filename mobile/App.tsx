@@ -9,11 +9,17 @@ import queryClient from './src/utils/queryClient';
 import { AuthProvider } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
-import { ThemeProvider } from './src/context/ThemeContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { IconContext } from 'phosphor-react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { appFontSources } from './src/theme/fonts';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Colors } from './src/theme/colors';
+
+function ThemedStatusBar() {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? 'light' : 'dark'} />;
+}
 
 // Icon fonts:
 // - iOS: registered via Info.plist at build time (handled by Expo prebuild +
@@ -29,7 +35,7 @@ export default function App() {
 
   if (!fontsLoaded && !fontError) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#080d14' }} />
+      <View style={{ flex: 1, backgroundColor: Colors.background }} />
     );
   }
   if (fontError) {
@@ -46,7 +52,7 @@ export default function App() {
                 <AccessibilityProvider>
                   <AuthProvider>
                     <AppNavigator />
-                    <StatusBar style="light" backgroundColor="#0A0714" translucent={false} />
+                    <ThemedStatusBar />
                   </AuthProvider>
                 </AccessibilityProvider>
               </ThemeProvider>

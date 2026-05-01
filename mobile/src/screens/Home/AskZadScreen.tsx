@@ -9,7 +9,6 @@ import { TextInput } from '@/ui/TextInput';
 import { View, StyleSheet, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useSubscription } from '../../context/SubscriptionContext';
@@ -20,7 +19,7 @@ import { Colors, BorderRadius, Spacing, Shadows } from '../../theme';
 import { safeBack } from '../../utils/safeBack';
 
 const DAILY_QUOTA = 150;
-const CHAT_GRADIENT: [string, string, string] = ['#8B5CF6', '#7C3AED', '#EC4899'];
+const HEADER_SOLID = Colors.primary;
 const CHAT_EMOJI = '🤖';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -203,13 +202,9 @@ export default function AskZadScreen() {
       return (
         <View style={styles.msgRowUser}>
           <View style={styles.userBubbleWrap}>
-            <LinearGradient
-              colors={CHAT_GRADIENT}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={styles.bubbleUser}
-            >
+            <View style={[styles.bubbleUser, { backgroundColor: C.primary }]}>
               <Text style={styles.bubbleTextUser}>{item.content}</Text>
-            </LinearGradient>
+            </View>
             <Text style={styles.timestamp}>{timeStr}</Text>
           </View>
         </View>
@@ -234,11 +229,7 @@ export default function AskZadScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
       {/* ── Gradient Header ─────────────────────────────────────────────────── */}
-      <LinearGradient
-        colors={CHAT_GRADIENT}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
+      <View style={[styles.headerGradient, { backgroundColor: HEADER_SOLID }]}>
         <SafeAreaView edges={['top']} style={styles.headerSafe}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => safeBack(navigation as any)} style={styles.backBtn}>
@@ -324,7 +315,7 @@ export default function AskZadScreen() {
             </View>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </View>
 
       {/* Credit progress bar */}
       {!isPremium && !hideQuotaChrome && (
@@ -335,7 +326,7 @@ export default function AskZadScreen() {
                 styles.creditBarFill,
                 {
                   width: `${Math.max(2, Math.min(100, (creditsRemaining / dailyQuota) * 100))}%`,
-                  backgroundColor: creditsRemaining <= 10 ? '#EF4444' : creditsRemaining <= dailyQuota * 0.3 ? '#F59E0B' : CHAT_GRADIENT[0],
+                  backgroundColor: creditsRemaining <= 10 ? '#EF4444' : creditsRemaining <= dailyQuota * 0.3 ? '#F59E0B' : C.primary,
                 },
               ]}
             />
@@ -399,12 +390,9 @@ export default function AskZadScreen() {
             contentContainerStyle={styles.emptyState}
             ListHeaderComponent={
               <View style={styles.emptyHeader}>
-                <LinearGradient
-                  colors={CHAT_GRADIENT}
-                  style={styles.emptyAvatarCircle}
-                >
+                <View style={[styles.emptyAvatarCircle, { backgroundColor: C.primary }]}>
                   <Text style={{ fontSize: 36 }}>{CHAT_EMOJI}</Text>
-                </LinearGradient>
+                </View>
                 <Text style={[styles.emptyTitle, { color: C.textPrimary }]}>
                   {isAr ? 'مرحباً 👋' : 'Bienvenue 👋'}
                 </Text>
@@ -423,17 +411,12 @@ export default function AskZadScreen() {
                     onPress={() => (navigation as any).navigate('Paywall')}
                     style={styles.emptyCtaPrimaryWrap}
                   >
-                    <LinearGradient
-                      colors={['#4F46E5', '#7C3AED']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.emptyCtaPrimary}
-                    >
+                    <View style={[styles.emptyCtaPrimary, { backgroundColor: C.primary }]}>
                       <AppIcon name='sparkles' size={18} color="#fff" />
                       <Text style={styles.emptyCtaPrimaryText}>
                         {isAr ? 'Studara+ — عرض شهري' : 'Studara+ — offre mensuelle'}
                       </Text>
-                    </LinearGradient>
+                    </View>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => (navigation as any).navigate('MyPlan')}
@@ -462,7 +445,7 @@ export default function AskZadScreen() {
               >
                 <Text style={styles.suggestionIcon}>{s.icon}</Text>
                 <Text style={[styles.suggestionText, { color: C.textPrimary }]}>{s.text}</Text>
-                <AppIcon name="arrowForward" size={14} color={CHAT_GRADIENT[0]} />
+                <AppIcon name="arrowForward" size={14} color={HEADER_SOLID} />
               </TouchableOpacity>
             )}
           />
@@ -480,11 +463,11 @@ export default function AskZadScreen() {
         {/* Typing indicator */}
         {loading && (
           <View style={styles.loadingRow}>
-            <View style={[styles.botAvatar, { backgroundColor: CHAT_GRADIENT[0] + '25' }]}>
+            <View style={[styles.botAvatar, { backgroundColor: HEADER_SOLID + '25' }]}>
               <Text style={{ fontSize: 17 }}>{CHAT_EMOJI}</Text>
             </View>
             <View style={[styles.typingBubble, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
-              <TypingDots color={CHAT_GRADIENT[0]} />
+              <TypingDots color={HEADER_SOLID} />
             </View>
           </View>
         )}
@@ -509,7 +492,7 @@ export default function AskZadScreen() {
 
           {/* Send button — standalone, always on trailing edge */}
           <TouchableOpacity
-            style={[styles.sendBtn, { backgroundColor: (!input.trim() || loading) ? C.border : CHAT_GRADIENT[0] }]}
+            style={[styles.sendBtn, { backgroundColor: (!input.trim() || loading) ? C.border : HEADER_SOLID }]}
             onPress={() => sendMessage(input)}
             disabled={!input.trim() || loading}
             activeOpacity={0.8}

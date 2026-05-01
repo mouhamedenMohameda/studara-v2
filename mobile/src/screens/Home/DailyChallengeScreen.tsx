@@ -23,8 +23,7 @@ import { useAccessibility } from '../../context/AccessibilityContext';
 import { apiRequest }      from '../../utils/api';
 import { scheduleDailyChallengeNotification, cancelDailyChallengeNotification } from '../../utils/notifications';
 import { getPendingDailyChallengeSubmit, setPendingDailyChallengeSubmit } from '../../utils/offlineStorage';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Gradients } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
 import { safeBack } from '../../utils/safeBack';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -171,7 +170,51 @@ export default function DailyChallengeScreen() {
     }, 1000);
   }, [stopTimer]);
 
+  const loadLeaderboard = useCallback(async () => {
+    setLbLoading(true);
+    try {
+      const lb = await apiRequest<{ entries: LeaderboardEntry[] }>(
+        '/daily-challenge/leaderboard', { token: token! },
+      );
+      setLeaderboard(lb.entries);
+    } catch {/* silent */}
+    setLbLoading(false);
+  }, [token]);
+
   useEffect(() => () => stopTimer(), [stopTimer]);
+
+  // ── Finish & submit ────────────────────────────────────────────────────────
+  const handleFinish = useCallback(async (finalAnswers: Array<{ id: string; answer: string }>) => {
+    const tl = timeLeft;
+    const totalTime = data?.timeLimitS ?? 300;
+    const timeTaken = totalTime - tl;
+
+    setPhase('result');
+
+    try {
+      const r = await apiRequest<{ ok: true; score: number; correct: number; total: number; timeTakenS: number }>(
+        '/daily-challenge/submit',
+        {
+          method: 'POST',
+          body: { answers: finalAnswers, timeTakenS: timeTaken },
+          token: token!,
+        },
+      );
+      setFinalScore(r.score);
+      setFinalCorrect(r.correct);
+      setFinalTotal(r.total);
+      await setPendingDailyChallengeSubmit(null);
+    } catch {
+      await setPendingDailyChallengeSubmit({
+        date: data?.date ?? new Date().toISOString().slice(0, 10),
+        payload: { answers: finalAnswers, timeTakenS: timeTaken },
+        queuedAt: new Date().toISOString(),
+      });
+    }
+
+    loadLeaderboard();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, data, token, loadLeaderboard]);
 
   // When time hits 0, auto-submit
   useEffect(() => {
@@ -224,51 +267,7 @@ export default function DailyChallengeScreen() {
       }
     }, 220);
     setAnswers(nextAnswers);
-  }, [selected, data, qIndex, answers, stopTimer]);
-
-  // ── Finish & submit ────────────────────────────────────────────────────────
-  const handleFinish = useCallback(async (finalAnswers: Array<{ id: string; answer: string }>) => {
-    const tl = timeLeft;
-    const totalTime = data?.timeLimitS ?? 300;
-    const timeTaken = totalTime - tl;
-
-    setPhase('result');
-
-    try {
-      const r = await apiRequest<{ ok: true; score: number; correct: number; total: number; timeTakenS: number }>(
-        '/daily-challenge/submit',
-        {
-          method: 'POST',
-          body: { answers: finalAnswers, timeTakenS: timeTaken },
-          token: token!,
-        },
-      );
-      setFinalScore(r.score);
-      setFinalCorrect(r.correct);
-      setFinalTotal(r.total);
-      await setPendingDailyChallengeSubmit(null);
-    } catch {
-      await setPendingDailyChallengeSubmit({
-        date: data?.date ?? new Date().toISOString().slice(0, 10),
-        payload: { answers: finalAnswers, timeTakenS: timeTaken },
-        queuedAt: new Date().toISOString(),
-      });
-    }
-
-    loadLeaderboard();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, data, token]);
-
-  const loadLeaderboard = useCallback(async () => {
-    setLbLoading(true);
-    try {
-      const lb = await apiRequest<{ entries: LeaderboardEntry[] }>(
-        '/daily-challenge/leaderboard', { token: token! },
-      );
-      setLeaderboard(lb.entries);
-    } catch {/* silent */}
-    setLbLoading(false);
-  }, [token]);
+  }, [selected, data, qIndex, answers, stopTimer, handleFinish]);
 
   // ── Timer color ────────────────────────────────────────────────────────────
   const totalTime  = data?.timeLimitS ?? 60;
@@ -295,22 +294,16 @@ export default function DailyChallengeScreen() {
     <View style={{ flex: 1, backgroundColor: C.background }}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      {/* Header */}
-      <LinearGradient
-        colors={Gradients.brand as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 16, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
-      >
+      <View style={{ paddingBottom: 16, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, backgroundColor: C.primary }}>
         <SafeAreaView edges={['top']}>
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingTop: 4 }}>
             <TouchableOpacity
               onPress={() => safeBack(navigation)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={{
-                marginRight: 12, width: 40, height: 40, borderRadius: 20,
-                backgroundColor: 'rgba(255,255,255,0.22)',
-                borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+                marginRight: 12, width: 42, height: 42, borderRadius: 21,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)',
                 alignItems: 'center', justifyContent: 'center',
               }}
             >
@@ -327,7 +320,6 @@ export default function DailyChallengeScreen() {
                 </Text>
               )}
             </View>
-            {/* Timer pill */}
             {phase === 'playing' && (
               <View style={{
                 backgroundColor: timerColor, borderRadius: 999,
@@ -343,12 +335,12 @@ export default function DailyChallengeScreen() {
             )}
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </View>
 
       {/* ── LOADING ── */}
       {phase === 'loading' && (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-          <ActivityIndicator size="large" color="#7C3AED" />
+          <ActivityIndicator size="large" color={C.primary} />
           <Text style={{ color: C.textSecondary, fontSize: fontSize(14) }}>
             {isAr ? 'جاري تحميل أسئلة اليوم…' : 'Chargement des questions…'}
           </Text>
@@ -364,7 +356,7 @@ export default function DailyChallengeScreen() {
           </Text>
           <TouchableOpacity
             onPress={() => { setPhase('loading'); }}
-            style={{ backgroundColor: '#7C3AED', borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12 }}
+            style={{ backgroundColor: Colors.primary, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12 }}
           >
             <Text style={{ color: '#fff', fontWeight: '700' }}>
               {isAr ? 'إعادة المحاولة' : 'Réessayer'}
@@ -399,7 +391,7 @@ export default function DailyChallengeScreen() {
             </Text>
             <TouchableOpacity
               onPress={() => safeBack(navigation)}
-              style={{ backgroundColor: '#7C3AED', borderRadius: 14, paddingHorizontal: 28, paddingVertical: 12 }}
+              style={{ backgroundColor: Colors.primary, borderRadius: 14, paddingHorizontal: 28, paddingVertical: 12 }}
             >
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: fontSize(15) }}>
                 {isAr ? '← عودة' : '← Retour'}
@@ -439,9 +431,9 @@ export default function DailyChallengeScreen() {
           <TouchableOpacity
             onPress={handleStart}
             style={{
-              marginTop: 32, backgroundColor: '#7C3AED',
+              marginTop: 32, backgroundColor: Colors.primary,
               borderRadius: 18, paddingVertical: 16, paddingHorizontal: 48,
-              shadowColor: '#7C3AED', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
+              shadowColor: Colors.primary, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
               elevation: 6,
             }}
             activeOpacity={0.85}
@@ -488,7 +480,7 @@ export default function DailyChallengeScreen() {
 
           <TouchableOpacity
             onPress={() => safeBack(navigation)}
-            style={{ marginTop: 26, backgroundColor: '#7C3AED', borderRadius: 14, paddingHorizontal: 28, paddingVertical: 12 }}
+            style={{ marginTop: 26, backgroundColor: Colors.primary, borderRadius: 14, paddingHorizontal: 28, paddingVertical: 12 }}
             activeOpacity={0.85}
           >
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: fontSize(15) }}>
@@ -505,7 +497,7 @@ export default function DailyChallengeScreen() {
           <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20, justifyContent: 'center' }}>
             {data.questions.map((_, i) => {
               const state = i < answers.length ? 'done' : i === qIndex ? 'active' : 'pending';
-              const bg = state === 'done' ? Colors.primary : state === 'active' ? '#7C3AED' : C.border;
+              const bg = state === 'done' ? Colors.primary : state === 'active' ? Colors.primary : C.border;
               return (
                 <View key={i} style={{
                   width: state === 'active' ? 28 : 10, height: 10,
@@ -523,7 +515,7 @@ export default function DailyChallengeScreen() {
             shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
           }}>
             {data.questions[qIndex].subject && (
-              <Text style={{ color: '#7C3AED', fontWeight: '700', fontSize: fontSize(11), marginBottom: 6 }}>
+              <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: fontSize(11), marginBottom: 6 }}>
                 {data.questions[qIndex].subject}
               </Text>
             )}
@@ -543,7 +535,7 @@ export default function DailyChallengeScreen() {
             {data.questions[qIndex].options.map((opt, oi) => {
               const isSelected  = selected === opt;
               const showResult  = selected !== null;
-              const bg = isSelected ? '#7C3AED' : C.surface;
+              const bg = isSelected ? Colors.primary : C.surface;
               const textColor = isSelected ? '#fff' : C.textPrimary;
               const label = ['A', 'B', 'C', 'D'][oi];
 
@@ -562,7 +554,7 @@ export default function DailyChallengeScreen() {
                       backgroundColor: bg,
                       borderRadius: BorderRadius.lg,
                       borderWidth: 1.5,
-                      borderColor: isSelected ? '#7C3AED' : C.border,
+                      borderColor: isSelected ? Colors.primary : C.border,
                       padding: Spacing.md,
                       flexDirection: isAr ? 'row-reverse' : 'row',
                       alignItems: 'center',
@@ -597,15 +589,14 @@ export default function DailyChallengeScreen() {
       {phase === 'result' && data && (
         <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 40 }}>
           {/* Score card */}
-          <LinearGradient
-            colors={Gradients.brand as any}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          <View
             style={{
               borderRadius: BorderRadius['2xl'],
               padding: 30, alignItems: 'center', marginBottom: 24,
-              shadowColor: '#7C3AED', shadowOpacity: 0.45, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 12,
-            }}>
+              backgroundColor: C.primary,
+              ...Shadows.brand,
+            }}
+          >
             <Text style={{ fontSize: 52 }}>
               {(finalCorrect || data.myScore?.correct || 0) ===
                (finalTotal || data.questions.length || data.myScore?.total || 5) ? '🏆' : '🎯'}
@@ -635,7 +626,7 @@ export default function DailyChallengeScreen() {
                 </Text>
               </View>
             )}
-          </LinearGradient>
+          </View>
 
           {/* Leaderboard */}
           <Text style={{ color: C.textPrimary, fontWeight: '800', fontSize: fontSize(16), marginBottom: 12 }}>
@@ -643,7 +634,7 @@ export default function DailyChallengeScreen() {
           </Text>
 
           {lbLoading ? (
-            <ActivityIndicator color="#7C3AED" style={{ marginVertical: 24 }} />
+            <ActivityIndicator color={C.primary} style={{ marginVertical: 24 }} />
           ) : leaderboard.length === 0 ? (
             <Text style={{ color: C.textSecondary, textAlign: 'center', marginVertical: 24, fontSize: fontSize(13) }}>
               {isAr ? 'لا يوجد منافسون بعد — كن أول المشاركين!' : 'Pas encore de compétiteurs — sois le premier!'}
@@ -654,10 +645,10 @@ export default function DailyChallengeScreen() {
                 <View
                   key={entry.rank}
                   style={{
-                    backgroundColor: entry.isMe ? '#7C3AED' + '22' : C.surface,
+                    backgroundColor: entry.isMe ? Colors.primary + '22' : C.surface,
                     borderRadius: BorderRadius.lg,
                     borderWidth: entry.isMe ? 1.5 : 1,
-                    borderColor: entry.isMe ? '#7C3AED' : C.border,
+                    borderColor: entry.isMe ? Colors.primary : C.border,
                     padding: Spacing.md,
                     flexDirection: isAr ? 'row-reverse' : 'row',
                     alignItems: 'center',
@@ -669,7 +660,7 @@ export default function DailyChallengeScreen() {
                   </Text>
                   <View style={{ flex: 1 }}>
                     <Text style={{
-                      color: entry.isMe ? '#7C3AED' : C.textPrimary,
+                      color: entry.isMe ? Colors.primary : C.textPrimary,
                       fontWeight: entry.isMe ? '800' : '600',
                       fontSize: fontSize(14),
                       textAlign: isAr ? 'right' : 'left',
@@ -684,7 +675,7 @@ export default function DailyChallengeScreen() {
                     </Text>
                   </View>
                   <Text style={{
-                    color: entry.isMe ? '#7C3AED' : C.textSecondary,
+                    color: entry.isMe ? Colors.primary : C.textSecondary,
                     fontWeight: '800',
                     fontSize: fontSize(16),
                   }}>
@@ -700,11 +691,11 @@ export default function DailyChallengeScreen() {
             onPress={() => safeBack(navigation)}
             style={{
               marginTop: 28, borderRadius: 14,
-              borderWidth: 1.5, borderColor: '#7C3AED',
+              borderWidth: 1.5, borderColor: Colors.primary,
               paddingVertical: 14, alignItems: 'center',
             }}
           >
-            <Text style={{ color: '#7C3AED', fontWeight: '700', fontSize: fontSize(15) }}>
+            <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: fontSize(15) }}>
               {isAr ? '← العودة' : '← Retour'}
             </Text>
           </TouchableOpacity>
@@ -715,7 +706,7 @@ export default function DailyChallengeScreen() {
             style={{
               marginTop: 12,
               borderRadius: 14,
-              backgroundColor: '#7C3AED',
+              backgroundColor: Colors.primary,
               paddingVertical: 14,
               alignItems: 'center',
             }}

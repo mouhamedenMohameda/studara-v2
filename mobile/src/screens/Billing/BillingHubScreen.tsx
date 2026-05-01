@@ -22,7 +22,6 @@ import {
   I18nManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 
@@ -31,7 +30,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useSubscription } from '../../context/SubscriptionContext';
 import { apiRequest, API_BASE } from '../../utils/api';
-import { Colors, BorderRadius, Spacing, Shadows, Gradients } from '../../theme';
+import { Colors, BorderRadius, Spacing, Shadows } from '../../theme';
 import { safeBack } from '../../utils/safeBack';
 import { PAYG_FEATURES, getPaygFeature, PaygModelPrice } from '../../constants/paygFeatures';
 
@@ -91,7 +90,7 @@ const FALLBACK_BANKS: Bank[] = [
 
 const PAYMENT_ACCOUNTS = [
   { bank: 'Bankily', phone: '42986738', color: '#16A34A' },
-  { bank: 'Masrivy', phone: '36863516', color: '#7C3AED' },
+  { bank: 'Masrivy', phone: '36863516', color: Colors.primary },
   { bank: 'Sedad', phone: '32164356', color: '#2563EB' },
 ] as const;
 
@@ -547,15 +546,16 @@ export default function BillingHubScreen() {
                     onPress={() => (navigation as any).navigate('Paywall')}
                     style={s.panelCtaInner}
                   >
-                    <LinearGradient
-                      colors={Gradients.brand as any}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[s.panelCtaGrad, isAr ? { flexDirection: 'row-reverse' } : { flexDirection: 'row' }]}
+                    <View
+                      style={[
+                        s.panelCtaGrad,
+                        { backgroundColor: C.primary },
+                        isAr ? { flexDirection: 'row-reverse' } : { flexDirection: 'row' },
+                      ]}
                     >
                       <AppIcon name="sparkles" size={20} color="#fff" />
                       <Text style={s.panelCtaText}>{isAr ? 'اكتشف Studara+' : 'Découvrir Studara+'}</Text>
-                    </LinearGradient>
+                    </View>
                   </TouchableOpacity>
                 </>
               )}
@@ -593,7 +593,7 @@ export default function BillingHubScreen() {
             <Text style={[s.sectionKicker, { color: C.textSecondary, marginTop: Spacing.lg }]}>
               {isAr ? 'PAYG (محفظة واحدة)' : 'PAYG (wallet unique)'}
             </Text>
-            <LinearGradient colors={['#8B5CF6', '#EC4899', '#F97316']} style={s.walletHero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+            <View style={[s.walletHero, { backgroundColor: C.primary }, Shadows.brand]}>
               <View style={s.walletHeroTop}>
                 <Text style={s.walletHeroLabel}>{isAr ? 'الرصيد الإجمالي' : 'Solde total'}</Text>
                 <Text style={s.walletHeroHint}>{isAr ? 'يُستخدم على كل ميزات PAYG' : 'Utilisable sur toutes les features PAYG'}</Text>
@@ -621,14 +621,14 @@ export default function BillingHubScreen() {
                 <Text style={s.walletHeroCtaText}>{isAr ? 'إدارة المحفظة' : 'Gérer le wallet'}</Text>
                 <AppIcon name={isRtl ? 'chevronBack' : 'chevronForward'} size={16} color="#fff" />
               </TouchableOpacity>
-            </LinearGradient>
+            </View>
           </View>
         )}
 
         {/* Wallet */}
         {activeTab === 'wallet' && (
           <View style={{ padding: Spacing.lg }}>
-            <LinearGradient colors={['#7C3AED', '#EC4899']} style={s.paygHeader} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+            <View style={[s.paygHeader, { backgroundColor: C.primary }, Shadows.brand]}>
               <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={s.paygHeaderTitle}>{isAr ? '💳 المحفظة (PAYG)' : '💳 Wallet (PAYG)'}</Text>
                 <View style={s.paygHeaderPill}>
@@ -639,7 +639,7 @@ export default function BillingHubScreen() {
               <Text style={s.paygHeaderSub}>
                 {isAr ? 'رصيد واحد لكل الميزات — كل ميزة بسعرها.' : 'Un seul solde pour toutes les features — chaque feature a son prix.'}
               </Text>
-            </LinearGradient>
+            </View>
 
             {/* Pricing list */}
             <Text style={[s.sectionKicker, { color: C.textSecondary, marginTop: Spacing.lg }]}>

@@ -11,8 +11,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSubscription } from '../../context/SubscriptionContext';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
 import { Faculty, University, ProfileStackParamList } from '../../types';
 import { FACULTIES, UNIVERSITIES } from '../../constants';
@@ -41,7 +40,7 @@ const LEVEL_LABELS: Record<number, { fr: string; ar: string; emoji: string; colo
   2: { fr: 'Intermédiaire', ar: 'متوسط',     emoji: '🥈', color: '#6B7280' },
   3: { fr: 'Avancé',        ar: 'متقدم',     emoji: '🥇', color: '#B45309' },
   4: { fr: 'Expert',        ar: 'خبير',      emoji: '💎', color: '#0891B2' },
-  5: { fr: 'Maître',        ar: 'أستاذ',     emoji: '👑', color: '#7C3AED' },
+  5: { fr: 'Maître',        ar: 'أستاذ',     emoji: '👑', color: Colors.primary },
 };
 
 const getLevelInfo = (level: number) => LEVEL_LABELS[Math.min(level, 5)] ?? LEVEL_LABELS[1];
@@ -282,53 +281,42 @@ const ProfileScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      {/* Header */}
-      <LinearGradient
-        colors={Gradients.brand as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerContent}>
-            {/* Avatar + Level */}
-            <View style={{ alignItems: 'center', gap: 4 }}>
-              <View style={styles.avatarCircle}>
-                <Text style={styles.initials}>{initials}</Text>
-              </View>
-              <View style={[styles.levelBadge, { backgroundColor: levelInfo.color + 'CC' }]}>
-                <Text style={styles.levelText}>{levelInfo.emoji} {isAr ? levelInfo.ar : levelInfo.fr}</Text>
-              </View>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.borderLight }}>
+        <View style={styles.headerContent}>
+          <View style={{ alignItems: 'center', gap: 4 }}>
+            <View style={[styles.avatarCircle, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }]}>
+              <Text style={[styles.initials, { color: C.primary }]}>{initials}</Text>
             </View>
-            <Text style={styles.userName}>{user.fullName}</Text>
-            <Text style={styles.userMeta}>
-              {facultyLabel(user.faculty)}  •  {t('profile.year.prefix')}{user.year}
-            </Text>
-            <View style={styles.universityBadge}>
-              <AppIcon name="schoolOutline" size={13} color="rgba(255,255,255,0.8)" />
-              <Text style={styles.universityText}>{user.university}</Text>
-            </View>
-
-            {/* XP Progress Bar */}
-            <View style={styles.xpContainer}>
-              <View style={styles.xpLabelRow}>
-                <Text style={styles.xpLabel}>{xp} XP</Text>
-                <Text style={styles.xpLabel}>{xpNextLevel} XP</Text>
-              </View>
-              <View style={styles.xpTrack}>
-                <View style={[styles.xpFill, { width: `${xpProgress * 100}%` as any }]} />
-              </View>
-              <Text style={styles.xpSub}>
-                {isAr ? `المستوى ${level}` : `Niveau ${level}`}
-                {streak > 0 ? `  🔥 ${streak} ${isAr ? 'يوم' : 'j'}` : ''}
-              </Text>
+            <View style={[styles.levelBadge, { backgroundColor: levelInfo.color + 'CC', borderColor: 'rgba(0,0,0,0.08)' }]}>
+              <Text style={styles.levelText}>{levelInfo.emoji} {isAr ? levelInfo.ar : levelInfo.fr}</Text>
             </View>
           </View>
-        </SafeAreaView>
-      </LinearGradient>
+          <Text style={[styles.userName, { color: C.textPrimary }]}>{user.fullName}</Text>
+          <Text style={[styles.userMeta, { color: C.textSecondary }]}>
+            {facultyLabel(user.faculty)}  •  {t('profile.year.prefix')}{user.year}
+          </Text>
+          <View style={[styles.universityBadge, { backgroundColor: C.surfaceVariant, borderColor: C.border }]}>
+            <AppIcon name="schoolOutline" size={13} color={C.primary} />
+            <Text style={[styles.universityText, { color: C.textSecondary }]}>{user.university}</Text>
+          </View>
+
+          <View style={styles.xpContainer}>
+            <View style={styles.xpLabelRow}>
+              <Text style={[styles.xpLabel, { color: C.textMuted }]}>{xp} XP</Text>
+              <Text style={[styles.xpLabel, { color: C.textMuted }]}>{xpNextLevel} XP</Text>
+            </View>
+            <View style={[styles.xpTrack, { backgroundColor: C.border }]}>
+              <View style={[styles.xpFill, { width: `${xpProgress * 100}%` as any, backgroundColor: C.secondaryDark }]} />
+            </View>
+            <Text style={[styles.xpSub, { color: C.textSecondary }]}>
+              {isAr ? `المستوى ${level}` : `Niveau ${level}`}
+              {streak > 0 ? `  🔥 ${streak} ${isAr ? 'يوم' : 'j'}` : ''}
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-        {/* Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <AppIcon name="cloudUploadOutline" size={22} color={Colors.primary} />
@@ -337,7 +325,7 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statCard}>
-            <AppIcon name="downloadOutline" size={22} color="#7C3AED" />
+            <AppIcon name="downloadOutline" size={22} color="Colors.primary" />
             <Text style={styles.statValue}>{user.totalDownloads ?? 0}</Text>
             <Text style={styles.statLabel}>{t('profile.stats.downloads')}</Text>
           </View>
@@ -351,7 +339,7 @@ const ProfileScreen = () => {
 
         {/* Bento Box share button */}
         <TouchableOpacity style={styles.shareCardBtn} onPress={handleShareCard} activeOpacity={0.8}>
-          <AppIcon name="shareSocialOutline" size={17} color="#7C3AED" />
+          <AppIcon name="shareSocialOutline" size={17} color="Colors.primary" />
           <Text style={styles.shareCardText}>
             {isAr ? '🌍 شارك بطاقتك الدراسية' : '🌍 Partager ma carte Studara'}
           </Text>
@@ -373,7 +361,7 @@ const ProfileScreen = () => {
 
         {/* Billing hub (subscription + PAYG wallet) */}
         <TouchableOpacity
-          style={[styles.wrappedBtn, { backgroundColor: '#7C3AED', marginTop: 12 }]}
+          style={[styles.wrappedBtn, { backgroundColor: Colors.primary, marginTop: 12 }]}
           onPress={() => (navigation as any).navigate('BillingHub')}
           activeOpacity={0.8}
         >
@@ -525,8 +513,8 @@ const ProfileScreen = () => {
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 6,
                       backgroundColor: '#EDE9FE', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}
                   >
-                    <AppIcon name="swapHorizontalOutline" size={15} color="#7C3AED" />
-                    <Text style={{ fontSize: 13, color: '#7C3AED', fontWeight: '600' }}>
+                    <AppIcon name="swapHorizontalOutline" size={15} color="Colors.primary" />
+                    <Text style={{ fontSize: 13, color: Colors.primary, fontWeight: '600' }}>
                       {isAr ? 'طلب تغيير التخصص' : 'Demander un changement'}
                     </Text>
                   </TouchableOpacity>
@@ -537,7 +525,7 @@ const ProfileScreen = () => {
                   <View style={{ width: '100%', gap: 10, marginTop: 4 }}>
 
                     {/* Level 1 — University */}
-                    <Text style={[styles.fieldLabel, { color: '#7C3AED' }]}>
+                    <Text style={[styles.fieldLabel, { color: Colors.primary }]}>
                       {isAr ? '١. الجامعة' : '1. Université'}
                     </Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -557,7 +545,7 @@ const ProfileScreen = () => {
                     {/* Level 2 — Faculty / Institut */}
                     {editSelectedUniv && (
                       <>
-                        <Text style={[styles.fieldLabel, { color: '#7C3AED' }]}>
+                        <Text style={[styles.fieldLabel, { color: Colors.primary }]}>
                           {isAr ? '٢. الكلية / المعهد' : '2. Faculté / Institut'}
                         </Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -580,7 +568,7 @@ const ProfileScreen = () => {
                     {/* Level 3 — Filière */}
                     {editSelectedFac && (
                       <>
-                        <Text style={[styles.fieldLabel, { color: '#7C3AED' }]}>
+                        <Text style={[styles.fieldLabel, { color: Colors.primary }]}>
                           {isAr ? '٣. الشعبة (الفيلير)' : '3. Filière'}
                         </Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -600,7 +588,7 @@ const ProfileScreen = () => {
                     )}
 
                     {/* Year */}
-                    <Text style={[styles.fieldLabel, { color: '#7C3AED' }]}>
+                    <Text style={[styles.fieldLabel, { color: Colors.primary }]}>
                       {isAr ? 'السنة' : 'Année'}
                     </Text>
                     <View style={styles.yearRow}>
@@ -623,7 +611,7 @@ const ProfileScreen = () => {
                       <TouchableOpacity
                         onPress={handleRequestChange}
                         disabled={requestSaving}
-                        style={{ flex: 1, backgroundColor: '#7C3AED', borderRadius: 10,
+                        style={{ flex: 1, backgroundColor: Colors.primary, borderRadius: 10,
                           paddingVertical: 10, alignItems: 'center', flexDirection: 'row',
                           justifyContent: 'center', gap: 6 }}
                       >
@@ -684,7 +672,7 @@ const ProfileScreen = () => {
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <View style={[styles.settingIcon, { backgroundColor: '#EDE9FE' }]}>
-                <AppIcon name="languageOutline" size={17} color="#7C3AED" />
+                <AppIcon name="languageOutline" size={17} color="Colors.primary" />
               </View>
               <Text style={styles.settingLabel}>{t('profile.language')}</Text>
             </View>
@@ -873,37 +861,32 @@ const AboutRow = ({ icon, color, label, value, onPress }: any) => {
 };
 
 const makeStyles = (C: typeof Colors) => StyleSheet.create({
-  header: { paddingBottom: 40, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
-  headerContent: { alignItems: 'center', paddingTop: 14, paddingBottom: 8, gap: 8 },
+  headerContent: { alignItems: 'center', paddingTop: 16, paddingBottom: 22, gap: 8 },
   avatarCircle: {
     width: 84, height: 84, borderRadius: 42,
-    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 3, borderColor: 'rgba(255,255,255,0.55)',
+    borderWidth: 3,
   },
-  initials: { fontSize: 30, fontWeight: '900', color: '#fff', letterSpacing: -1 },
-  levelBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
+  initials: { fontSize: 30, fontWeight: '900', letterSpacing: -1 },
+  levelBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
   levelText: { fontSize: 11, fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
-  userName: { fontSize: 24, fontWeight: '900', color: '#fff', marginTop: 6, letterSpacing: -0.5 },
-  userMeta: { fontSize: 13, color: 'rgba(255,255,255,0.92)', fontWeight: '600' },
+  userName: { fontSize: 24, fontWeight: '900', marginTop: 6, letterSpacing: -0.5 },
+  userMeta: { fontSize: 13, fontWeight: '600' },
   universityBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
-    paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, marginTop: 4,
+    paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, marginTop: 4, borderWidth: 1,
   },
-  universityText: { fontSize: 12, color: '#fff', fontWeight: '700' },
-  // XP bar
+  universityText: { fontSize: 12, fontWeight: '700' },
   xpContainer: { width: '90%', marginTop: 14, gap: 6 },
   xpLabelRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  xpLabel: { fontSize: 11, color: '#fff', fontWeight: '800', letterSpacing: 0.4 },
-  xpTrack: { height: 10, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 5, overflow: 'hidden' },
-  xpFill: { height: '100%', backgroundColor: '#FDE68A', borderRadius: 5 },
-  xpSub: { fontSize: 11, color: 'rgba(255,255,255,0.85)', textAlign: 'center', marginTop: 4, fontWeight: '700', letterSpacing: 0.3 },
+  xpLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.4 },
+  xpTrack: { height: 10, borderRadius: 5, overflow: 'hidden' },
+  xpFill: { height: '100%', borderRadius: 5 },
+  xpSub: { fontSize: 11, textAlign: 'center', marginTop: 4, fontWeight: '700', letterSpacing: 0.3 },
   // Stats
   statsRow: {
     flexDirection: 'row', backgroundColor: C.surface,
-    marginHorizontal: 16, marginTop: -26, borderRadius: 22,
+    marginHorizontal: 16, marginTop: 14, borderRadius: 22,
     padding: 18, ...Shadows.md, alignItems: 'center',
     borderWidth: 1, borderColor: C.borderLight,
   },

@@ -6,13 +6,12 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { View, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Modal, Share } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Modal, Share, Animated } from 'react-native';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useAuth }          from '../../context/AuthContext';
 import { useTheme }         from '../../context/ThemeContext';
@@ -29,7 +28,7 @@ import {
 import { API_BASE } from '../../utils/api';
 import { notifyWalletSpent } from '../../utils/walletUtils';
 import { computePaygChargeMru } from '@/utils/paygCharge';
-import { Colors, BorderRadius, Gradients, Shadows, Spacing } from '../../theme';
+import { Colors, BorderRadius, Shadows, Spacing } from '../../theme';
 import { usePremiumFeature } from '../../hooks/usePremiumFeature';
 import PremiumGate from '../../components/common/PremiumGate';
 import { safeBack } from '../../utils/safeBack';
@@ -37,7 +36,7 @@ import { safeBack } from '../../utils/safeBack';
 type Route = RouteProp<RootStackParamList, 'VoiceNoteDetail'>;
 type Nav   = StackNavigationProp<RootStackParamList, 'VoiceNoteDetail'>;
 
-const WHISPER_COLOR = '#7C3AED';
+const WHISPER_COLOR = Colors.primary;
 
 // ─── Config des actions IA ────────────────────────────────────────────────────
 
@@ -81,7 +80,7 @@ const AI_ACTIONS: ActionConfig[] = [
     labelFr: 'Flashcards', labelAr: 'بطاقات',
     descFr:  '8-15 Q/R pour réviser le cours',
     descAr:  '8-15 سؤال وجواب للمراجعة',
-    gradient: ['#8B5CF6', '#6D28D9'],
+    gradient: [WHISPER_COLOR, '#14532D'],
   },
 ];
 
@@ -176,7 +175,7 @@ function CourseRenderer({ text, C, isAr }: { text: string; C: typeof Colors; isA
   );
 }
 
-// ─── DiffText — renders text with {{word}} markers as underlined violet ───────
+// ─── DiffText — {{word}} markers → soulignement couleur primaire ─────────────
 
 function DiffText({ text, C, isAr }: { text: string; C: typeof Colors; isAr: boolean }) {
   // Split on {{...}} tokens
@@ -239,8 +238,25 @@ export default function VoiceNoteDetailScreen() {
   const isAr          = lang === 'ar';
   const styles        = useMemo(() => makeStyles(C), [C]);
   const insets        = useSafeAreaInsets();
-  const transcriptScrollRef = useRef<ScrollView>(null);
+  const transcriptScrollRef = useRef<ScrollView | null>(null);
   const [mainTab, setMainTab] = useState<'transcript' | 'ai'>('transcript');
+  const transcriptTabOpacity = useRef(new Animated.Value(1)).current;
+  const aiTabOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(transcriptTabOpacity, {
+        toValue: mainTab === 'transcript' ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(aiTabOpacity, {
+        toValue: mainTab === 'ai' ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [mainTab, transcriptTabOpacity, aiTabOpacity]);
 
   const { hasAccess: hasWhisperAccess, loading: whisperLoading, balanceMru: whisperBalance } = usePremiumFeature('whisper_studio');
 
@@ -603,7 +619,7 @@ export default function VoiceNoteDetailScreen() {
       // Notifier le débit PAYG (coût RÉEL renvoyé par l’API quand disponible)
       // - course     → ai_course (per_use)
       // - autres actions Whisper Studio (summary/rewrite/flashcards) → whisper_studio (au volume)
-      const paygFeatureKey = mode === 'course' ? 'ai_course' : 'whisper_studio';
+      const paygFeatureKey: 'ai_course' | 'whisper_studio' = 'whisper_studio';
       const apiCostMru =
         typeof (data as any)?.billing?.costMru === 'number'
           ? (data as any).billing.costMru
@@ -678,8 +694,8 @@ export default function VoiceNoteDetailScreen() {
     Alert.alert(
       isAr ? 'إعادة النسخ' : 'Retranscrire l\'audio',
       isAr
-        ? 'سيُعاد إرسال الملف الصوتي إلى Whisper. الكلمات المُعدَّلة ستكون مُسطَّرة باللون البنفسجي. هل تريد المتابعة؟'
-        : 'Le fichier audio sera renvoyé à Whisper. Les mots modifiés seront soulignés en violet. Continuer ?',
+        ? 'سيُعاد إرسال الملف الصوتي إلى Whisper. الكلمات المُعدَّلة ستكون مُسطَّرة باللون الأخضر. هل تريد المتابعة؟'
+        : 'Le fichier audio sera renvoyé à Whisper. Les mots modifiés seront soulignés en vert. Continuer ?',
       [
         { text: isAr ? 'إلغاء' : 'Annuler', style: 'cancel' },
         {
@@ -815,12 +831,7 @@ export default function VoiceNoteDetailScreen() {
       lang={lang}
     >
     <SafeAreaView style={styles.container} edges={['top']}>
-      <LinearGradient
-        colors={isDark ? ['#1E1040', '#2A1455', '#3B0764'] : [...Gradients.brand]}
-        style={styles.headerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+      <View style={[styles.headerGradient, { backgroundColor: C.primary }]}>
         <View style={styles.headerRow}>
           <TouchableOpacity
             onPress={() => safeBack(navigation)}
@@ -895,21 +906,23 @@ export default function VoiceNoteDetailScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
       <View style={styles.body}>
         {/* ── Lecteur audio (fixe, hors scroll principal) ── */}
         {note.status === 'done' && (
           <View style={styles.playerStrip}>
-          <LinearGradient
-            colors={isDark ? ['#1E1040', '#130A2A'] : ['#EDE9FE', '#F5F3FF', '#FAF9FF']}
-            style={styles.playerCard}
+          <View
+            style={[
+              styles.playerCard,
+              { backgroundColor: isDark ? '#121a14' : '#F0FDF4' },
+            ]}
           >
             {/* Titre + durée */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <LinearGradient colors={[...Gradients.violet]} style={{ width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', ...Shadows.brand }}>
+              <View style={{ width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: WHISPER_COLOR, ...Shadows.brand }}>
                 <AppIcon name="musicalNotes" size={15} color="#fff" />
-              </LinearGradient>
+              </View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: C.textPrimary, flex: 1 }} numberOfLines={1}>
                 {note.title || t('vn.transcript')}
               </Text>
@@ -928,10 +941,11 @@ export default function VoiceNoteDetailScreen() {
               style={{ marginBottom: 6 }}
             >
               <View style={styles.progressTrack}>
-                <LinearGradient
-                  colors={['#A78BFA', '#7C3AED']}
-                  style={[styles.progressFill, { width: `${Math.round(audioPct * 100)}%` }]}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${Math.round(audioPct * 100)}%`, backgroundColor: Colors.primary },
+                  ]}
                 />
                 {audioDur > 0 && (
                   <View style={[styles.progressThumb, { left: `${Math.round(audioPct * 100)}%` as any }]} />
@@ -948,12 +962,12 @@ export default function VoiceNoteDetailScreen() {
                 disabled={audioLoading}
                 activeOpacity={0.8}
               >
-                <LinearGradient colors={[...Gradients.violet]} style={styles.playBtnGrad}>
+                <View style={[styles.playBtnGrad, { backgroundColor: WHISPER_COLOR }]}>
                   {audioLoading
                     ? <ActivityIndicator color="#fff" size="small" />
                     : <AppIcon name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
                   }
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
               <Text style={styles.timeText}>
                 {audioDur > 0 ? fmtMs(audioDur) : note.duration_s ? formatDuration(note.duration_s) : '--:--'}
@@ -965,7 +979,7 @@ export default function VoiceNoteDetailScreen() {
                 ⚠️ {audioErr}
               </Text>
             ) : null}
-          </LinearGradient>
+          </View>
           </View>
         )}
 
@@ -1013,9 +1027,9 @@ export default function VoiceNoteDetailScreen() {
         </View>
 
         <View style={styles.tabContentWrap}>
-          <ScrollView
+          <Animated.ScrollView
             ref={transcriptScrollRef}
-            style={[styles.tabScroll, { opacity: mainTab === 'transcript' ? 1 : 0 }]}
+            style={[styles.tabScroll, { opacity: transcriptTabOpacity }]}
             pointerEvents={mainTab === 'transcript' ? 'auto' : 'none'}
             contentContainerStyle={{ paddingBottom: bottomPad, paddingTop: 4 }}
             showsVerticalScrollIndicator={mainTab === 'transcript'}
@@ -1220,10 +1234,10 @@ export default function VoiceNoteDetailScreen() {
             </View>
           )}
         </View>
-          </ScrollView>
+          </Animated.ScrollView>
 
-          <ScrollView
-            style={[styles.tabScroll, { opacity: mainTab === 'ai' ? 1 : 0 }]}
+          <Animated.ScrollView
+            style={[styles.tabScroll, { opacity: aiTabOpacity }]}
             pointerEvents={mainTab === 'ai' ? 'auto' : 'none'}
             contentContainerStyle={{ paddingBottom: bottomPad, paddingTop: 4 }}
             showsVerticalScrollIndicator={mainTab === 'ai'}
@@ -1231,9 +1245,9 @@ export default function VoiceNoteDetailScreen() {
           >
         <View style={[styles.aiStudioCard, { marginHorizontal: Spacing.base }]}>
           <View style={styles.sectionHeader}>
-            <LinearGradient colors={[...Gradients.violet]} style={styles.aiStudioIcon}>
+            <View style={[styles.aiStudioIcon, { backgroundColor: WHISPER_COLOR }]}>
               <AppIcon name='sparkles' size={16} color="#FFFFFF" />
-            </LinearGradient>
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.sectionLabelAccent}>
                 {t('vn.ai_title')}
@@ -1329,17 +1343,12 @@ export default function VoiceNoteDetailScreen() {
                     disabled={enhanceLoading}
                     activeOpacity={0.75}
                   >
-                    <LinearGradient
-                      colors={action.gradient}
-                      style={styles.actionIcon}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
+                    <View style={[styles.actionIcon, { backgroundColor: action.gradient[0] }]}>
                       {isLoading
                         ? <ActivityIndicator color="#fff" size="small" />
                         : <AppIcon name={isDone ? 'checkmarkCircle' : action.icon} size={22} color="#fff" />
                       }
-                    </LinearGradient>
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.actionLabel}>
                         {isAr ? action.labelAr : action.labelFr}
@@ -1349,15 +1358,12 @@ export default function VoiceNoteDetailScreen() {
                       </Text>
                     </View>
                     {isDone ? (
-                      <LinearGradient
-                        colors={[action.gradient[0] + '30', action.gradient[1] + '20']}
-                        style={styles.donePill}
-                      >
+                      <View style={[styles.donePill, { backgroundColor: action.gradient[0] + '28' }]}>
                         <AppIcon name='checkmark' size={11} color={action.gradient[0]} />
                         <Text style={[styles.donePillText, { color: action.gradient[0] }]}>
                           {t('vn.done_badge')}
                         </Text>
-                      </LinearGradient>
+                      </View>
                     ) : (
                       <AppIcon name="chevronForward" size={18} color={C.textMuted} />
                     )}
@@ -1369,7 +1375,7 @@ export default function VoiceNoteDetailScreen() {
           </>
           )}
         </View>
-          </ScrollView>
+          </Animated.ScrollView>
 
           {showTranscriptScrollFab ? (
             <TouchableOpacity
@@ -1506,12 +1512,12 @@ export default function VoiceNoteDetailScreen() {
 
             {resultCards && resultCards.map((card, i) => (
               <View key={i} style={styles.flashcardItem}>
-                <LinearGradient colors={[WHISPER_COLOR + '25', WHISPER_COLOR + '10']} style={styles.flashcardFront}>
+                <View style={[styles.flashcardFront, { backgroundColor: WHISPER_COLOR + '18' }]}>
                   <Text style={styles.flashcardLabel}>
                     {isAr ? `سؤال ${i + 1}` : `Q${i + 1}`}
                   </Text>
                   <Text style={styles.flashcardFrontText}>{card.front}</Text>
-                </LinearGradient>
+                </View>
                 <View style={styles.flashcardBack}>
                   <Text style={styles.flashcardLabel}>{isAr ? 'الجواب' : 'Réponse'}</Text>
                   <Text style={styles.flashcardBackText}>{card.back}</Text>
@@ -1530,17 +1536,12 @@ export default function VoiceNoteDetailScreen() {
                   } catch {}
                 }}
               >
-                <LinearGradient
-                  colors={['#F59E0B', '#B45309']}
-                  style={styles.ctaBtnGrad}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
+                <View style={[styles.ctaBtnGrad, { backgroundColor: '#D97706' }]}>
                   <AppIcon name="shareOutline" size={18} color="#fff" />
                   <Text style={styles.ctaBtnText}>
                     {isAr ? 'مشاركة الدرس' : 'Partager le cours'}
                   </Text>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             </View>
           )}
@@ -1551,17 +1552,12 @@ export default function VoiceNoteDetailScreen() {
                 style={styles.ctaBtn}
                 onPress={() => { closeModal(); navigation.navigate('Main'); }}
               >
-                <LinearGradient
-                  colors={['#8B5CF6', '#6D28D9']}
-                  style={styles.ctaBtnGrad}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
+                <View style={[styles.ctaBtnGrad, { backgroundColor: WHISPER_COLOR }]}>
                   <AppIcon name='albums' size={18} color="#fff" />
                   <Text style={styles.ctaBtnText}>
                     {t('vn.ai.flashcards.label')}
                   </Text>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             </View>
           )}
@@ -1583,8 +1579,8 @@ export default function VoiceNoteDetailScreen() {
               </Text>
               <Text style={{ fontSize: 12, color: C.textMuted, marginTop: 3 }}>
                 {isAr
-                  ? 'الكلمات المُسطَّرة بالبنفسجي تمّ تصحيحها أو إضافتها'
-                  : 'Les mots soulignés en violet ont été corrigés ou ajoutés'}
+                  ? 'الكلمات المُسطَّرة باللون الأخضر تمّ تصحيحها أو إضافتها'
+                  : 'Les mots soulignés en vert ont été corrigés ou ajoutés'}
               </Text>
             </View>
             <TouchableOpacity onPress={() => setShowDiffModal(false)} style={styles.modalCloseBtn}>
@@ -1608,19 +1604,14 @@ export default function VoiceNoteDetailScreen() {
               onPress={handleRejectRetranscribe}
               disabled={restoreLoading || transcriptVersions.length === 0}
             >
-              <LinearGradient
-                colors={['#DC2626', '#991B1B']}
-                style={styles.ctaBtnGrad}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
+              <View style={[styles.ctaBtnGrad, { backgroundColor: '#DC2626' }]}>
                 {restoreLoading
                   ? <ActivityIndicator size="small" color="#fff" />
                   : <AppIcon name="arrowUndo" size={17} color="#fff" />}
                 <Text style={styles.ctaBtnText}>
                   {isAr ? 'رفض — استعادة السابق' : 'Rejeter'}
                 </Text>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
 
             {/* Accept: keep new transcript */}
@@ -1631,17 +1622,12 @@ export default function VoiceNoteDetailScreen() {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               }}
             >
-              <LinearGradient
-                colors={[WHISPER_COLOR, '#5B21B6']}
-                style={styles.ctaBtnGrad}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
+              <View style={[styles.ctaBtnGrad, { backgroundColor: WHISPER_COLOR }]}>
                 <AppIcon name="checkmarkCircle" size={17} color="#fff" />
                 <Text style={styles.ctaBtnText}>
                   {isAr ? 'قبول' : 'Accepter'}
                 </Text>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -1760,7 +1746,7 @@ function makeStyles(C: typeof Colors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
 
-    // ── Header (gradient, aligné Whisper list) ─────────────────────────────
+    // ── Header (plein primaire, aligné liste Whisper) ─────────────────────────
     headerGradient: {
       paddingHorizontal: Spacing.base,
       paddingTop: Spacing.sm,
@@ -1963,6 +1949,8 @@ function makeStyles(C: typeof Colors) {
       borderRadius: BorderRadius.lg,
       borderWidth: 1,
       borderColor: C.border,
+      borderLeftWidth: 3,
+      borderLeftColor: WHISPER_COLOR,
       padding: Spacing.base,
       ...Shadows.sm,
     },
@@ -2186,6 +2174,8 @@ function makeStyles(C: typeof Colors) {
       padding: Spacing.base,
       borderWidth: 1,
       borderColor: C.border,
+      borderLeftWidth: 3,
+      borderLeftColor: WHISPER_COLOR,
       marginBottom: 0,
       ...Shadows.sm,
     },

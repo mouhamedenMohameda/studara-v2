@@ -6,10 +6,9 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { View, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -17,7 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { apiRequest } from '../../utils/api';
-import { Colors, Spacing, BorderRadius } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../utils/queryKeys';
 import { usePremiumFeature } from '../../hooks/usePremiumFeature';
@@ -32,7 +31,7 @@ export default function ScanCreateScreen() {
   const navigation = useNavigation<any>();
   const { token } = useAuth();
   const { lang } = useLanguage();
-  const { colors: C } = useTheme();
+  const { colors: C, isDark } = useTheme();
   const qc = useQueryClient();
   const styles = useMemo(() => makeStyles(C), [C]);
   const isAr = lang === 'ar';
@@ -102,20 +101,21 @@ export default function ScanCreateScreen() {
       lang={lang}
     >
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      {/* Hero header */}
-      <LinearGradient colors={['#7C3AED', '#5B21B6']} style={styles.hero}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.heroRow}>
-            <TouchableOpacity onPress={() => safeBack(navigation as any, { name: 'Explore', params: { screen: 'Flashcards' } })} style={styles.backBtn}>
-              <AppIcon name="arrowBack" size={20} color="#fff" />
-            </TouchableOpacity>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{isAr ? '📸 مسح وإنشاء' : '📸 Scan & Créer'}</Text>
-              <Text style={styles.heroSub}>{isAr ? 'صوّر ملاحظاتك → بطاقات تلقائياً' : 'Photo de tes notes → flashcards auto'}</Text>
-            </View>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.heroRow}>
+          <TouchableOpacity
+            onPress={() => safeBack(navigation as any, { name: 'Explore', params: { screen: 'Flashcards' } })}
+            style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}
+          >
+            <AppIcon name="arrowBack" size={20} color={C.textPrimary} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>{isAr ? '📸 مسح وإنشاء' : '📸 Scan & Créer'}</Text>
+            <Text style={[styles.heroSub, { color: C.textMuted }]}>{isAr ? 'صوّر ملاحظاتك → بطاقات تلقائياً' : 'Photo de tes notes → flashcards auto'}</Text>
           </View>
-        </SafeAreaView>
-      </LinearGradient>
+        </View>
+      </SafeAreaView>
 
       <ScrollView contentContainerStyle={{ padding: Spacing.lg, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         {/* Image pick buttons */}
@@ -126,11 +126,11 @@ export default function ScanCreateScreen() {
             </Text>
             <View style={styles.pickBtnsRow}>
               <TouchableOpacity style={styles.pickBtn} onPress={() => pickImage(true)} activeOpacity={0.82}>
-                <AppIcon name="cameraOutline" size={32} color="#7C3AED" />
+                <AppIcon name="cameraOutline" size={32} color={C.primary} />
                 <Text style={styles.pickBtnText}>{isAr ? 'الكاميرا' : 'Caméra'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.pickBtn} onPress={() => pickImage(false)} activeOpacity={0.82}>
-                <AppIcon name="imagesOutline" size={32} color="#7C3AED" />
+                <AppIcon name="imagesOutline" size={32} color={C.primary} />
                 <Text style={styles.pickBtnText}>{isAr ? 'المعرض' : 'Galerie'}</Text>
               </TouchableOpacity>
             </View>
@@ -212,7 +212,7 @@ export default function ScanCreateScreen() {
                   onPress={() => navigation.navigate('Explore' as any, { screen: 'Flashcards' })}
                   activeOpacity={0.82}
                 >
-                  <AppIcon name="albumsOutline" size={18} color="#7C3AED" />
+                  <AppIcon name="albumsOutline" size={18} color="Colors.primary" />
                   <Text style={styles.goToDeckText}>{isAr ? 'افتح مكتبة البطاقات' : 'Voir la bibliothèque'}</Text>
                 </TouchableOpacity>
               </View>
@@ -226,20 +226,23 @@ export default function ScanCreateScreen() {
 }
 
 const makeStyles = (C: typeof Colors) => StyleSheet.create({
-  hero: { paddingBottom: 20 },
-  heroRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.lg, gap: 12 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  heroTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  heroSub: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  heroRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingTop: 8, paddingBottom: 16, gap: 12 },
+  backBtn: {
+    width: 44, height: 44, borderRadius: 22, borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center', ...Shadows.xs,
+  },
+  heroTitle: { fontSize: 20, fontWeight: '800' },
+  heroSub: { fontSize: 13, marginTop: 2 },
 
   pickArea: { alignItems: 'center', paddingVertical: 40, gap: 20 },
   pickHint: { fontSize: 14, textAlign: 'center', lineHeight: 22 },
   pickBtnsRow: { flexDirection: 'row', gap: 16 },
   pickBtn: {
     width: 130, height: 130, borderRadius: BorderRadius.xl,
-    backgroundColor: '#F3F0FF', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: C.primarySurface, alignItems: 'center', justifyContent: 'center', gap: 8,
+    borderWidth: 1, borderColor: C.primarySoft,
   },
-  pickBtnText: { fontSize: 14, fontWeight: '700', color: '#7C3AED' },
+  pickBtnText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
 
   previewWrap: { borderRadius: BorderRadius.xl, overflow: 'hidden', marginBottom: 16 },
   previewImg: { width: '100%', height: 240 },
@@ -260,19 +263,20 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
 
   scanBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: '#7C3AED', borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.primary, borderRadius: BorderRadius.lg,
     paddingVertical: 14, marginTop: 20,
   },
   scanBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
 
   resultCard: {
-    backgroundColor: '#F3F0FF', borderRadius: BorderRadius.xl,
+    backgroundColor: C.primarySurface, borderRadius: BorderRadius.xl,
     padding: 16, marginTop: 20, gap: 8,
+    borderWidth: 1, borderColor: C.primarySoft,
   },
   resultHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   resultEmoji: { fontSize: 36 },
-  resultTitle: { fontSize: 18, fontWeight: '800', color: '#5B21B6' },
-  resultSub: { fontSize: 13, color: '#7C3AED', marginTop: 2 },
+  resultTitle: { fontSize: 18, fontWeight: '800', color: C.primaryDark },
+  resultSub: { fontSize: 13, color: Colors.primary, marginTop: 2 },
   previewCard: {
     backgroundColor: '#fff', borderRadius: BorderRadius.md, padding: 10, gap: 4,
   },
@@ -280,7 +284,7 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   previewCardA: { fontSize: 12, color: '#6B7280' },
   goToDeckBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#EDE9FE', borderRadius: BorderRadius.lg, paddingVertical: 12, marginTop: 8,
+    backgroundColor: C.primarySoft, borderRadius: BorderRadius.lg, paddingVertical: 12, marginTop: 8,
   },
-  goToDeckText: { fontSize: 15, fontWeight: '700', color: '#7C3AED' },
+  goToDeckText: { fontSize: 15, fontWeight: '700', color: Colors.primary },
 });

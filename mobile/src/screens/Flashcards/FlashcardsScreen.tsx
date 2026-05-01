@@ -12,7 +12,6 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { FlashcardsStackParamList, FlashcardDeck } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Spacing, BorderRadius, Shadows, Gradients } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
@@ -37,26 +36,32 @@ const mapDeck = (d: any): FlashcardDeck => ({
   userId: d.user_id,
   title: d.title,
   subject: d.subject,
-  color: d.color || '#8B5CF6',
+  color: d.color || Colors.modules.profile,
   cardCount: d.card_count ?? 0,
   dueCount: d.due_count ?? 0,
   createdAt: d.created_at,
   updatedAt: d.updated_at,
 });
 
-const ACCENT = '#06B6D4'; // cyan-500 (module: flashcards)
-const ACCENT_DARK = '#0891B2';
-
-const makeStyles = (C: typeof import('../../theme').Colors, fs: (n: number) => number = n => n) => StyleSheet.create({
-  header: { paddingBottom: 20, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 10 },
-  headerTitle: { fontSize: fs(24), fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
-  headerSub: { fontSize: fs(12), color: 'rgba(255,255,255,0.92)', marginTop: 3, fontWeight: '700' },
+const makeStyles = (C: typeof import('../../theme').Colors, fs: (n: number) => number = n => n) => {
+  const mod = C.modules.flashcards;
+  return StyleSheet.create({
+  headerWrap: { backgroundColor: C.background },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 12,
+    paddingBottom: 14,
+  },
+  headerTitle: { fontSize: fs(24), fontWeight: '900', color: C.textPrimary, letterSpacing: -0.5 },
+  headerSub: { fontSize: fs(12), color: C.textSecondary, marginTop: 3, fontWeight: '700' },
   addBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.26)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.45)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.primary,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.brand,
   },
   deckCard: {
     backgroundColor: C.surface, borderRadius: BorderRadius['2xl'],
@@ -71,7 +76,7 @@ const makeStyles = (C: typeof import('../../theme').Colors, fs: (n: number) => n
   menuBtn: { marginLeft: 6 },
   deckStats: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8, flexWrap: 'wrap' },
   statPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.surfaceVariant, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  duePill: { backgroundColor: ACCENT },
+  duePill: { backgroundColor: mod },
   donePill: { backgroundColor: '#ECFDF5' },
   statText: { fontSize: fs(12), color: C.textMuted, fontWeight: '600' },
   studyBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
@@ -79,20 +84,23 @@ const makeStyles = (C: typeof import('../../theme').Colors, fs: (n: number) => n
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 },
   emptyTitle: { fontSize: fs(20), fontWeight: '800', color: C.textPrimary },
   emptyText: { fontSize: fs(14), color: C.textMuted, textAlign: 'center', lineHeight: 22 },
-  createFirstBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: ACCENT, borderRadius: BorderRadius.lg, paddingHorizontal: 20, paddingVertical: 12, marginTop: 8 },
+  createFirstBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: mod, borderRadius: BorderRadius.lg, paddingHorizontal: 20, paddingVertical: 12, marginTop: 8 },
   createFirstBtnText: { color: '#fff', fontWeight: '700', fontSize: fs(15) },
-  quizBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: ACCENT, borderRadius: 16, padding: 14, marginBottom: 12 },
+  quizBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: mod, borderRadius: BorderRadius.xl, padding: 14, marginBottom: 12, ...Shadows.sm },
   quizBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   quizBannerIcon: { fontSize: 28 },
   quizBannerTitle: { fontSize: fs(15), fontWeight: '800', color: '#fff' },
   quizBannerSub: { fontSize: fs(12), color: 'rgba(255,255,255,0.8)', marginTop: 2 },
-  syncToast: { backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 6, gap: 6 },
+  syncToast: { backgroundColor: mod, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 6, gap: 6 },
   syncToastText: { color: '#fff', fontSize: fs(12), fontWeight: '600' },
   importBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
-    alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: C.surface,
+    borderWidth: 1.5,
+    borderColor: C.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.xs,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24 },
@@ -101,15 +109,21 @@ const makeStyles = (C: typeof import('../../theme').Colors, fs: (n: number) => n
   modalHint: { fontSize: fs(12), color: C.textMuted, lineHeight: 18, textAlign: 'right', marginBottom: 16, backgroundColor: C.surfaceVariant, padding: 10, borderRadius: 10 },
   fieldLabel: { fontSize: fs(13), fontWeight: '700', color: C.textSecondary, textAlign: 'right', marginBottom: 6 },
   fieldInput: { borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: fs(14), color: C.textPrimary, marginBottom: 14 },
-  importConfirmBtn: { backgroundColor: ACCENT, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginTop: 4 },
+  importConfirmBtn: { backgroundColor: mod, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: BorderRadius.lg, paddingVertical: 14, marginTop: 4 },
   importConfirmText: { color: '#fff', fontWeight: '700', fontSize: fs(15) },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
-    alignItems: 'center', justifyContent: 'center',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: C.surface,
+    borderWidth: 1.5,
+    borderColor: C.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.xs,
   },
 });
+};
 
 const DeckCard = ({
   deck,
@@ -277,7 +291,7 @@ export default function FlashcardsScreen() {
       const deck = await apiRequest<{ id: string }>('/flashcards/decks', {
         method: 'POST',
         token: token!,
-        body: { title: csvDeckName.trim(), subject: csvSubject.trim() || undefined, color: '#8B5CF6' },
+        body: { title: csvDeckName.trim(), subject: csvSubject.trim() || undefined, color: Colors.modules.profile },
       });
       if (!deck?.id) throw new Error('فشل إنشاء المجموعة');
 
@@ -412,62 +426,54 @@ export default function FlashcardsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      <StatusBar barStyle="light-content" backgroundColor={ACCENT} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
 
-      {/* Header */}
-      <LinearGradient
-        colors={['#06B6D4', '#0EA5E9', '#6366F1']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={onBackPress}
-              activeOpacity={0.75}
-            >
-              <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={18} color="#fff" />
-            </TouchableOpacity>
-            <View>
-              <Text style={styles.headerTitle}>{t('flash.title')}</Text>
-              {totalDue > 0 && (
-                <Text style={styles.headerSub}>{totalDue}{t('flash.due_today')}</Text>
-              )}
-              {totalDue === 0 && decks.length > 0 && (
-                <Text style={styles.headerSub}>{t('flash.all_done')}</Text>
-              )}
-            </View>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity
-                style={styles.importBtn}
-                onPress={() => (navigation as any).navigate('Pomodoro')}
-              >
-                <Text style={{ fontSize: 16 }}>🍅</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.importBtn}
-                onPress={() => (navigation as any).navigate('ScanCreate')}
-              >
-                <AppIcon name="cameraOutline" size={18} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.importBtn}
-                onPress={() => setCsvModalVisible(true)}
-              >
-                <AppIcon name="documentTextOutline" size={18} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.addBtn}
-                onPress={() => navigation.navigate('CreateDeck', undefined)}
-              >
-                <AppIcon name='add' size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
+      <SafeAreaView edges={['top']} style={styles.headerWrap}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={onBackPress}
+            activeOpacity={0.75}
+          >
+            <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={18} color={C.textPrimary} />
+          </TouchableOpacity>
+          <View style={{ flex: 1, marginHorizontal: 10 }}>
+            <Text style={styles.headerTitle} numberOfLines={1}>{t('flash.title')}</Text>
+            {totalDue > 0 ? (
+              <Text style={styles.headerSub}>{totalDue}{t('flash.due_today')}</Text>
+            ) : null}
+            {totalDue === 0 && decks.length > 0 ? (
+              <Text style={styles.headerSub}>{t('flash.all_done')}</Text>
+            ) : null}
           </View>
-        </SafeAreaView>
-      </LinearGradient>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <TouchableOpacity
+              style={styles.importBtn}
+              onPress={() => (navigation as any).navigate('Pomodoro')}
+            >
+              <Text style={{ fontSize: 16 }}>🍅</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.importBtn}
+              onPress={() => (navigation as any).navigate('ScanCreate')}
+            >
+              <AppIcon name="cameraOutline" size={18} color={C.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.importBtn}
+              onPress={() => setCsvModalVisible(true)}
+            >
+              <AppIcon name="documentTextOutline" size={18} color={C.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addBtn}
+              onPress={() => navigation.navigate('CreateDeck', undefined)}
+            >
+              <AppIcon name="add" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
 
       {/* Offline banner */}
       {offlineCachedAt !== null && (
@@ -484,7 +490,7 @@ export default function FlashcardsScreen() {
 
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color={ACCENT} />
+          <ActivityIndicator size="large" color={C.primary} />
         </View>
       ) : decks.length === 0 ? (
         /* Empty state */

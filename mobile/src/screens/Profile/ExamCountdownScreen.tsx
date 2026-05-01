@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,16 +12,16 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { apiRequest } from '../../utils/api';
 import { queryKeys } from '../../utils/queryKeys';
 import { ExamCountdown, ProfileStackParamList } from '../../types';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Shadows, BorderRadius, Gradients } from '../../theme';
+import { Colors, Shadows, BorderRadius } from '../../theme';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { scheduleExamReminders, cancelExamReminders, requestNotificationPermissions } from '../../utils/notifications';
 import { safeBack } from '../../utils/safeBack';
 
 type Nav = StackNavigationProp<ProfileStackParamList, 'ExamCountdown'>;
 
-const EXAM_COLORS = ['#DC2626', '#D97706', Colors.primary, '#2563EB', '#7C3AED', '#DB2777'];
+const EXAM_COLORS = ['#DC2626', '#D97706', Colors.primary, '#2563EB', Colors.primary, '#DB2777'];
 
 const daysUntil = (dateStr: string) => {
   const d = new Date(dateStr);
@@ -34,6 +34,7 @@ const ExamCountdownScreen = () => {
   const { lang, t } = useLanguage();
   const navigation = useNavigation<Nav>();
   const qc = useQueryClient();
+  const { colors: C, isDark } = useTheme();
   const isAr = lang === 'ar';
   const { token } = useAuth();
 
@@ -109,30 +110,32 @@ const ExamCountdownScreen = () => {
   const done = exams.filter(e => e.isDone);
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      {/* Header */}
-      <LinearGradient
-        colors={Gradients.brand as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => safeBack(navigation, { name: 'Profile' })} style={styles.backBtn}>
-              <AppIcon name="chevronBack" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>📅 {t('exam.title')}</Text>
-            <TouchableOpacity style={styles.addBtn} onPress={() => setModalOpen(true)}>
-              <AppIcon name='add' size={24} color="#fff" />
-            </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => safeBack(navigation, { name: 'Profile' })}
+            style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}
+          >
+            <AppIcon name="chevronBack" size={22} color={C.textPrimary} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
+            <Text style={[styles.headerTitle, { color: C.textPrimary }]}>📅 {t('exam.title')}</Text>
           </View>
-        </SafeAreaView>
-      </LinearGradient>
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: C.primary }]}
+            onPress={() => setModalOpen(true)}
+          >
+            <AppIcon name='add' size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         {isLoading ? (
-          <ActivityIndicator color={Colors.primary} style={{ marginTop: 60 }} />
+          <ActivityIndicator color={C.primary} style={{ marginTop: 60 }} />
         ) : upcoming.length === 0 && done.length === 0 ? (
           <View style={styles.empty}>
             <Text style={{ fontSize: 56 }}>📅</Text>
@@ -278,20 +281,19 @@ const ExamCountdownScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 20, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
-  headerTitle: { fontSize: 19, fontWeight: '900', color: '#fff', letterSpacing: -0.3 },
+  headerTitleWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  headerTitle: { fontSize: 19, fontWeight: '900', letterSpacing: -0.3, textAlign: 'center' },
   addBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.26)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.45)',
+    width: 46, height: 46, borderRadius: 23,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.brand,
   },
   empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyTitle: { fontSize: 22, fontWeight: '900', color: Colors.textPrimary, letterSpacing: -0.4 },

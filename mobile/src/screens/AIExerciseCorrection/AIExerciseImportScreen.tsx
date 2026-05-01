@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '@/theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { usePremiumFeature } from '@/hooks/usePremiumFeature';
 import { apiUpload, apiRequest } from '@/utils/api';
 import { countWordsFrText, estimateAiSummaryPriceMru } from '@/utils/aiDocumentPricing';
@@ -18,6 +18,7 @@ type Picked = { uri: string; name: string; type: string; size?: number } | null;
 
 export default function AIExerciseImportScreen({ navigation }: any) {
   const { token } = useAuth();
+  const { colors: C, isDark } = useTheme();
   const { balanceMru, loading: walletLoading } = usePremiumFeature('ai_exercise_correction', 15_000);
   const [picked, setPicked] = useState<Picked>(null);
   const [mode, setMode] = useState<'file' | 'text'>('file');
@@ -136,24 +137,23 @@ export default function AIExerciseImportScreen({ navigation }: any) {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <LinearGradient colors={Gradients.brand as any} style={styles.header}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-              <AppIcon name="arrowBack" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Correction IA</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('AIExerciseHistory')}
-              style={styles.historyBtn}
-              activeOpacity={0.85}
-            >
-              <AppIcon name="timeOutline" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}>
+            <AppIcon name="arrowBack" size={22} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Correction IA</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('AIExerciseHistory')}
+            style={[styles.historyBtn, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }]}
+            activeOpacity={0.85}
+          >
+            <AppIcon name="timeOutline" size={20} color={C.primary} />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -175,7 +175,7 @@ export default function AIExerciseImportScreen({ navigation }: any) {
                 style={styles.walletCta}
               >
                 <Text style={styles.walletCtaText}>Gérer</Text>
-                <AppIcon name="chevronForward" size={16} color="#7C3AED" />
+                <AppIcon name="chevronForward" size={16} color={Colors.primary} />
               </TouchableOpacity>
             </View>
             <Text style={styles.walletBalance}>
@@ -204,15 +204,15 @@ export default function AIExerciseImportScreen({ navigation }: any) {
               <>
                 <View style={{ height: 8 }} />
                 <TouchableOpacity style={styles.actionBtn} onPress={() => pickImage(true)} disabled={loading}>
-                  <AppIcon name="cameraOutline" size={20} color="#7C3AED" />
+                  <AppIcon name="cameraOutline" size={20} color="Colors.primary" />
                   <Text style={styles.actionText}>Prendre une photo</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtn} onPress={() => pickImage(false)} disabled={loading}>
-                  <AppIcon name="imagesOutline" size={20} color="#7C3AED" />
+                  <AppIcon name="imagesOutline" size={20} color="Colors.primary" />
                   <Text style={styles.actionText}>Choisir une image / scan</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtn} onPress={pickDocument} disabled={loading}>
-                  <AppIcon name="documentAttach" size={20} color="#7C3AED" />
+                  <AppIcon name="documentAttach" size={20} color="Colors.primary" />
                   <Text style={styles.actionText}>Choisir un PDF</Text>
                 </TouchableOpacity>
 
@@ -262,34 +262,32 @@ export default function AIExerciseImportScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 18, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingTop: 10,
+    paddingTop: 8,
+    paddingBottom: 14,
   },
-  headerTitle: { fontSize: 19, fontWeight: '900', color: '#fff' },
+  headerTitle: { fontSize: 19, fontWeight: '900' },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.32)',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.xs,
   },
   historyBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.32)',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.xs,
   },
   content: { flexGrow: 1, padding: Spacing.lg, paddingBottom: 140 },
   walletCard: {
@@ -304,8 +302,8 @@ const styles = StyleSheet.create({
   walletRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   walletTitle: { fontSize: 14, fontWeight: '900', color: Colors.textPrimary },
   walletCta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  walletCtaText: { fontSize: 13, fontWeight: '900', color: '#7C3AED' },
-  walletBalance: { fontSize: 22, fontWeight: '900', color: '#7C3AED', marginTop: 8 },
+  walletCtaText: { fontSize: 13, fontWeight: '900', color: Colors.primary },
+  walletBalance: { fontSize: 22, fontWeight: '900', color: Colors.primary, marginTop: 8 },
   walletHint: { fontSize: 12, color: Colors.textMuted, marginTop: 6, lineHeight: 16 },
   card: {
     backgroundColor: '#fff',
@@ -335,9 +333,9 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     backgroundColor: '#fff',
   },
-  chipActive: { backgroundColor: '#EDE9FE', borderColor: '#7C3AED' },
+  chipActive: { backgroundColor: '#EDE9FE', borderColor: Colors.primary },
   chipText: { fontSize: 12, color: Colors.textMuted, fontWeight: '700' },
-  chipTextActive: { color: '#7C3AED' },
+  chipTextActive: { color: Colors.primary },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -382,7 +380,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#7C3AED',
+    backgroundColor: Colors.primary,
     borderRadius: 16,
     paddingVertical: 14,
     marginTop: 18,

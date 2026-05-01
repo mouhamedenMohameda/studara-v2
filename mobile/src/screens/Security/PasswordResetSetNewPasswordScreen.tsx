@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -10,7 +9,8 @@ import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { useLanguage } from '../../context/LanguageContext';
 import { Input } from '../../components/common';
-import { BorderRadius, Colors, Gradients, Spacing } from '../../theme';
+import { BorderRadius, Colors, Spacing, Shadows } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 import { apiRequest } from '../../utils/api';
 import type { RootStackParamList } from '../../types';
 
@@ -22,6 +22,7 @@ export default function PasswordResetSetNewPasswordScreen() {
   const route = useRoute<R>();
   const { intentId, ticket } = route.params;
   const { lang } = useLanguage();
+  const { colors: C } = useTheme();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -60,16 +61,19 @@ export default function PasswordResetSetNewPasswordScreen() {
   };
 
   return (
-    <LinearGradient colors={Gradients.brand as any} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fill}>
+    <View style={[styles.fill, { backgroundColor: C.background }]}>
       <SafeAreaView style={styles.fill} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow}>
-            <AppIcon name={lang === 'ar' ? 'arrowForward' : 'arrowBack'} size={22} color="#fff" />
-            <Text style={styles.backText}>{lang === 'fr' ? 'Retour' : 'رجوع'}</Text>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={[styles.backRow, { backgroundColor: C.surface, borderColor: C.border }]}
+          >
+            <AppIcon name={lang === 'ar' ? 'arrowForward' : 'arrowBack'} size={22} color={C.textPrimary} />
+            <Text style={[styles.backText, { color: C.textPrimary }]}>{lang === 'fr' ? 'Retour' : 'رجوع'}</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: C.surface, borderColor: C.borderLight }, Shadows.sm]}>
           <View style={styles.iconWrap}>
             <AppIcon name="keyOutline" size={34} color={Colors.primary} />
           </View>
@@ -115,20 +119,23 @@ export default function PasswordResetSetNewPasswordScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   header: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.sm },
-  backRow: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start' },
-  backText: { color: '#fff', fontWeight: '800' },
+  backRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start',
+    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, borderWidth: 1.5,
+  },
+  backText: { fontWeight: '800' },
   card: {
     marginTop: Spacing.lg,
     marginHorizontal: Spacing.xl,
-    backgroundColor: '#fff',
     borderRadius: 24,
+    borderWidth: 1,
     padding: Spacing.xl,
     shadowColor: '#000',
     shadowOpacity: 0.15,

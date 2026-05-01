@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StatusBar, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 
@@ -12,7 +11,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { apiRequest, API_BASE } from '../../utils/api';
 import { safeBack } from '../../utils/safeBack';
-import { BorderRadius, Colors, Gradients, Spacing } from '../../theme';
+import { BorderRadius, Colors, Shadows, Spacing } from '../../theme';
 
 type PrizePayload = {
   date: string;
@@ -145,12 +144,7 @@ export default function DailyChallengeWinnerScreen() {
     <View style={{ flex: 1, backgroundColor: C.background }}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      <LinearGradient
-        colors={Gradients.brand as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 14, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
-      >
+      <View style={{ paddingBottom: 14, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, backgroundColor: C.primary }}>
         <SafeAreaView edges={['top']}>
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingTop: 4 }}>
             <TouchableOpacity
@@ -158,12 +152,12 @@ export default function DailyChallengeWinnerScreen() {
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={{
                 marginRight: 12,
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: 'rgba(255,255,255,0.22)',
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: 'rgba(255,255,255,0.2)',
                 borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.32)',
+                borderColor: 'rgba(255,255,255,0.28)',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -183,7 +177,7 @@ export default function DailyChallengeWinnerScreen() {
             </View>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </View>
 
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
@@ -249,19 +243,13 @@ export default function DailyChallengeWinnerScreen() {
         </ScrollView>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40 }}>
-          <LinearGradient
-            colors={Gradients.brand as any}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          <View
             style={{
               borderRadius: BorderRadius['2xl'],
               padding: 26,
               alignItems: 'center',
-              shadowColor: '#7C3AED',
-              shadowOpacity: 0.45,
-              shadowRadius: 22,
-              shadowOffset: { width: 0, height: 10 },
-              elevation: 12,
+              backgroundColor: C.primary,
+              ...Shadows.brand,
             }}
           >
             <Text style={{ fontSize: 72 }}>🏆</Text>
@@ -273,7 +261,7 @@ export default function DailyChallengeWinnerScreen() {
                 ? 'أدخل معلومات الاستلام مرة واحدة ثم أكد. بعد التأكيد لا يمكن تعديلها.'
                 : 'Saisis tes infos de réception une seule fois puis confirme. Après confirmation, tu ne pourras plus modifier.'}
             </Text>
-          </LinearGradient>
+          </View>
 
           {/* Phase A: user hasn't submitted payout info yet */}
           {(!data?.prize) && (

@@ -5,7 +5,6 @@ import { TextInput } from '@/ui/TextInput';
 import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, SectionList, Share, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ResourcesStackParamList, ResourceType, Faculty, Resource, ResourceStatus, University } from '../../types';
@@ -39,7 +38,7 @@ const TYPE_ICONS: Record<ResourceType, AppIconName> = {
 };
 
 const TYPE_COLORS: Record<ResourceType, string> = {
-  [ResourceType.Note]:         '#8B5CF6',
+  [ResourceType.Note]:         Colors.modules.profile,
   [ResourceType.PastExam]:     '#EF4444',
   [ResourceType.Summary]:      '#10B981',
   [ResourceType.Exercise]:     '#F59E0B',
@@ -47,17 +46,6 @@ const TYPE_COLORS: Record<ResourceType, string> = {
   [ResourceType.Presentation]: '#EC4899',
   [ResourceType.VideoCourse]:  '#FF6B35',
 };
-
-// Gradient pairs for year pills (one per year, cycling — vibrant Gen-Z)
-const YEAR_GRADIENTS: [string, string][] = [
-  ['#8B5CF6', '#EC4899'], // violet → pink
-  ['#0EA5E9', '#6366F1'], // sky → indigo
-  ['#10B981', '#059669'], // emerald
-  ['#F59E0B', '#EF4444'], // amber → red
-  ['#EC4899', '#F43F5E'], // pink → rose
-  ['#7C3AED', '#A78BFA'], // violet mono
-  ['#14B8A6', '#0EA5E9'], // teal → sky
-];
 
 const mapResource = (r: any): Resource => ({
   id: r.id,
@@ -234,7 +222,6 @@ const YearPill = ({
     onPress();
   };
 
-  const [g1, g2] = YEAR_GRADIENTS[(year - 1) % YEAR_GRADIENTS.length];
   const label = isAr ? `س${year}` : `A${year}`;
 
   return (
@@ -242,16 +229,12 @@ const YearPill = ({
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.85}
-        style={[styles.yearPill, active && styles.yearPillActive]}
+        style={[
+          styles.yearPill,
+          active && styles.yearPillActive,
+          active && { backgroundColor: C.primary, borderColor: C.primary },
+        ]}
       >
-        {active && (
-          <LinearGradient
-            colors={[g1, g2]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-        )}
         <Text style={[styles.yearPillText, active && styles.yearPillTextAct]}>{label}</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -296,7 +279,7 @@ const ResourceCard = React.memo(({
   const { colors: C } = useTheme();
   const { fontSize } = useAccessibility();
   const styles = useMemo(() => makeStyles(C, fontSize), [C, fontSize]);
-  const color = TYPE_COLORS[resource.type] || '#8B5CF6';
+  const color = TYPE_COLORS[resource.type] || Colors.primary;
   const isNew = resource.moderatedAt
     ? Date.now() - new Date(resource.moderatedAt).getTime() < 48 * 60 * 60 * 1000
     : false;
@@ -558,17 +541,14 @@ const ResourcesScreen = () => {
           <FilterRow label={isAr ? 'السنة' : 'ANNÉE'}>
             {/* "All" pill */}
             <TouchableOpacity
-              style={[styles.yearPill, selectedYear === null && styles.yearPillActive, { overflow: 'hidden' }]}
+              style={[
+                styles.yearPill,
+                selectedYear === null && styles.yearPillActive,
+                selectedYear === null && { backgroundColor: C.primary, borderColor: C.primary },
+              ]}
               onPress={() => setSelectedYear(null)}
               activeOpacity={0.8}
             >
-              {selectedYear === null && (
-                <LinearGradient
-                  colors={['#8B5CF6', '#EC4899', '#F97316']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFill}
-                />
-              )}
               <Text style={[styles.yearPillText, selectedYear === null && styles.yearPillTextAct]}>
                 {isAr ? 'الكل' : 'Tout'}
               </Text>

@@ -9,9 +9,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, Shadows, Gradients } from '../../theme';
-import { ORBIT_BAR_HEIGHT } from '../../navigation/OrbitBar';
+import { Colors, Spacing, Shadows, BorderRadius } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { useTabBarContentPadding } from '../../hooks/useTabBarContentPadding';
 import { apiRequest } from '../../utils/api';
 import { safeBack } from '../../utils/safeBack';
 import { smoothGoHomeTab } from '../../utils/smoothTabBack';
@@ -54,7 +54,7 @@ const EMPTY_FORM: FormData = {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TYPE_COLORS: Record<HousingType, string> = {
-  studio: '#8B5CF6', chambre: '#3B82F6', appartement: Colors.primary, colocation: '#F97316',
+  studio: Colors.modules.housing, chambre: '#3B82F6', appartement: Colors.primary, colocation: '#F97316',
 };
 const TYPE_ICONS: Record<HousingType, AppIconName> = {
   studio: 'homeOutline', chambre: 'bedOutline',
@@ -393,6 +393,9 @@ const FILTER_TYPES: Array<HousingType | 'all'> = ['all', 'studio', 'chambre', 'a
 export default function HousingScreen() {
   const { lang } = useLanguage();
   const { user, token } = useAuth();
+  const { colors: C, isDark } = useTheme();
+  const listBottomPad = useTabBarContentPadding(24);
+  const postCtaBottomPad = useTabBarContentPadding(12);
   const isAr = lang === 'ar';
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -517,69 +520,66 @@ export default function HousingScreen() {
   const myPendingCount = mine.filter(l => l.status === 'pending').length;
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <StatusBar barStyle="light-content" />
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
 
-      {/* Header */}
-      <LinearGradient
-        colors={['#F59E0B', '#F97316', '#EC4899']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerContent}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={[styles.headerBackBtn, { backgroundColor: C.surface, borderColor: C.border }]}
+            onPress={onBackPress}
+            activeOpacity={0.75}
+          >
+            <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={19} color={C.textPrimary} />
+          </TouchableOpacity>
+          <View>
+            <Text style={[styles.headerTitle, { color: C.textPrimary }]}>{isAr ? '🏠 سكن الطلاب' : '🏠 Logement Étudiant'}</Text>
+            <Text style={[styles.headerSub, { color: C.textMuted }]}>
+              {visibleList.length} {isAr ? 'عرض متاح' : 'offre(s)'}
+            </Text>
+          </View>
+          {mine.length > 0 ? (
             <TouchableOpacity
-              style={styles.headerBackBtn}
-              onPress={onBackPress}
-              activeOpacity={0.75}
+              style={[
+                styles.mineBtn,
+                { backgroundColor: C.surfaceVariant, borderColor: C.border },
+                showMine && { backgroundColor: C.primary, borderColor: C.primary },
+              ]}
+              onPress={() => setShowMine(m => !m)}
             >
-              <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={19} color="#fff" />
-            </TouchableOpacity>
-            <View>
-              <Text style={styles.headerTitle}>{isAr ? '🏠 سكن الطلاب' : '🏠 Logement Étudiant'}</Text>
-              <Text style={styles.headerSub}>
-                {visibleList.length} {isAr ? 'عرض متاح' : 'offre(s)'}
+              <AppIcon name="personOutline" size={14} color={showMine ? '#fff' : C.primary} />
+              <Text style={[styles.mineBtnText, { color: showMine ? '#fff' : C.textSecondary }]}>
+                {isAr ? 'إعلاناتي' : 'Mes annonces'}
               </Text>
-            </View>
-            {mine.length > 0 && (
-              <TouchableOpacity
-                style={[styles.mineBtn, showMine && styles.mineBtnActive]}
-                onPress={() => setShowMine(m => !m)}
-              >
-                <AppIcon name="personOutline" size={14} color={showMine ? Colors.primary : '#fff'} />
-                <Text style={[styles.mineBtnText, showMine && { color: Colors.primary }]}>
-                  {isAr ? 'إعلاناتي' : 'Mes annonces'}
-                </Text>
-                {myPendingCount > 0 && (
-                  <View style={styles.pendingDot}>
-                    <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800' }}>{myPendingCount}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-          {/* Search */}
-          <View style={styles.searchWrap}>
-            <AppIcon name="searchOutline" size={17} color="rgba(255,255,255,0.7)" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={isAr ? 'ابحث عن سكن...' : 'Rechercher un logement...'}
-              placeholderTextColor="rgba(255,255,255,0.6)"
-              value={search} onChangeText={setSearch}
-              textAlign={isAr ? 'right' : 'left'} returnKeyType='search'
-            />
-            {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch('')}>
-                <AppIcon name="closeCircle" size={18} color="rgba(255,255,255,0.7)" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+              {myPendingCount > 0 && (
+                <View style={styles.pendingDot}>
+                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800' }}>{myPendingCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 44 }} />
+          )}
+        </View>
+        <View style={[styles.searchWrap, { backgroundColor: C.surface, borderColor: C.borderLight }]}>
+          <AppIcon name="searchOutline" size={17} color={C.primary} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: C.textPrimary }]}
+            placeholder={isAr ? 'ابحث عن سكن...' : 'Rechercher un logement...'}
+            placeholderTextColor={C.textMuted}
+            value={search} onChangeText={setSearch}
+            textAlign={isAr ? 'right' : 'left'} returnKeyType="search"
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <AppIcon name="closeCircle" size={18} color={C.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </SafeAreaView>
 
       {/* Type filter */}
-      <View style={styles.filterBar}>
+      <View style={[styles.filterBar, { backgroundColor: C.surface }]}>
         {FILTER_TYPES.map(t => (
           <TouchableOpacity
             key={t} style={[styles.filterChip, activeType === t && styles.filterChipActive]}
@@ -591,7 +591,7 @@ export default function HousingScreen() {
       </View>
 
       {/* Price filter */}
-      <View style={styles.priceFilterBar}>
+      <View style={[styles.priceFilterBar, { backgroundColor: C.background, borderBottomColor: C.borderLight }]}>
         <Text style={styles.priceFilterLabel}>{isAr ? 'الحد الأقصى:' : 'Prix max :'}</Text>
         {MAX_PRICE_STEPS.map((step, i) => (
           <TouchableOpacity
@@ -607,7 +607,7 @@ export default function HousingScreen() {
 
       {/* List */}
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 80 }} color={Colors.primary} size="large" />
+        <ActivityIndicator style={{ marginTop: 80 }} color={C.primary} size="large" />
       ) : (
         <FlatList
           data={visibleList}
@@ -621,7 +621,7 @@ export default function HousingScreen() {
               onDelete={handleDelete}
             />
           )}
-          contentContainerStyle={{ padding: Spacing.md, paddingBottom: ORBIT_BAR_HEIGHT + 16, gap: 12 }}
+          contentContainerStyle={{ padding: Spacing.md, paddingBottom: listBottomPad, gap: 12 }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -634,7 +634,7 @@ export default function HousingScreen() {
       )}
 
       {/* Post CTA */}
-      <View style={styles.postCTA}>
+      <View style={[styles.postCTA, { backgroundColor: C.surface, borderTopColor: C.borderLight, paddingBottom: postCtaBottomPad }]}>
         <TouchableOpacity
           style={styles.postBtn} activeOpacity={0.85}
           onPress={() => { setEditing(null); setShowModal(true); }}
@@ -656,40 +656,37 @@ export default function HousingScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  header: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: Spacing.lg, paddingTop: 12, paddingBottom: 8 },
+  headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: Spacing.lg, paddingTop: 8, paddingBottom: 8 },
   headerBackBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
-  headerTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: -0.4 },
-  headerSub:   { fontSize: 12, color: 'rgba(255,255,255,0.92)', marginTop: 3, fontWeight: '700' },
+  headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.4 },
+  headerSub:   { fontSize: 12, marginTop: 3, fontWeight: '700' },
   mineBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: BorderRadius.full,
+    borderWidth: 1,
   },
-  mineBtnActive: { backgroundColor: '#fff', borderColor: '#fff' },
-  mineBtnText: { fontSize: 12, fontWeight: '800', color: '#fff' },
-  pendingDot: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#F97316', alignItems: 'center', justifyContent: 'center' },
+  mineBtnText: { fontSize: 12, fontWeight: '800' },
+  pendingDot: { width: 18, height: 18, borderRadius: 9, backgroundColor: Colors.secondaryDark, alignItems: 'center', justifyContent: 'center' },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
-    borderRadius: 16, marginHorizontal: Spacing.lg, marginBottom: 14,
+    borderWidth: 1.5,
+    borderRadius: BorderRadius.xl, marginHorizontal: Spacing.lg, marginBottom: 12,
     paddingHorizontal: 14, paddingVertical: 10,
+    ...Shadows.xs,
   },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: '#fff', padding: 0, fontWeight: '500' },
-  filterBar: { flexDirection: 'row', paddingHorizontal: Spacing.md, paddingVertical: 12, gap: 8, backgroundColor: Colors.surface },
+  searchInput: { flex: 1, fontSize: 14, padding: 0, fontWeight: '500' },
+  filterBar: { flexDirection: 'row', paddingHorizontal: Spacing.md, paddingVertical: 12, gap: 8 },
   filterChip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 999, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.surfaceVariant },
   filterChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary, ...Shadows.brand },
   filterText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '700' },
   filterTextActive: { color: '#fff', fontWeight: '800' },
-  priceFilterBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingBottom: 8, paddingTop: 4, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F0F0', gap: 6, flexWrap: 'wrap' },
+  priceFilterBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingBottom: 8, paddingTop: 4, borderBottomWidth: 1, gap: 6, flexWrap: 'wrap' },
   priceFilterLabel: { fontSize: 12, color: Colors.textMuted, fontWeight: '600', marginRight: 2 },
   priceChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB' },
   priceChipActive: { backgroundColor: '#FEF3C7', borderColor: '#D97706' },
@@ -729,7 +726,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   emptySub: { fontSize: 14, color: Colors.textMuted },
-  postCTA: { backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingHorizontal: Spacing.lg, paddingVertical: 12, paddingBottom: ORBIT_BAR_HEIGHT + 8 },
+  postCTA: { borderTopWidth: 1, paddingHorizontal: Spacing.lg, paddingTop: 12 },
   postBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: Colors.primary + '50', borderRadius: 12, paddingVertical: 12, backgroundColor: Colors.primarySurface },
   postBtnText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
   // Modal

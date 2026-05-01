@@ -1,17 +1,10 @@
 /**
- * LogoMark — Studara Brand Identity (v2, vibrant Gen-Z)
- *
- * Icon:     violet-gradient rounded square with bold "S", tilted orbit ring,
- *           and a hot-pink planet dot.
- * Wordmark: violet "S" + primary-ink "tudara".
- *
- * Built 100% from React Native primitives + expo-linear-gradient.
+ * LogoMark — Studara (vert éducation / forêt — maquette utilisateur).
  */
 
 import React from 'react';
 import { Text } from '@/ui/Text';
 import { View, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 type Size    = 'sm' | 'md' | 'lg' | 'xl';
 type Variant = 'dark' | 'light' | 'brand';
@@ -34,10 +27,10 @@ const SIZES: Record<Size, {
   xl: { box: 114, orbitW: 104,orbitScaleY: 0.32, letter: 66, text: 30, radius: 28, planet: 8,   planetTop: 14, planetRight: 14 },
 };
 
-// Violet → pink gradient for the mark body
-const BG_DARK:  [string, string, string] = ['#5B21B6', '#7C3AED', '#A78BFA'];
-const BG_LIGHT: [string, string]         = ['#F5F3FF', '#EDE9FE'];
-const BG_BRAND: [string, string, string] = ['#8B5CF6', '#EC4899', '#F97316'];
+/** Fonds unis — plus de LinearGradient dans le logo. */
+const BOX_DARK  = '#166534';
+const BOX_LIGHT = '#DCFCE7';
+const BOX_BRAND = '#15803D';
 
 export function LogoMark({
   size      = 'md',
@@ -47,19 +40,17 @@ export function LogoMark({
 }: LogoMarkProps) {
   const s = SIZES[size];
 
-  const bgColors     = (variant === 'light' ? BG_LIGHT : variant === 'brand' ? BG_BRAND : BG_DARK) as unknown as [string, string, ...string[]];
-  const sColor       = variant === 'light' ? '#7C3AED' : '#FFFFFF';
-  const orbitColor   = variant === 'light' ? 'rgba(124,58,237,0.45)' : 'rgba(255,255,255,0.55)';
-  const planetColor  = variant === 'light' ? '#EC4899' : '#FDE68A';
-  const resolvedName = nameColor ?? (variant === 'light' ? '#0F0A1F' : '#FFFFFF');
+  const boxBg =
+    variant === 'light' ? BOX_LIGHT : variant === 'brand' ? BOX_BRAND : BOX_DARK;
+  const sColor       = variant === 'light' ? '#14532D' : '#FFFFFF';
+  const orbitColor   = variant === 'light' ? 'rgba(20,83,45,0.45)' : 'rgba(255,255,255,0.55)';
+  const planetColor  = variant === 'light' ? '#84CC16' : '#FDE68A';
+  const resolvedName = nameColor ?? (variant === 'light' ? '#14221A' : '#FFFFFF');
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={bgColors as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.box, { width: s.box, height: s.box, borderRadius: s.radius }]}
+      <View
+        style={[styles.box, { width: s.box, height: s.box, borderRadius: s.radius, backgroundColor: boxBg }]}
       >
         {/* Orbit ring — circle compressed on Y axis then rotated */}
         <View
@@ -100,7 +91,7 @@ export function LogoMark({
             shadowOffset:    { width: 0, height: 0 },
           }]}
         />
-      </LinearGradient>
+      </View>
 
       {showName && (
         <View style={styles.wordmarkRow}>

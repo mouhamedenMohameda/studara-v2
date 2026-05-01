@@ -6,7 +6,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { View, StyleSheet, FlatList, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -15,8 +15,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { apiRequest } from '../../utils/api';
 import { ForumPost } from '../../types';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
+import { useTabBarContentPadding } from '../../hooks/useTabBarContentPadding';
 import { safeBack } from '../../utils/safeBack';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -51,6 +51,7 @@ export default function ForumScreen() {
   const { lang, t } = useLanguage();
   const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(C, isDark), [C, isDark]);
+  const listBottomPad = useTabBarContentPadding(96);
   const isAr = lang === 'ar';
 
   const [posts, setPosts]         = useState<ForumPost[]>([]);
@@ -145,16 +146,11 @@ export default function ForumScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      {/* Header */}
-      <LinearGradient
-        colors={Gradients.brand as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-      <SafeAreaView edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => safeBack(navigation)} style={styles.backBtn}>
-            <AppIcon name={isAr ? 'chevronForward' : 'chevronBack'} size={24} color="#fff" />
+            <AppIcon name={isAr ? 'chevronForward' : 'chevronBack'} size={24} color={C.textPrimary} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>💬 {t('forum.title')}</Text>
@@ -162,13 +158,12 @@ export default function ForumScreen() {
           </View>
         </View>
 
-        {/* Search */}
         <View style={styles.searchRow}>
-          <AppIcon name="searchOutline" size={16} color={C.textSecondary} style={{ marginRight: 6 }} />
+          <AppIcon name="searchOutline" size={16} color={C.primary} style={{ marginRight: 6 }} />
           <TextInput
             style={styles.searchInput}
             placeholder={t('forum.search_placeholder')}
-            placeholderTextColor={C.textSecondary}
+            placeholderTextColor={C.textMuted}
             value={searchQ}
             onChangeText={t => { setSearchQ(t); }}
             onSubmitEditing={() => { setLoading(true); fetchPosts(1, true); }}
@@ -176,12 +171,11 @@ export default function ForumScreen() {
           />
           {searchQ.length > 0 && (
             <TouchableOpacity onPress={() => { setSearchQ(''); setLoading(true); fetchPosts(1, true); }}>
-              <AppIcon name="closeCircle" size={16} color={C.textSecondary} />
+              <AppIcon name="closeCircle" size={16} color={C.textMuted} />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Subject filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersRow}>
           {SUBJECTS.map(s => (
             <TouchableOpacity
@@ -197,7 +191,6 @@ export default function ForumScreen() {
           ))}
         </ScrollView>
       </SafeAreaView>
-      </LinearGradient>
 
       {/* Posts */}
       {loading ? (
@@ -207,7 +200,7 @@ export default function ForumScreen() {
           data={posts}
           keyExtractor={p => p.id}
           renderItem={renderPost}
-          contentContainerStyle={{ padding: Spacing.md, paddingBottom: 100 }}
+          contentContainerStyle={{ padding: Spacing.md, paddingBottom: listBottomPad }}
           refreshing={refreshing}
           onRefresh={() => { setRefreshing(true); fetchPosts(1, true); }}
           onEndReached={() => hasMore && fetchPosts(page + 1, false)}
@@ -289,33 +282,35 @@ const makeStyles = (C: any, isDark: boolean) => StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingTop: 6, paddingBottom: 12, gap: 10,
+    paddingTop: 8, paddingBottom: 12, gap: 10,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.surface,
+    borderWidth: 1.5, borderColor: C.border,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#fff', letterSpacing: -0.3 },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.92)', fontWeight: '600', marginTop: 2 },
+  headerTitle: { fontSize: 20, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.3 },
+  headerSub: { fontSize: 12, color: C.textMuted, fontWeight: '600', marginTop: 2 },
   searchRow: {
     flexDirection: 'row', alignItems: 'center', marginHorizontal: Spacing.md,
-    marginTop: 10, marginBottom: 4,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
-    borderRadius: BorderRadius.lg, paddingHorizontal: 14, height: 44,
+    marginTop: 4, marginBottom: 8,
+    backgroundColor: C.surface,
+    borderWidth: 1.5, borderColor: C.borderLight,
+    borderRadius: BorderRadius.xl, paddingHorizontal: 14, height: 46,
+    ...Shadows.xs,
   },
-  searchInput: { flex: 1, color: '#fff', fontSize: 14, fontWeight: '500' },
-  filtersRow: { paddingHorizontal: Spacing.md, paddingVertical: 10, gap: 8, paddingBottom: 14 },
+  searchInput: { flex: 1, color: C.textPrimary, fontSize: 14, fontWeight: '500' },
+  filtersRow: { paddingHorizontal: Spacing.md, paddingVertical: 10, gap: 8, paddingBottom: 12 },
   filterChip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)',
+    backgroundColor: C.surfaceVariant,
+    borderWidth: 1, borderColor: C.border,
   },
-  filterChipActive: { backgroundColor: '#fff', borderColor: '#fff' },
-  filterText: { fontSize: 13, color: '#fff', fontWeight: '700' },
-  filterTextActive: { color: Colors.primary, fontWeight: '800' },
+  filterChipActive: { backgroundColor: C.primary, borderColor: C.primary, ...Shadows.sm },
+  filterText: { fontSize: 13, color: C.textSecondary, fontWeight: '700' },
+  filterTextActive: { color: '#fff', fontWeight: '800' },
 
   postCard: {
     backgroundColor: C.surface, borderRadius: BorderRadius['2xl'],
@@ -334,7 +329,7 @@ const makeStyles = (C: any, isDark: boolean) => StyleSheet.create({
   metaLeft: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, flexWrap: 'wrap' },
   metaRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   subjectChip: {
-    backgroundColor: isDark ? '#1E1B4B' : '#EDE9FE',
+    backgroundColor: C.primarySurface,
     borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2,
   },
   subjectText: { fontSize: 11, color: Colors.primary, fontWeight: '600' },

@@ -5,8 +5,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar }
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../../context/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Gradients, Shadows } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
 import { useFaculties } from '../../hooks/useFaculties';
 import { Faculty } from '../../types';
 import { setFavoriteFaculty } from '../../utils/offlineStorage';
@@ -45,7 +44,7 @@ const SLIDES = [
     key: 'faculty',
     step: '04',
     emoji: '🎓',
-    accentColor: '#7C3AED',
+    accentColor: Colors.primary,
     title: 'ما هي كليتك؟',
     subtitle: 'سنعرض لك أولاً الموارد الأنسب لتخصصك الدراسي.',
     skeletonType: 'faculty' as const,
@@ -155,7 +154,7 @@ const OnboardingScreen = () => {
                 )}
                 {s.skeletonType === 'timeline' && [
                   { label: 'امتحان', color: '#DC2626' },
-                  { label: 'واجب', color: '#7C3AED' },
+                  { label: 'واجب', color: Colors.primary },
                   { label: 'محاضرة', color: s.accentColor },
                 ].map((item, i) => (
                   <View key={i} style={styles.mockupTimeline}>
@@ -210,12 +209,7 @@ const OnboardingScreen = () => {
             </TouchableOpacity>
           )}
           <TouchableOpacity style={styles.nextBtnWrap} onPress={handleNext} activeOpacity={0.88}>
-            <LinearGradient
-              colors={Gradients.brand as any}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.nextBtn}
-            >
+            <View style={styles.nextBtn}>
               <Text style={styles.nextText}>
                 {activeIndex === SLIDES.length - 1 ? 'ابدأ الآن 🚀' : 'التالي'}
               </Text>
@@ -224,7 +218,7 @@ const OnboardingScreen = () => {
                   <AppIcon name="arrowBack" size={18} color={Colors.primary} />
                 </View>
               )}
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -336,6 +330,7 @@ const styles = StyleSheet.create({
   nextBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     paddingVertical: 18, paddingHorizontal: 20,
+    backgroundColor: Colors.primary,
   },
   nextText: { fontSize: 17, fontWeight: '900', color: '#fff', letterSpacing: 0.2 },
   nextArrow: {

@@ -2,13 +2,13 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { View, StyleSheet, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Alert, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, Alert, ScrollView, ActivityIndicator, RefreshControl, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
+import { useTabBarContentPadding } from '../../hooks/useTabBarContentPadding';
 import { useTheme } from '../../context/ThemeContext';
 import { ReminderType } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -24,7 +24,7 @@ import { queryKeys } from '../../utils/queryKeys';
 
 const TYPE_CONFIG: Record<ReminderType, { icon: AppIconName; color: string }> = {
   [ReminderType.Exam]:       { icon: 'schoolOutline',                    color: '#DC2626' },
-  [ReminderType.Assignment]: { icon: 'documentTextOutline',              color: '#7C3AED' },
+  [ReminderType.Assignment]: { icon: 'documentTextOutline',              color: Colors.primary },
   [ReminderType.Course]:     { icon: 'bookOutline',                       color: '#2563EB' },
   [ReminderType.Other]:      { icon: 'ellipsisHorizontalCircleOutline', color: '#6B7280' },
 };
@@ -45,37 +45,38 @@ const emptyForm = {
 };
 
 const makeStyles = (C: typeof Colors) => StyleSheet.create({
-  header: { paddingBottom: 10, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 10, paddingBottom: 14 },
-  headerTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: -0.4 },
+  headerWrap: { backgroundColor: C.background, paddingBottom: 4 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 8, paddingBottom: 12 },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.4 },
   backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.26)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.surface,
+    borderWidth: 1.5, borderColor: C.border,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
   addBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.26)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.primarySurface,
+    borderWidth: 1.5, borderColor: C.primarySoft,
     alignItems: 'center', justifyContent: 'center',
   },
-  tabs: { flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: 10, paddingBottom: 14 },
+  tabs: { flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: 10, paddingBottom: 12 },
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: 10, borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)',
+    backgroundColor: C.surfaceVariant,
+    borderWidth: 1, borderColor: C.border,
   },
   tabActive: {
-    backgroundColor: '#fff', borderColor: '#fff',
-    shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 5,
+    backgroundColor: C.primary, borderColor: C.primary,
+    ...Shadows.sm,
   },
-  tabText: { fontSize: 13, fontWeight: '800', color: '#fff' },
-  tabTextActive: { color: '#EC4899' },
+  tabText: { fontSize: 13, fontWeight: '800', color: C.textSecondary },
+  tabTextActive: { color: '#fff' },
   tabBadge: { backgroundColor: Colors.error, borderRadius: 999, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   tabBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
-  listContent: { padding: Spacing.lg, paddingBottom: 120 },
+  listContent: { padding: Spacing.lg, paddingBottom: 28 },
   section: { marginBottom: Spacing.md },
   sectionTitle: { fontSize: 12, fontWeight: '700', color: C.textMuted, textAlign: 'right', marginBottom: 8, letterSpacing: 0.5 },
   card: {
@@ -103,10 +104,10 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   emptySub: { fontSize: 14, color: C.textMuted, textAlign: 'center', lineHeight: 22 },
   emptyAddBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#EC4899',
+    backgroundColor: C.primary,
     paddingHorizontal: 24, paddingVertical: 14,
     borderRadius: 999, marginTop: 10,
-    shadowColor: '#EC4899', shadowOpacity: 0.38, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8,
+    ...Shadows.brand,
   },
   emptyAddText: { color: '#fff', fontWeight: '800', fontSize: 15, letterSpacing: 0.3 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
@@ -242,6 +243,7 @@ const RemindersScreen = () => {
   const { t, lang } = useLanguage();
   const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
+  const listBottomPad = useTabBarContentPadding(16);
   const navigation = useNavigation();
   const isAr = lang === 'ar';
 
@@ -386,7 +388,7 @@ const RemindersScreen = () => {
   const cardProps: Omit<ReminderCardProps, 'item' | 'faded'> = {
     activeTab,
     userId: user?.id,
-    lang,
+    lang: lang as 'ar' | 'fr',
     typeLabels: TYPE_LABELS,
     pendingLabel:  t('rem.status.pending'),
     rejectedLabel: t('rem.status.rejected'),
@@ -397,41 +399,31 @@ const RemindersScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      <LinearGradient
-        colors={['#EC4899', '#F43F5E', '#F97316']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={onBackPress}
-              activeOpacity={0.75}
-            >
-              <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={20} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t('rem.title')}</Text>
-            <TouchableOpacity style={styles.addBtn} onPress={openAdd} activeOpacity={0.75}>
-              <AppIcon name='add' size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.tabs}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={styles.headerWrap}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBackPress} activeOpacity={0.75}>
+            <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={20} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('rem.title')}</Text>
+          <TouchableOpacity style={styles.addBtn} onPress={openAdd} activeOpacity={0.75}>
+            <AppIcon name="add" size={22} color={C.primary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.tabs}>
           {(['personal', 'global'] as const).map(tab => (
-              <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
-                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab === 'personal' ? t('rem.tab_personal') : t('rem.tab_global')}</Text>
-                {tab === 'global' && globalList.filter(r => r.status === 'approved').length > 0 && (
-                  <View style={styles.tabBadge}><Text style={styles.tabBadgeText}>{globalList.filter(r => r.status === 'approved').length}</Text></View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+            <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
+              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab === 'personal' ? t('rem.tab_personal') : t('rem.tab_global')}</Text>
+              {tab === 'global' && globalList.filter(r => r.status === 'approved').length > 0 && (
+                <View style={styles.tabBadge}><Text style={styles.tabBadgeText}>{globalList.filter(r => r.status === 'approved').length}</Text></View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </SafeAreaView>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 60 }} color="#D97706" size="large" />
+        <ActivityIndicator style={{ marginTop: 60 }} color={C.primary} size="large" />
       ) : list.length === 0 ? (
         <View style={styles.emptyState}>
           <AppIcon name="alarmOutline" size={64} color="#D1D5DB" />
@@ -445,7 +437,7 @@ const RemindersScreen = () => {
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: listBottomPad }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refetchPersonal(); refetchGlobal(); }} />}
         >
           {activeTab === 'personal' ? (
@@ -487,7 +479,7 @@ const RemindersScreen = () => {
                   </View>
                   {form.scope === 'global' && (
                     <View style={styles.globalNote}>
-                      <AppIcon name="informationCircleOutline" size={16} color="#7C3AED" />
+                      <AppIcon name="informationCircleOutline" size={16} color="Colors.primary" />
                       <Text style={styles.globalNoteText}>{t('rem.global_note')}</Text>
                     </View>
                   )}

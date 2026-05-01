@@ -7,14 +7,13 @@ import { Text } from '@/ui/Text';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useSubscription } from '../../context/SubscriptionContext';
 import { apiRequest } from '../../utils/api';
-import { Colors, BorderRadius, Spacing, Shadows, Gradients } from '../../theme';
+import { Colors, BorderRadius, Spacing, Shadows } from '../../theme';
 import { safeBack } from '../../utils/safeBack';
 
 interface SubscriptionSnap {
@@ -214,17 +213,18 @@ export default function MyPlanScreen() {
                   onPress={() => (navigation as any).navigate('Paywall')}
                   style={styles.panelCtaInner}
                 >
-                  <LinearGradient
-                    colors={Gradients.brand as any}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.panelCtaGrad, isAr ? { flexDirection: 'row-reverse' } : { flexDirection: 'row' }]}
+                  <View
+                    style={[
+                      styles.panelCtaGrad,
+                      { backgroundColor: C.primary },
+                      isAr ? { flexDirection: 'row-reverse' } : { flexDirection: 'row' },
+                    ]}
                   >
                     <AppIcon name='sparkles' size={20} color="#fff" />
                     <Text style={styles.panelCtaText}>
                       {isAr ? 'اكتشف Studara+' : 'Découvrir Studara+'}
                     </Text>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
               </>
             ) : null}

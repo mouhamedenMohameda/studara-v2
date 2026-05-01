@@ -30,79 +30,98 @@ import ScanCreateScreen from '../screens/Flashcards/ScanCreateScreen';
 import StudySessionScreen from '../screens/Flashcards/StudySessionScreen';
 import TimetableScreen from '../screens/Timetable/TimetableScreen';
 import RemindersScreen from '../screens/Reminders/RemindersScreen';
+import { useModernStackOptions } from './modernNavigator';
 
 // ─── Module stacks (same as Explore tab, but pushed as a root stack screen) ────
 
 const JobsStack = createStackNavigator<JobsStackParamList>();
-const JobsNavigator = () => (
-  <JobsStack.Navigator screenOptions={{ headerShown: false }}>
-    <JobsStack.Screen name="JobsList"        component={JobsScreen} />
-    <JobsStack.Screen name="JobDetail"       component={JobDetailScreen} />
-    <JobsStack.Screen name="MyApplications" component={MyApplicationsScreen} />
-  </JobsStack.Navigator>
-);
+const JobsNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <JobsStack.Navigator screenOptions={opts}>
+      <JobsStack.Screen name="JobsList"        component={JobsScreen} />
+      <JobsStack.Screen name="JobDetail"       component={JobDetailScreen} />
+      <JobsStack.Screen name="MyApplications" component={MyApplicationsScreen} />
+    </JobsStack.Navigator>
+  );
+};
 
 const OpportunitiesStack = createStackNavigator<OpportunitiesStackParamList>();
-const OpportunitiesNavigator = () => (
-  <OpportunitiesStack.Navigator screenOptions={{ headerShown: false }}>
-    <OpportunitiesStack.Screen name="OpportunitiesList" component={OpportunitiesScreen} />
-    <OpportunitiesStack.Screen name="OpportunityDetail" component={OpportunityDetailScreen} />
-  </OpportunitiesStack.Navigator>
-);
+const OpportunitiesNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <OpportunitiesStack.Navigator screenOptions={opts}>
+      <OpportunitiesStack.Screen name="OpportunitiesList" component={OpportunitiesScreen} />
+      <OpportunitiesStack.Screen name="OpportunityDetail" component={OpportunityDetailScreen} />
+    </OpportunitiesStack.Navigator>
+  );
+};
 
 const ResourcesStack = createStackNavigator<ResourcesStackParamList>();
-const ResourcesNavigator = () => (
-  <ResourcesStack.Navigator screenOptions={{ headerShown: false }}>
-    <ResourcesStack.Screen name="ResourcesList"   component={ResourcesScreen} />
-    <ResourcesStack.Screen name="ResourceDetail"  component={ResourceDetailScreen} />
-    <ResourcesStack.Screen name="ResourceViewer"  component={ResourceViewerScreen} />
-    <ResourcesStack.Screen name="UploadResource"  component={UploadResourceScreen} />
-    <ResourcesStack.Screen name="MySubmissions"   component={MySubmissionsScreen} />
-    <ResourcesStack.Screen name="CourseViewer"    component={CourseViewerScreen} />
-  </ResourcesStack.Navigator>
-);
+const ResourcesNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <ResourcesStack.Navigator screenOptions={opts}>
+      <ResourcesStack.Screen name="ResourcesList"   component={ResourcesScreen} />
+      <ResourcesStack.Screen name="ResourceDetail"  component={ResourceDetailScreen} />
+      <ResourcesStack.Screen name="ResourceViewer"  component={ResourceViewerScreen} />
+      <ResourcesStack.Screen name="UploadResource"  component={UploadResourceScreen} />
+      <ResourcesStack.Screen name="MySubmissions"   component={MySubmissionsScreen} />
+      <ResourcesStack.Screen name="CourseViewer"    component={CourseViewerScreen} />
+    </ResourcesStack.Navigator>
+  );
+};
 
 const CoursesStack = createStackNavigator<CoursesStackParamList>();
-const CoursesNavigator = () => (
-  <CoursesStack.Navigator screenOptions={{ headerShown: false }}>
-    <CoursesStack.Screen name="CoursesList" component={VideoCoursesScreen} />
-    <CoursesStack.Screen name="CourseViewer" component={CourseViewerScreen} />
-  </CoursesStack.Navigator>
-);
+const CoursesNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <CoursesStack.Navigator screenOptions={opts}>
+      <CoursesStack.Screen name="CoursesList" component={VideoCoursesScreen} />
+      <CoursesStack.Screen name="CourseViewer" component={CourseViewerScreen} />
+    </CoursesStack.Navigator>
+  );
+};
 
 const FlashcardsStack = createStackNavigator<FlashcardsStackParamList>();
-const FlashcardsNavigator = () => (
-  <FlashcardsStack.Navigator screenOptions={{ headerShown: false }}>
-    <FlashcardsStack.Screen name="FlashcardsList" component={FlashcardsScreen} />
-    <FlashcardsStack.Screen name="StudySession"   component={StudySessionScreen} />
-    <FlashcardsStack.Screen name="CreateDeck"     component={CreateDeckScreen} />
-    <FlashcardsStack.Screen name="ScanCreate"     component={ScanCreateScreen} options={{ animation: 'slide_from_bottom' }} />
-  </FlashcardsStack.Navigator>
-);
+const FlashcardsNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <FlashcardsStack.Navigator screenOptions={opts}>
+      <FlashcardsStack.Screen name="FlashcardsList" component={FlashcardsScreen} />
+      <FlashcardsStack.Screen name="StudySession"   component={StudySessionScreen} />
+      <FlashcardsStack.Screen name="CreateDeck"     component={CreateDeckScreen} />
+      <FlashcardsStack.Screen name="ScanCreate"     component={ScanCreateScreen} options={{ animation: 'slide_from_bottom' }} />
+    </FlashcardsStack.Navigator>
+  );
+};
 
 const HousingStack = createStackNavigator<HousingStackParamList>();
-const HousingNavigator = () => (
-  <HousingStack.Navigator screenOptions={{ headerShown: false }}>
-    <HousingStack.Screen name="HousingList" component={HousingScreen} />
-  </HousingStack.Navigator>
-);
+const HousingNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <HousingStack.Navigator screenOptions={opts}>
+      <HousingStack.Screen name="HousingList" component={HousingScreen} />
+    </HousingStack.Navigator>
+  );
+};
 
 // ─── Modal Explore stack ───────────────────────────────────────────────────────
 
 const ExploreModalStack = createStackNavigator<ExploreStackParamList>();
 
 export default function ExploreModalNavigator() {
+  const opts = useModernStackOptions();
   return (
-    <ExploreModalStack.Navigator screenOptions={{ headerShown: false }}>
-      <ExploreModalStack.Screen name="Resources"  component={ResourcesNavigator} />
-      <ExploreModalStack.Screen name="Timetable"  component={TimetableScreen} />
-      <ExploreModalStack.Screen name="Courses"    component={CoursesNavigator} />
-      <ExploreModalStack.Screen name="Flashcards" component={FlashcardsNavigator} />
-      <ExploreModalStack.Screen name="Jobs"       component={JobsNavigator} />
+    <ExploreModalStack.Navigator screenOptions={opts}>
+      <ExploreModalStack.Screen name="Resources"     component={ResourcesNavigator} />
+      <ExploreModalStack.Screen name="Timetable"     component={TimetableScreen} />
+      <ExploreModalStack.Screen name="Courses"       component={CoursesNavigator} />
+      <ExploreModalStack.Screen name="Flashcards"    component={FlashcardsNavigator} />
+      <ExploreModalStack.Screen name="Jobs"          component={JobsNavigator} />
       <ExploreModalStack.Screen name="Opportunities" component={OpportunitiesNavigator} />
-      <ExploreModalStack.Screen name="Reminders"  component={RemindersScreen} />
-      <ExploreModalStack.Screen name="Housing"    component={HousingNavigator} />
+      <ExploreModalStack.Screen name="Reminders"     component={RemindersScreen} />
+      <ExploreModalStack.Screen name="Housing"       component={HousingNavigator} />
     </ExploreModalStack.Navigator>
   );
 }
-

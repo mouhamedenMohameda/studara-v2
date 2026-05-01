@@ -9,7 +9,6 @@ import { TextInput } from '@/ui/TextInput';
 import { View, TouchableOpacity, FlatList, StyleSheet, Alert, ActivityIndicator, Animated, ScrollView, Platform, Modal, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 // Use expo-audio (new-architecture compatible) for recording. expo-av's
@@ -63,14 +62,14 @@ import { API_BASE } from '../../utils/api';
 import { notifyWalletSpent } from '../../utils/walletUtils';
 import { computePaygChargeMru } from '@/utils/paygCharge';
 import { getPaygFeature } from '@/constants/paygFeatures';
-import { Colors, BorderRadius, Gradients, Shadows, Spacing } from '../../theme';
+import { Colors, BorderRadius, Shadows, Spacing } from '../../theme';
 import { usePremiumFeature } from '../../hooks/usePremiumFeature';
 import PremiumGate from '../../components/common/PremiumGate';
 import { safeBack } from '../../utils/safeBack';
 
 type Nav = StackNavigationProp<RootStackParamList, 'VoiceNotes'>;
 
-const WHISPER_COLOR = '#7C3AED';
+const WHISPER_COLOR = Colors.primary;
 const RECORD_COLOR  = '#EF4444';
 const MAX_DURATION  = 60 * 60;
 
@@ -305,6 +304,11 @@ export default function VoiceNoteScreen() {
   const [search, setSearch]           = useState('');
   /** Studio = capture & réglages · Coffre = liste uniquement (transcription longue ≠ scroll infini) */
   const [homeTab, setHomeTab]         = useState<'studio' | 'vault'>('studio');
+  const prevHomeTabRef                = useRef(homeTab);
+  const studioEnterOpacity            = useRef(new Animated.Value(1)).current;
+  const studioEnterY                  = useRef(new Animated.Value(0)).current;
+  const vaultEnterOpacity             = useRef(new Animated.Value(1)).current;
+  const vaultEnterY                   = useRef(new Animated.Value(0)).current;
   const [titleEdit, setTitleEdit]     = useState<{ id: string; draft: string } | null>(null);
   const [titleEditSaving, setTitleEditSaving] = useState(false);
   const insets                        = useSafeAreaInsets();
@@ -318,6 +322,31 @@ export default function VoiceNoteScreen() {
       n.transcript_preview?.toLowerCase().includes(q),
     );
   }, [notes, search]);
+
+  /** Entrées douces entre Studio ↔ Coffre (hors enregistrement / upload). */
+  useEffect(() => {
+    const prev = prevHomeTabRef.current;
+    const wasVault = prev === 'vault';
+    const wasStudio = prev === 'studio';
+    prevHomeTabRef.current = homeTab;
+    if (wasVault && homeTab === 'studio' && !isRecording && !isUploading) {
+      studioEnterOpacity.setValue(0);
+      studioEnterY.setValue(14);
+      Animated.parallel([
+        Animated.timing(studioEnterOpacity, { toValue: 1, duration: 260, useNativeDriver: true }),
+        Animated.spring(studioEnterY, { toValue: 0, friction: 9, tension: 76, useNativeDriver: true }),
+      ]).start();
+    }
+    if (wasStudio && homeTab === 'vault') {
+      vaultEnterOpacity.setValue(0);
+      vaultEnterY.setValue(10);
+      Animated.parallel([
+        Animated.timing(vaultEnterOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.spring(vaultEnterY, { toValue: 0, friction: 9, tension: 80, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [homeTab, isRecording, isUploading, studioEnterOpacity, studioEnterY, vaultEnterOpacity, vaultEnterY]);
+
   // ── Pulsebeat du bouton record ─────────────────────────────────────────────
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -781,15 +810,15 @@ export default function VoiceNoteScreen() {
   const renderNote = ({ item }: { item: VoiceNote }) => {
     // Dots IA complétés
     const aiDots: string[] = [];
-    if (item.deck_id || item.enhance_mode === 'flashcards') aiDots.push('#8B5CF6');
+    if (item.deck_id || item.enhance_mode === 'flashcards') aiDots.push(WHISPER_COLOR);
     if (item.ai_course) aiDots.push('#F59E0B');
     if (item.clean_transcript || (item.enhance_mode && item.enhance_mode !== 'flashcards' && item.enhance_mode !== 'course'))
       aiDots.push('#10B981');
 
-    const accentColors: [string, string] =
-      item.status === 'failed'     ? ['#EF4444', '#DC2626'] :
-      item.status === 'processing' ? ['#F59E0B', '#D97706'] :
-                                     ['#8B5CF6', '#6D28D9'];
+    const accentSolid =
+      item.status === 'failed'     ? '#EF4444' :
+      item.status === 'processing' ? '#D97706' :
+                                     WHISPER_COLOR;
 
     return (
       <View style={styles.tapeRow}>
@@ -805,20 +834,20 @@ export default function VoiceNoteScreen() {
           onLongPress={() => deleteNote(item)}
         >
           <View style={styles.tapeRail}>
-            <LinearGradient colors={accentColors} style={styles.tapeOrb}>
+            <View style={[styles.tapeOrb, { backgroundColor: accentSolid }]}>
               {item.status === 'processing'
                 ? <ActivityIndicator color="#fff" size="small" />
                 : <AppIcon name={item.status === 'failed' ? 'warningOutline' : 'mic'} size={14} color="#fff" />
               }
-            </LinearGradient>
-            <View style={[styles.tapeStem, { backgroundColor: accentColors[0] + '35' }]} />
+            </View>
+            <View style={[styles.tapeStem, { backgroundColor: accentSolid + '35' }]} />
           </View>
 
-          <LinearGradient
-            colors={isDark ? [C.surfaceWarm, C.surface] : ['#FFFFFF', C.primarySurface]}
-            style={styles.tapeCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          <View
+            style={[
+              styles.tapeCard,
+              { backgroundColor: isDark ? C.surfaceWarm : C.surface, borderWidth: 1, borderColor: C.border },
+            ]}
           >
           <View style={styles.tapeCardTop}>
             <Text style={styles.tapeTitle} numberOfLines={2}>
@@ -868,7 +897,7 @@ export default function VoiceNoteScreen() {
               <Text style={styles.retryChipText}>{t('vn.retry_restart').replace('🔄 ', '')}</Text>
             </TouchableOpacity>
           ) : null}
-        </LinearGradient>
+        </View>
         </TouchableOpacity>
         <View style={styles.vaultActions}>
           <TouchableOpacity
@@ -897,16 +926,20 @@ export default function VoiceNoteScreen() {
     );
   };
 
+  const heroSurfaceBg =
+    isRecording || isUploading
+      ? (isDark ? '#0f1712' : '#ECFDF5')
+      : (isDark ? C.surfaceWarm : C.background);
+
   // ── Header enregistreur hero ───────────────────────────────────────────────
   const RecorderHero = () => (
     <View style={styles.heroOuter}>
-      <LinearGradient
-        colors={
-          isRecording || isUploading
-            ? (isDark ? ['#1E1040', '#130A2A', '#0D0618'] : ['#EDE9FE', '#F5F3FF', '#FAF9FF'])
-            : (isDark ? [C.surfaceWarm, C.surface] : [...Gradients.brandSoft])
-        }
-        style={[styles.heroGradient, !isRecording && !isUploading && styles.heroGradientIdle]}
+      <View
+        style={[
+          styles.heroGradient,
+          { backgroundColor: heroSurfaceBg },
+          !isRecording && !isUploading && styles.heroGradientIdle,
+        ]}
       >
         {isRecording ? (
           /* ── Enregistrement actif ── */
@@ -932,7 +965,16 @@ export default function VoiceNoteScreen() {
             </View>
 
             <View style={styles.controlsRow}>
-              <TouchableOpacity style={styles.ctrlBtn} onPress={cancelRecording}>
+              <TouchableOpacity
+                style={[
+                  styles.ctrlBtn,
+                  !isDark && {
+                    backgroundColor: 'rgba(22,101,52,0.08)',
+                    borderColor: WHISPER_COLOR + '35',
+                  },
+                ]}
+                onPress={cancelRecording}
+              >
                 <AppIcon name="trashOutline" size={20} color="#EF4444" />
               </TouchableOpacity>
 
@@ -948,7 +990,16 @@ export default function VoiceNoteScreen() {
                 </Animated.View>
               </View>
 
-              <TouchableOpacity style={styles.ctrlBtn} onPress={togglePause}>
+              <TouchableOpacity
+                style={[
+                  styles.ctrlBtn,
+                  !isDark && {
+                    backgroundColor: 'rgba(22,101,52,0.08)',
+                    borderColor: WHISPER_COLOR + '35',
+                  },
+                ]}
+                onPress={togglePause}
+              >
                 <AppIcon name={isPaused ? 'play' : 'pause'} size={20} color={WHISPER_COLOR} />
               </TouchableOpacity>
             </View>
@@ -1002,14 +1053,9 @@ export default function VoiceNoteScreen() {
                     <View style={styles.recordRingInner}>
                       <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                         <TouchableOpacity onPress={startRecording} activeOpacity={0.85} style={styles.recordBtnShadow}>
-                          <LinearGradient
-                            colors={['#F87171', RECORD_COLOR, '#DC2626']}
-                            style={styles.recordBtn}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                          >
+                          <View style={[styles.recordBtn, { backgroundColor: RECORD_COLOR }]}>
                             <AppIcon name='mic' size={34} color="#fff" />
-                          </LinearGradient>
+                          </View>
                         </TouchableOpacity>
                       </Animated.View>
                     </View>
@@ -1027,12 +1073,7 @@ export default function VoiceNoteScreen() {
                   disabled={isUploading}
                   activeOpacity={0.78}
                 >
-                  <LinearGradient
-                    colors={[C.primary + '22', C.accent + '18']}
-                    style={StyleSheet.absoluteFillObject}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  />
+                  <View style={[StyleSheet.absoluteFillObject, { backgroundColor: C.primary + '16' }]} />
                   {isUploading
                     ? <ActivityIndicator size="small" color={WHISPER_COLOR} />
                     : <AppIcon name="layersOutline" size={26} color={WHISPER_COLOR} />
@@ -1104,7 +1145,7 @@ export default function VoiceNoteScreen() {
                 const fmt = (n: number) => (n < 0.1 ? n.toFixed(3) : n.toFixed(2)).replace(/0+$/, '').replace(/\.$/, '');
                 const models = [
                   { key: 'gpt-4o-transcribe',      label: 'GPT-4o',      badge: '⭐', color: '#6366F1', desc: isAr ? 'أعلى جودة'  : 'Top qualité' },
-                  { key: 'gpt-4o-mini-transcribe', label: 'GPT-4o Mini', badge: '⚡', color: '#8B5CF6', desc: isAr ? 'اقتصادي'   : 'Économique' },
+                  { key: 'gpt-4o-mini-transcribe', label: 'GPT-4o Mini', badge: '⚡', color: '#0D9488', desc: isAr ? 'اقتصادي'   : 'Économique' },
                   { key: 'groq-whisper',           label: 'Groq',        badge: '🔊', color: '#10B981', desc: isAr ? 'سريع'      : 'Rapide' },
                   { key: 'google-chirp',           label: 'Chirp 2',     badge: '🔵', color: '#0EA5E9', desc: isAr ? 'جوجل'      : 'Google' },
                 ] as const;
@@ -1159,7 +1200,7 @@ export default function VoiceNoteScreen() {
             </View>
           </View>
         )}
-      </LinearGradient>
+      </View>
     </View>
   );
 
@@ -1202,19 +1243,18 @@ export default function VoiceNoteScreen() {
       lang={lang}
     >
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Carte Whisper : léger dégradé + ombre, crédit aligné à droite, onglets type « hero » (pilule blanche / violet) */}
+      {/* Carte Whisper : surface + onglets pilule (chrome Studara) */}
       <View style={styles.headerWrap}>
         <View style={styles.headerCardOuter}>
-          <LinearGradient
-            colors={
-              isDark
-                ? ['#2D2654', '#221C42', '#18132E']
-                : ['#FFFFFF', '#FAF7FF', '#FDF2F8']
-            }
-            locations={[0, 0.55, 1]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.headerCardGrad}
+          <View
+            style={[
+              styles.headerCardGrad,
+              {
+                backgroundColor: isDark ? C.surfaceWarm : '#FFFFFF',
+                borderWidth: 1,
+                borderColor: C.border,
+              },
+            ]}
           >
             <View style={styles.headerTopRow}>
               <TouchableOpacity
@@ -1234,10 +1274,16 @@ export default function VoiceNoteScreen() {
                 activeOpacity={0.75}
                 accessibilityLabel={isAr ? 'رصيد المحفظة' : 'Solde portefeuille'}
               >
-                <LinearGradient
-                  colors={balanceMru > 100 ? ['#8B5CF6', '#6D28D9'] : balanceMru > 0 ? ['#F59E0B', '#D97706'] : ['#EF4444', '#B91C1C']}
-                  style={styles.walletChipGrad}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                <View
+                  style={[
+                    styles.walletChipGrad,
+                    {
+                      backgroundColor:
+                        balanceMru > 100 ? Colors.primary :
+                        balanceMru > 0 ? '#D97706' :
+                        '#B91C1C',
+                    },
+                  ]}
                 >
                   <AppIcon name='wallet' size={16} color="rgba(255,255,255,0.95)" />
                   <Text style={styles.walletChipAmount} numberOfLines={1}>
@@ -1246,7 +1292,7 @@ export default function VoiceNoteScreen() {
                       : balanceMru.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}
                     <Text style={styles.walletChipCur}> MRU</Text>
                   </Text>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -1308,7 +1354,7 @@ export default function VoiceNoteScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          </LinearGradient>
+          </View>
         </View>
       </View>
 
@@ -1319,10 +1365,23 @@ export default function VoiceNoteScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <RecorderHero />
+          <Animated.View
+            style={{
+              opacity: studioEnterOpacity,
+              transform: [{ translateY: studioEnterY }],
+            }}
+          >
+            <RecorderHero />
+          </Animated.View>
         </ScrollView>
       ) : (
-        <>
+        <Animated.View
+          style={{
+            flex: 1,
+            opacity: vaultEnterOpacity,
+            transform: [{ translateY: vaultEnterY }],
+          }}
+        >
           {notes.length > 0 ? (
             <View style={styles.vaultChrome}>
               <View style={styles.vaultHead}>
@@ -1377,11 +1436,14 @@ export default function VoiceNoteScreen() {
                 </View>
               ) : (
                 <View style={styles.emptyState}>
-                  <LinearGradient colors={['#8B5CF6', '#6D28D9']} style={styles.emptyIconWrap}>
+                  <View style={[styles.emptyIconWrap, { backgroundColor: WHISPER_COLOR }]}>
                     <AppIcon name='mic' size={34} color="#fff" />
-                  </LinearGradient>
+                  </View>
                   <Text style={styles.emptyTitle}>{t('vn.empty_title')}</Text>
                   <Text style={styles.emptySub}>{t('vn.empty_sub')}</Text>
+                  <Text style={styles.emptyHintKicker}>
+                    {isAr ? 'باختصار' : 'En bref'}
+                  </Text>
                   <TouchableOpacity
                     style={styles.emptyJumpStudio}
                     onPress={() => {
@@ -1389,12 +1451,12 @@ export default function VoiceNoteScreen() {
                       setHomeTab('studio');
                     }}
                   >
-                    <LinearGradient colors={[...Gradients.violet]} style={styles.emptyJumpStudioGrad}>
+                    <View style={[styles.emptyJumpStudioGrad, { backgroundColor: WHISPER_COLOR }]}>
                       <AppIcon name='flash' size={18} color="#fff" />
                       <Text style={styles.emptyJumpStudioText}>
                         {isAr ? 'اذهب للاستوديو' : 'Ouvrir le studio'}
                       </Text>
-                    </LinearGradient>
+                    </View>
                   </TouchableOpacity>
                   <View style={styles.emptyTips}>
                     {[
@@ -1418,7 +1480,7 @@ export default function VoiceNoteScreen() {
             }}
             showsVerticalScrollIndicator={false}
           />
-        </>
+        </Animated.View>
       )}
 
       <Modal
@@ -1508,7 +1570,7 @@ function makeStyles(C: typeof Colors, isDark: boolean) {
     },
     walletChipCur: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.88)' },
 
-    // ── Header carte Whisper (dégradé doux + onglets pilule blanche / violet) ───
+    // ── Header carte Whisper (chrome + onglets pilule) ───
     headerWrap: {
       paddingTop: Spacing.sm,
       paddingBottom: Spacing.md,
@@ -1520,7 +1582,7 @@ function makeStyles(C: typeof Colors, isDark: boolean) {
       overflow: 'hidden',
       ...Shadows.sm,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(167,139,250,0.28)' : 'rgba(124,58,237,0.16)',
+      borderColor: isDark ? 'rgba(34,197,94,0.22)' : WHISPER_COLOR + '22',
     },
     headerCardGrad: {
       borderRadius: BorderRadius.xl,
@@ -1538,9 +1600,9 @@ function makeStyles(C: typeof Colors, isDark: boolean) {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.14)',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : WHISPER_COLOR + '12',
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(124,58,237,0.28)',
+      borderColor: isDark ? 'rgba(255,255,255,0.22)' : WHISPER_COLOR + '28',
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -1558,12 +1620,12 @@ function makeStyles(C: typeof Colors, isDark: boolean) {
     homeTabRowCard: {
       flexDirection: 'row',
       alignSelf: 'stretch',
-      backgroundColor: isDark ? 'rgba(0,0,0,0.32)' : 'rgba(124,58,237,0.1)',
+      backgroundColor: isDark ? 'rgba(0,0,0,0.32)' : WHISPER_COLOR + '0E',
       borderRadius: BorderRadius.pill,
       padding: 4,
       gap: 4,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(124,58,237,0.16)',
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : WHISPER_COLOR + '1A',
     },
     homeTabCard: {
       flex: 1,
@@ -1590,7 +1652,7 @@ function makeStyles(C: typeof Colors, isDark: boolean) {
       minWidth: 18,
       height: 18,
       borderRadius: 9,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(124,58,237,0.18)',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : WHISPER_COLOR + '18',
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 4,
@@ -2075,7 +2137,17 @@ function makeStyles(C: typeof Colors, isDark: boolean) {
       shadowOpacity: 0.35, shadowRadius: 16, elevation: 10,
     },
     emptyTitle: { fontSize: 18, fontWeight: '800', color: C.textPrimary, marginBottom: 6 },
-    emptySub:   { fontSize: 13, color: C.textMuted, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+    emptySub:   { fontSize: 13, color: C.textMuted, textAlign: 'center', lineHeight: 20, marginBottom: 12 },
+    emptyHintKicker: {
+      alignSelf: 'stretch',
+      textAlign: 'center',
+      fontSize: 10,
+      fontWeight: '800',
+      color: C.textMuted,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      marginBottom: 10,
+    },
     emptyTips: { width: '100%', gap: 10 },
     emptyTip: {
       flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -2105,7 +2177,10 @@ function makeStyles(C: typeof Colors, isDark: boolean) {
     // ── Retry chip (failed notes) ──────────────────────────────────────────
     retryChip: {
       flexDirection: 'row', alignItems: 'center', gap: 4,
-      backgroundColor: '#EDE9FE', borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(34,197,94,0.12)' : '#DCFCE7',
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: WHISPER_COLOR + '30',
       paddingHorizontal: 8, paddingVertical: 3,
     },
     retryChipText: { fontSize: 11, fontWeight: '700', color: WHISPER_COLOR },

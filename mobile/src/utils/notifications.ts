@@ -29,7 +29,7 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
       name: 'التحدي اليومي',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 300, 200, 300],
-      lightColor: '#7C3AED',
+      lightColor: '#166534',
     });
   }
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -259,7 +259,7 @@ export const scheduleNewJobsNotification = async (
     await Notifications.setNotificationChannelAsync('jobs', {
       name: 'وظائف جديدة',
       importance: Notifications.AndroidImportance.DEFAULT,
-      lightColor: '#7C3AED',
+      lightColor: '#166534',
     });
   }
 
@@ -298,7 +298,7 @@ export const scheduleRageQuitNotification = async (): Promise<void> => {
     await Notifications.setNotificationChannelAsync('engagement', {
       name: 'تذكير المراجعة',
       importance: Notifications.AndroidImportance.DEFAULT,
-      lightColor: '#7C3AED',
+      lightColor: '#166534',
     }).catch(() => {});
   }
 

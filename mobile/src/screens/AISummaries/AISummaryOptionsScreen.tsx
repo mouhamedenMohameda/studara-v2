@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import SummaryCreditsCard from '@/components/cards/SummaryCreditsCard';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '@/theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { apiRequest } from '@/utils/api';
 
 type DocStatus = 'UPLOADED' | 'TEXT_EXTRACTING' | 'TEXT_READY' | 'FAILED';
@@ -31,6 +31,7 @@ type CourseDocPricingResponse = {
 
 export default function AISummaryOptionsScreen({ navigation, route }: any) {
   const { token } = useAuth();
+  const { colors: C, isDark } = useTheme();
   const documentId: string = route.params.documentId;
 
   const [docStatus, setDocStatus] = useState<DocStatus>('UPLOADED');
@@ -159,18 +160,17 @@ export default function AISummaryOptionsScreen({ navigation, route }: any) {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <LinearGradient colors={Gradients.brand as any} style={styles.header}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-              <AppIcon name="arrowBack" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Options</Text>
-            <View style={{ width: 44 }} />
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}>
+            <AppIcon name="arrowBack" size={22} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Options</Text>
+          <View style={{ width: 46 }} />
+        </View>
+      </SafeAreaView>
 
       <ScrollView contentContainerStyle={styles.content}>
         <SummaryCreditsCard
@@ -201,7 +201,7 @@ export default function AISummaryOptionsScreen({ navigation, route }: any) {
             ) : docStatus === 'FAILED' ? (
               <AppIcon name="alertCircleOutline" size={18} color="#EF4444" />
             ) : (
-              <ActivityIndicator color="#7C3AED" />
+              <ActivityIndicator color="Colors.primary" />
             )}
             <Text style={styles.statusText}>
               {docStatus === 'TEXT_READY'
@@ -253,14 +253,16 @@ export default function AISummaryOptionsScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 18, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 10 },
-  headerTitle: { fontSize: 19, fontWeight: '900', color: '#fff' },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg, paddingTop: 8, paddingBottom: 14,
+  },
+  headerTitle: { fontSize: 19, fontWeight: '900' },
   backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
   content: { padding: Spacing.lg, paddingBottom: 120 },
   card: {
@@ -278,10 +280,10 @@ const styles = StyleSheet.create({
   h: { fontSize: 12, fontWeight: '800', color: Colors.textMuted, marginTop: 14, marginBottom: 8, letterSpacing: 0.4, textTransform: 'uppercase' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#fff' },
-  chipActive: { backgroundColor: '#EDE9FE', borderColor: '#7C3AED' },
+  chipActive: { backgroundColor: '#EDE9FE', borderColor: Colors.primary },
   chipText: { fontSize: 12, color: Colors.textMuted, fontWeight: '700' },
-  chipTextActive: { color: '#7C3AED' },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#7C3AED', borderRadius: 16, paddingVertical: 14, marginTop: 18 },
+  chipTextActive: { color: Colors.primary },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: 16, paddingVertical: 14, marginTop: 18 },
   primaryText: { color: '#fff', fontWeight: '800', fontSize: 16 },
 });
 

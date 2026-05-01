@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
+import { useTheme } from '@/context/ThemeContext';
+import { BorderRadius, Shadows } from '@/theme';
 
 export type GlassKpiCardProps = {
   icon: AppIconName;
@@ -25,22 +27,32 @@ export const GlassKpiCard = memo(function GlassKpiCard({
   testID,
   rtl,
 }: GlassKpiCardProps) {
+  const { colors: C } = useTheme();
+
   return (
     <Pressable
       testID={testID}
-      style={[styles.wrap, style, disabled && { opacity: 0.7 }]}
+      style={[
+        styles.wrap,
+        {
+          backgroundColor: C.surfaceVariant,
+          borderColor: C.borderLight,
+        },
+        style,
+        disabled && { opacity: 0.6 },
+      ]}
       onPress={disabled ? undefined : onPress}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
     >
-      <View style={styles.iconBox}>
-        <AppIcon name={icon} size={16} color="#fff" />
+      <View style={[styles.iconBox, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }]}>
+        <AppIcon name={icon} size={16} color={C.primary} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={[styles.value, { color: C.textPrimary }]}>{value}</Text>
         <Text
-          style={[styles.label, rtl && styles.rtlText]}
+          style={[styles.label, { color: C.textMuted }, rtl && styles.rtlText]}
           numberOfLines={2}
           adjustsFontSizeToFit
           minimumFontScale={0.85}
@@ -64,32 +76,30 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    ...Shadows.xs,
   },
   iconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.14)',
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   value: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#FFFFFF',
     letterSpacing: -0.6,
     lineHeight: 22,
   },
   label: {
     fontSize: 10,
     fontWeight: '800',
-    color: 'rgba(255,255,255,0.86)',
     marginTop: 2,
     lineHeight: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 0.2,
   },
 });
-

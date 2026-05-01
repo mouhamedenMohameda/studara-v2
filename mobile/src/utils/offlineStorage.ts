@@ -84,7 +84,7 @@ export async function getPendingReviews(): Promise<PendingReview[]> {
 
 export interface PendingDailyChallengeSubmit {
   date: string; // YYYY-MM-DD (UTC)
-  payload: { score: number; correct: number; total: number; time_taken_s: number };
+  payload: { answers: Array<{ id: string; answer: string }>; timeTakenS: number };
   queuedAt: string; // ISO
 }
 

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { SubscriptionProvider } from '../context/SubscriptionContext';
 import { RootStackParamList } from '../types';
 import { Colors } from '../theme';
+import { useAppNavigationTheme, useModernStackOptions } from './modernNavigator';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import OnboardingScreen from '../screens/Auth/OnboardingScreen';
@@ -45,6 +46,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 /** Inner navigator — has access to SubscriptionContext */
 const RootNavigator = () => {
   const { isLoading, isAuthenticated, isOnboarded, token } = useAuth();
+  const stackOpts = useModernStackOptions();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -84,7 +86,7 @@ const RootNavigator = () => {
   // Determine which root screen to show
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, animation: 'none' }}>
+    <Stack.Navigator screenOptions={{ ...stackOpts, animation: 'none' }}>
       {!isOnboarded ? (
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       ) : !isAuthenticated ? (
@@ -292,6 +294,7 @@ const AppNavigator = () => {
   const navRef = useNavigationContainerRef<RootStackParamList>();
   const { isAuthenticated } = useAuth();
   const [navReady, setNavReady] = useState(false);
+  const navigationTheme = useAppNavigationTheme();
 
   useEffect(() => {
     const extractIntentId = (resp: Notifications.NotificationResponse | null) => {
@@ -358,7 +361,12 @@ const AppNavigator = () => {
   }, [isAuthenticated, navReady, navRef]);
 
   return (
-    <NavigationContainer linking={linking} ref={navRef} onReady={() => setNavReady(true)}>
+    <NavigationContainer
+      linking={linking}
+      ref={navRef}
+      onReady={() => setNavReady(true)}
+      theme={navigationTheme}
+    >
       <SubscriptionProvider>
         <RootNavigator />
       </SubscriptionProvider>

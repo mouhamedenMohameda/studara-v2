@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '@/theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { apiRequest, API_BASE } from '@/utils/api';
 
 type Status = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
@@ -45,6 +45,7 @@ function Box({ title, children }: any) {
 
 export default function AISummaryResultScreen({ navigation, route }: any) {
   const { token } = useAuth();
+  const { colors: C, isDark } = useTheme();
   const summaryId: string = route.params.summaryId;
   const [status, setStatus] = useState<Status>('PENDING');
   const [result, setResult] = useState<any>(null);
@@ -101,24 +102,27 @@ export default function AISummaryResultScreen({ navigation, route }: any) {
   const r = result || {};
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <LinearGradient colors={Gradients.brand as any} style={styles.header}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-              <AppIcon name="arrowBack" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Résultat</Text>
-            <TouchableOpacity onPress={exportPdf} style={styles.iconBtn} disabled={exporting || status !== 'COMPLETED'}>
-              {exporting ? <ActivityIndicator color="#fff" /> : <AppIcon name="downloadOutline" size={22} color="#fff" />}
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}>
+            <AppIcon name="arrowBack" size={22} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Résultat</Text>
+          <TouchableOpacity
+            onPress={exportPdf}
+            style={[styles.iconBtn, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }]}
+            disabled={exporting || status !== 'COMPLETED'}
+          >
+            {exporting ? <ActivityIndicator color={C.primary} /> : <AppIcon name="downloadOutline" size={22} color={C.primary} />}
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
       {status !== 'COMPLETED' ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#7C3AED" />
+          <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.centerText}>
             {status === 'FAILED' ? 'Échec génération' : 'Génération en cours…'}
           </Text>
@@ -195,20 +199,22 @@ export default function AISummaryResultScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 18, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 10 },
-  headerTitle: { fontSize: 19, fontWeight: '900', color: '#fff' },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg, paddingTop: 8, paddingBottom: 14,
+  },
+  headerTitle: { fontSize: 19, fontWeight: '900' },
   backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
   iconBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12 },
   centerText: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary, textAlign: 'center' },

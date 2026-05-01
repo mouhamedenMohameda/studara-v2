@@ -5,13 +5,12 @@ import { View, StyleSheet, FlatList, TouchableOpacity, StatusBar, Alert } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Gradients } from '../../theme';
+import { BorderRadius, Colors, Shadows } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getAllJobApplications, removeJobApplication, JobApplication, JobApplicationStatus } from '../../utils/offlineStorage';
-import { ORBIT_BAR_HEIGHT } from '../../navigation/OrbitBar';
 import { safeBack } from '../../utils/safeBack';
+import { useTabBarContentPadding } from '../../hooks/useTabBarContentPadding';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -25,25 +24,29 @@ const STATUS_CONFIG: Record<JobApplicationStatus, { labelAr: string; labelFr: st
 const STATUS_ORDER: JobApplicationStatus[] = ['offer', 'interview', 'applied', 'rejected'];
 
 const makeStyles = (C: typeof Colors) => StyleSheet.create({
-  header: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 6, paddingBottom: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: -0.4 },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
-    alignItems: 'center', justifyContent: 'center',
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, backgroundColor: C.background,
   },
-  statsRow: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.4 },
+  backBtn: {
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.surface,
+    borderWidth: 1.5, borderColor: C.border,
+    alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
+  },
+  statsRow: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 14, gap: 8, backgroundColor: C.background },
   statCard: {
     flex: 1, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)',
-    borderRadius: 14, paddingVertical: 11,
+    backgroundColor: C.surfaceVariant,
+    borderWidth: 1, borderColor: C.borderLight,
+    borderRadius: BorderRadius.sm, paddingVertical: 11,
+    ...Shadows.xs,
   },
-  statNum:   { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: -0.4 },
-  statLabel: { fontSize: 10, color: 'rgba(255,255,255,0.92)', marginTop: 3, fontWeight: '700', letterSpacing: 0.3, textTransform: 'uppercase' },
-  list: { padding: 16, paddingBottom: ORBIT_BAR_HEIGHT + 20 },
+  statNum:   { fontSize: 22, fontWeight: '900', letterSpacing: -0.4 },
+  statLabel: { fontSize: 10, color: C.textMuted, marginTop: 3, fontWeight: '700', letterSpacing: 0.3, textTransform: 'uppercase' },
+  list: { paddingHorizontal: 16, paddingTop: 16 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, marginTop: 16 },
   sectionIcon: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontSize: 13, fontWeight: '700' },
@@ -107,8 +110,9 @@ const AppCard = React.memo(({ item, isAr, onDelete }: {
 
 export default function MyApplicationsScreen() {
   const navigation = useNavigation();
-  const { colors: C } = useTheme();
+  const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
+  const listBottomPad = useTabBarContentPadding(20);
   const { isAr } = useLanguage() as any;
 
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -157,40 +161,33 @@ export default function MyApplicationsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
-      <LinearGradient
-        colors={['#F97316', '#EC4899', '#7C3AED']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => safeBack(navigation as any, { name: 'Explore', params: { screen: 'Jobs' } })}>
-              <AppIcon name="arrowBack" size={18} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>
-              {isAr ? '📋 طلباتي' : '📋 Mes Candidatures'}
-            </Text>
-            <View style={{ width: 36 }} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => safeBack(navigation as any, { name: 'Explore', params: { screen: 'Jobs' } })}>
+            <AppIcon name="arrowBack" size={18} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {isAr ? '📋 طلباتي' : '📋 Mes Candidatures'}
+          </Text>
+          <View style={{ width: 42 }} />
+        </View>
+        {applications.length > 0 && (
+          <View style={styles.statsRow}>
+            {[
+              { num: counts.total,     label: isAr ? 'إجمالي' : 'Total',      color: C.textPrimary },
+              { num: counts.offer,     label: isAr ? 'عروض' : 'Offres',       color: '#10B981' },
+              { num: counts.interview, label: isAr ? 'مقابلات' : 'Entretiens', color: '#F59E0B' },
+              { num: counts.rejected,  label: isAr ? 'رُفض' : 'Refus',       color: '#EF4444' },
+            ].map(s => (
+              <View key={s.label} style={styles.statCard}>
+                <Text style={[styles.statNum, { color: s.color }]}>{s.num}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </View>
+            ))}
           </View>
-          {applications.length > 0 && (
-            <View style={styles.statsRow}>
-              {[
-                { num: counts.total,     label: isAr ? 'إجمالي' : 'Total',      color: '#fff' },
-                { num: counts.offer,     label: isAr ? 'عروض' : 'Offres',       color: '#10B981' },
-                { num: counts.interview, label: isAr ? 'مقابلات' : 'Entretiens', color: '#F59E0B' },
-                { num: counts.rejected,  label: isAr ? 'رُفض' : 'Refus',         color: '#EF4444' },
-              ].map(s => (
-                <View key={s.label} style={styles.statCard}>
-                  <Text style={[styles.statNum, { color: s.color }]}>{s.num}</Text>
-                  <Text style={styles.statLabel}>{s.label}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </SafeAreaView>
-      </LinearGradient>
+        )}
+      </SafeAreaView>
 
       {applications.length === 0 ? (
         <View style={styles.emptyWrap}>
@@ -208,7 +205,7 @@ export default function MyApplicationsScreen() {
         <FlatList
           data={grouped}
           keyExtractor={g => g.status}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: listBottomPad }]}
           renderItem={({ item: group }) => {
             const cfg = STATUS_CONFIG[group.status];
             return (

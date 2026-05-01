@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
-import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -11,7 +10,8 @@ import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Input, LogoMark } from '../../components/common';
-import { Colors, Gradients, Spacing, BorderRadius } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PENDING_RESET_INTENT_KEY } from '../../constants/security';
 import { openWhatsAppSupport } from '../../constants/support';
@@ -22,51 +22,12 @@ import {
 
 type Nav = StackNavigationProp<AuthStackParamList, 'Login'>;
 
-// ── Decorative background blobs ───────────────────────────────────────────────
-const GeoBg = () => (
-  <View style={StyleSheet.absoluteFill} pointerEvents="none">
-    {/* Large soft circle — top-right */}
-    <View style={geo.c1} />
-    {/* Medium circle — bottom-left */}
-    <View style={geo.c2} />
-    {/* Small bright dot — top-left */}
-    <View style={geo.c3} />
-    {/* Gold accent pill — bottom-right */}
-    <View style={geo.c4} />
-    {/* Gold accent dot */}
-    <View style={geo.c5} />
-  </View>
-);
-
-const geo = StyleSheet.create({
-  c1: {
-    position: 'absolute', width: 260, height: 260, borderRadius: 130,
-    backgroundColor: 'rgba(255,255,255,0.07)', top: -80, right: -80,
-  },
-  c2: {
-    position: 'absolute', width: 160, height: 160, borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.05)', bottom: -20, left: -60,
-  },
-  c3: {
-    position: 'absolute', width: 52, height: 52, borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.10)', top: 36, left: 28,
-  },
-  c4: {
-    position: 'absolute', width: 92, height: 8, borderRadius: 4,
-    backgroundColor: 'rgba(253,230,138,0.55)', bottom: 42, right: 28,
-    transform: [{ rotate: '-12deg' }],
-  },
-  c5: {
-    position: 'absolute', width: 18, height: 18, borderRadius: 9,
-    backgroundColor: 'rgba(253,230,138,0.75)', bottom: 30, right: 128,
-  },
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
 const LoginScreen = () => {
   const navigation = useNavigation<Nav>();
   const { login } = useAuth();
   const { lang } = useLanguage();
+  const { colors: C, isDark } = useTheme();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [loading,  setLoading]  = useState(false);
@@ -191,69 +152,57 @@ const LoginScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.primaryDeep }}
+      style={{ flex: 1, backgroundColor: C.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* ── Hero gradient panel ────────────────────────────────────── */}
-      <LinearGradient
-        colors={Gradients.brand}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
-        style={styles.topPanel}
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 36 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="none"
+        removeClippedSubviews={false}
       >
-        <GeoBg />
-        <SafeAreaView edges={['top']} style={styles.topInner}>
-
-          {/* Step badge */}
-          <View style={styles.badge}>
-            <View style={styles.badgeDot} />
-            <Text style={styles.badgeText}>
-              {lang === 'fr' ? '01 — CONNEXION' : '٠١ — تسجيل الدخول'}
-            </Text>
-          </View>
-
-          {/* Logo + App name */}
-          <View style={styles.logoRow}>
-            <LogoMark size="lg" showName={false} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.appName}>Studara</Text>
-              <Text style={styles.tagline}>رفيقك في المسيرة الجامعية</Text>
+        <SafeAreaView edges={['top']} style={{ paddingHorizontal: Spacing.xl }}>
+          <View style={[styles.heroCard, { backgroundColor: C.surface, borderColor: C.borderLight }, Shadows.sm]}>
+            <View style={[styles.heroAccent, { backgroundColor: C.primary }]} />
+            <View style={{ position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: C.primarySoft, top: -80, right: -60 }} pointerEvents="none" />
+            <View style={[styles.badge, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }]}>
+              <View style={[styles.badgeDot, { backgroundColor: C.secondaryDark }]} />
+              <Text style={[styles.badgeText, { color: C.primary }]}>
+                {lang === 'fr' ? 'CONNEXION' : 'تسجيل الدخول'}
+              </Text>
+            </View>
+            <View style={styles.logoRow}>
+              <LogoMark size="lg" variant="brand" showName={false} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.appName, { color: C.textPrimary }]}>Studara</Text>
+                <Text style={[styles.tagline, { color: C.textSecondary }]}>{lang === 'fr' ? 'Ton compagnon étudiant' : 'رفيقك في المسيرة الجامعية'}</Text>
+              </View>
+            </View>
+            <View style={styles.pillRow}>
+              <View style={[styles.pill, { backgroundColor: C.surfaceVariant, borderColor: C.border }]}>
+                <AppIcon name="libraryOutline" size={13} color={C.primary} />
+                <Text style={[styles.pillText, { color: C.textSecondary }]}>{lang === 'fr' ? 'Ressources' : 'موارد'}</Text>
+              </View>
+              <View style={[styles.pill, { backgroundColor: C.surfaceVariant, borderColor: C.border }]}>
+                <AppIcon name="calendarOutline" size={13} color={C.primary} />
+                <Text style={[styles.pillText, { color: C.textSecondary }]}>{lang === 'fr' ? 'Planning' : 'جدول'}</Text>
+              </View>
+              <View style={[styles.pill, { backgroundColor: C.surfaceVariant, borderColor: C.border }]}>
+                <AppIcon name="albumsOutline" size={13} color={C.primary} />
+                <Text style={[styles.pillText, { color: C.textSecondary }]}>{lang === 'fr' ? 'Fiches' : 'بطاقات'}</Text>
+              </View>
             </View>
           </View>
-
-          {/* Decorative stat pills */}
-          <View style={styles.pillRow}>
-            <View style={styles.pill}>
-              <AppIcon name="libraryOutline"  size={12} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.pillText}>{lang === 'fr' ? 'Ressources' : 'موارد'}</Text>
-            </View>
-            <View style={styles.pill}>
-              <AppIcon name="calendarOutline" size={12} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.pillText}>{lang === 'fr' ? 'Emploi du temps' : 'جدول'}</Text>
-            </View>
-            <View style={styles.pill}>
-              <AppIcon name="albumsOutline"   size={12} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.pillText}>{lang === 'fr' ? 'Fiches' : 'بطاقات'}</Text>
-            </View>
-          </View>
-
         </SafeAreaView>
-      </LinearGradient>
 
-      {/* ── White form sheet ───────────────────────────────────────── */}
-      <View style={styles.sheet}>
-        <View style={styles.handle} />
-        <ScrollView
-          contentContainerStyle={styles.form}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="always"
-          keyboardDismissMode="none"
-          removeClippedSubviews={false}
-        >
-          <Text style={styles.formTitle}>
+        <View style={{ paddingHorizontal: Spacing.xl, marginTop: Spacing.lg }}>
+          <Text style={[styles.formTitle, { color: C.textPrimary }]}>
             {lang === 'fr' ? 'Bon retour 👋' : 'أهلاً بعودتك 👋'}
           </Text>
-          <Text style={styles.formSub}>
+          <Text style={[styles.formSub, { color: C.textSecondary }]}>
             {lang === 'fr'
               ? 'Connectez-vous pour accéder à vos ressources.'
               : 'سجّل دخولك للوصول إلى مواردك الأكاديمية.'}
@@ -281,147 +230,134 @@ const LoginScreen = () => {
           />
 
           <TouchableOpacity style={styles.forgot} activeOpacity={0.7} onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.forgotText}>
+            <Text style={[styles.forgotText, { color: C.primary }]}>
               {lang === 'fr' ? 'Mot de passe oublié ?' : 'نسيت كلمة المرور؟'}
             </Text>
           </TouchableOpacity>
 
-          {/* Login button — gradient pill */}
           <TouchableOpacity
             onPress={handleLogin}
             disabled={loading}
             activeOpacity={0.88}
-            style={{
-              borderRadius: BorderRadius.pill,
-              overflow: 'hidden',
-              opacity: loading ? 0.65 : 1,
-              shadowColor: Colors.primary,
-              shadowOpacity: 0.45,
-              shadowRadius: 18,
-              shadowOffset: { width: 0, height: 10 },
-              elevation: 10,
-            }}
+            style={[
+              styles.loginBtnOuter,
+              { backgroundColor: C.primary, opacity: loading ? 0.65 : 1 },
+              Shadows.brand,
+            ]}
           >
-            <LinearGradient
-              colors={Gradients.brand}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.loginBtn}
-            >
-              {loading ? (
-                <AppIcon name="reloadOutline" size={20} color="#fff" />
-              ) : (
-                <>
-                  <Text style={styles.loginBtnText}>
-                    {lang === 'fr' ? 'Se connecter' : 'تسجيل الدخول'}
-                  </Text>
-                  <View style={styles.loginBtnArrow}>
-                    <AppIcon
-                      name={lang === 'ar' ? 'arrowBack' : 'arrowForward'}
-                      size={16}
-                      color={Colors.primary}
-                    />
-                  </View>
-                </>
-              )}
-            </LinearGradient>
+            {loading ? (
+              <AppIcon name="reloadOutline" size={20} color="#fff" />
+            ) : (
+              <>
+                <Text style={styles.loginBtnText}>
+                  {lang === 'fr' ? 'Se connecter' : 'تسجيل الدخول'}
+                </Text>
+                <View style={styles.loginBtnArrow}>
+                  <AppIcon
+                    name={lang === 'ar' ? 'arrowBack' : 'arrowForward'}
+                    size={16}
+                    color={C.primary}
+                  />
+                </View>
+              </>
+            )}
           </TouchableOpacity>
 
           {/* Biometric quick login */}
           {bio.available && bio.enabled && (
             <TouchableOpacity
-              style={styles.bioBtn}
+              style={[styles.bioBtn, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }]}
               onPress={handleBiometricLogin}
               disabled={loading}
               activeOpacity={0.8}
             >
-              <AppIcon name="fingerPrint" size={22} color={Colors.primary} />
-              <Text style={styles.bioBtnText}>
+              <AppIcon name="fingerPrint" size={22} color={C.primary} />
+              <Text style={[styles.bioBtnText, { color: C.primary }]}>
                 {lang === 'fr' ? `Connexion avec ${bio.label}` : `دخول بـ${bio.label}`}
               </Text>
             </TouchableOpacity>
           )}
 
-          <View style={styles.regRow}>
-            <Text style={styles.regText}>
+          <View style={[styles.regRow, { paddingBottom: 8 }]}>
+            <Text style={[styles.regText, { color: C.textSecondary }]}>
               {lang === 'fr' ? 'Pas encore de compte ? ' : 'ليس لديك حساب؟ '}
             </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.7}>
-              <Text style={styles.regLink}>
+              <Text style={[styles.regLink, { color: C.primary }]}>
                 {lang === 'fr' ? 'Créer un compte' : 'إنشاء حساب'}
               </Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  // Hero gradient panel
-  topPanel: { flex: 0.46, overflow: 'hidden' },
-  topInner: {
-    flex: 1,
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: 36,
-    justifyContent: 'flex-end',
-    gap: 16,
+  scrollContent: {
+    flexGrow: 1,
   },
-
-  // Step badge
+  heroCard: {
+    marginTop: 8,
+    borderRadius: BorderRadius['3xl'],
+    borderWidth: 1,
+    padding: Spacing.lg,
+    paddingLeft: Spacing.lg + 8,
+    overflow: 'hidden',
+    position: 'relative',
+    minHeight: 220,
+    justifyContent: 'flex-end',
+    gap: 14,
+  },
+  heroAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+    borderTopLeftRadius: BorderRadius['3xl'],
+    borderBottomLeftRadius: BorderRadius['3xl'],
+  },
   badge: {
+    alignSelf: 'flex-start',
     flexDirection: 'row', alignItems: 'center', gap: 7,
-    alignSelf: 'flex-end',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
-    paddingHorizontal: 12, paddingVertical: 6,
+    borderWidth: 1,
+    paddingHorizontal: 14, paddingVertical: 8,
     borderRadius: BorderRadius.pill,
   },
-  badgeDot:  { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FDE68A' },
-  badgeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '800', letterSpacing: 1.4 },
+  badgeDot:  { width: 8, height: 8, borderRadius: 4 },
+  badgeText: { fontSize: 10, fontWeight: '900', letterSpacing: 2 },
 
-  // Logo row
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  appName: { fontSize: 48, fontWeight: '900', color: '#fff', letterSpacing: -1.8, lineHeight: 52 },
-  tagline: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4, fontWeight: '500' },
+  appName: { fontSize: 40, fontWeight: '900', letterSpacing: -1.6, lineHeight: 44 },
+  tagline: { fontSize: 14, marginTop: 6, fontWeight: '600' },
 
-  // Feature pill row
-  pillRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  pillRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
   pill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)',
-    paddingHorizontal: 12, paddingVertical: 6,
+    borderWidth: 1,
+    paddingHorizontal: 12, paddingVertical: 7,
     borderRadius: BorderRadius.pill,
   },
-  pillText: { fontSize: 11, color: '#FFFFFF', fontWeight: '700', letterSpacing: 0.2 },
+  pillText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
 
-  // White sheet
-  sheet: {
-    flex: 0.54,
-    zIndex: 1,
-    elevation: 8,
-    backgroundColor: Colors.background,
-    borderTopLeftRadius: 36, borderTopRightRadius: 36,
-    marginTop: -32, paddingTop: 12,
-    shadowColor: '#0F0A1F', shadowOpacity: 0.15, shadowRadius: 24, shadowOffset: { width: 0, height: -8 },
-  },
-  handle: {
-    width: 44, height: 5, borderRadius: 3,
-    backgroundColor: Colors.border,
-    alignSelf: 'center', marginBottom: 10,
-  },
-  form:      { paddingHorizontal: Spacing.xl, paddingBottom: 32 },
-  formTitle: { fontSize: 28, fontWeight: '900', color: Colors.textPrimary, letterSpacing: -0.6, marginBottom: 6, marginTop: 4 },
-  formSub:   { fontSize: 14, color: Colors.textSecondary, marginBottom: Spacing.xl, lineHeight: 20 },
+  formTitle: { fontSize: 26, fontWeight: '900', letterSpacing: -0.65, marginBottom: 8, marginTop: 4 },
+  formSub:   { fontSize: 14, marginBottom: Spacing.lg, lineHeight: 20 },
 
   forgot:     { alignSelf: 'flex-end', marginBottom: Spacing.lg, marginTop: 2 },
-  forgotText: { color: Colors.primary, fontSize: 13, fontWeight: '700' },
+  forgotText: { fontSize: 13, fontWeight: '700' },
 
-  // Gradient login button
-  loginBtn:      { paddingVertical: 17, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  loginBtnOuter: {
+    borderRadius: BorderRadius.pill,
+    paddingVertical: 17,
+    paddingHorizontal: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
   loginBtnText:  { fontSize: 16, fontWeight: '800', color: '#fff', flex: 1, textAlign: 'center', letterSpacing: 0.3 },
   loginBtnArrow: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
 
@@ -429,15 +365,14 @@ const styles = StyleSheet.create({
   bioBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     marginTop: 14, paddingVertical: 14,
-    backgroundColor: Colors.primarySurface,
-    borderWidth: 1.5, borderColor: Colors.primarySoft,
+    borderWidth: 1.5,
     borderRadius: BorderRadius.pill,
   },
-  bioBtnText: { color: Colors.primary, fontSize: 14, fontWeight: '800' },
+  bioBtnText: { fontSize: 14, fontWeight: '800' },
 
   regRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: Spacing.xl, flexWrap: 'wrap' },
-  regText: { color: Colors.textSecondary, fontSize: 13, fontWeight: '500' },
-  regLink: { color: Colors.primary, fontSize: 13, fontWeight: '800' },
+  regText: { fontSize: 13, fontWeight: '500' },
+  regLink: { fontSize: 13, fontWeight: '800' },
 });
 
 export default LoginScreen;

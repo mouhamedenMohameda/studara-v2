@@ -1,9 +1,12 @@
 import React from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIcon } from '@/icons';
 import { MainTabParamList, ResourcesStackParamList, CoursesStackParamList, FlashcardsStackParamList, HomeStackParamList, JobsStackParamList, OpportunitiesStackParamList, ProfileStackParamList, HousingStackParamList, ExploreStackParamList } from '../types';
-import { Colors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { useModernStackOptions } from './modernNavigator';
 
 // Screens
 import HomeScreen from '../screens/Home/HomeScreen';
@@ -35,193 +38,254 @@ import { FeatureGate } from '../components/FeatureGate';
 // ─── Home Stack ───────────────────────────────────────────────────────────────
 
 const HomeStack = createStackNavigator<HomeStackParamList>();
-const HomeNavigator = () => (
-  <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-    <HomeStack.Screen name="HomeMain" component={HomeScreen} />
-  </HomeStack.Navigator>
-);
+const HomeNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <HomeStack.Navigator screenOptions={opts}>
+      <HomeStack.Screen name="HomeMain" component={HomeScreen} />
+    </HomeStack.Navigator>
+  );
+};
 
 // ─── Jobs Stack ────────────────────────────────────────────────────────────────
 
 const JobsStack = createStackNavigator<JobsStackParamList>();
-const JobsNavigator = () => (
-  <JobsStack.Navigator screenOptions={{ headerShown: false }}>
-    <JobsStack.Screen name="JobsList"        component={JobsScreen} />
-    <JobsStack.Screen name="JobDetail"       component={JobDetailScreen} />
-    <JobsStack.Screen name="MyApplications" component={MyApplicationsScreen} />
-  </JobsStack.Navigator>
-);
+const JobsNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <JobsStack.Navigator screenOptions={opts}>
+      <JobsStack.Screen name="JobsList"        component={JobsScreen} />
+      <JobsStack.Screen name="JobDetail"       component={JobDetailScreen} />
+      <JobsStack.Screen name="MyApplications" component={MyApplicationsScreen} />
+    </JobsStack.Navigator>
+  );
+};
 
 const OpportunitiesStack = createStackNavigator<OpportunitiesStackParamList>();
-const OpportunitiesNavigator = () => (
-  <OpportunitiesStack.Navigator screenOptions={{ headerShown: false }}>
-    <OpportunitiesStack.Screen name="OpportunitiesList" component={OpportunitiesScreen} />
-    <OpportunitiesStack.Screen name="OpportunityDetail" component={OpportunityDetailScreen} />
-  </OpportunitiesStack.Navigator>
-);
+const OpportunitiesNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <OpportunitiesStack.Navigator screenOptions={opts}>
+      <OpportunitiesStack.Screen name="OpportunitiesList" component={OpportunitiesScreen} />
+      <OpportunitiesStack.Screen name="OpportunityDetail" component={OpportunityDetailScreen} />
+    </OpportunitiesStack.Navigator>
+  );
+};
 
 // ─── Resources Stack ──────────────────────────────────────────────────────────
 
 const ResourcesStack = createStackNavigator<ResourcesStackParamList>();
-const ResourcesNavigator = () => (
-  <ResourcesStack.Navigator screenOptions={{ headerShown: false }}>
-    <ResourcesStack.Screen name="ResourcesList"   component={ResourcesScreen} />
-    <ResourcesStack.Screen name="ResourceDetail"  component={ResourceDetailScreen} />
-    <ResourcesStack.Screen name="ResourceViewer"  component={ResourceViewerScreen} />
-    <ResourcesStack.Screen name="UploadResource"  component={UploadResourceScreen} />
-    <ResourcesStack.Screen name="MySubmissions"   component={MySubmissionsScreen} />
-    <ResourcesStack.Screen name="CourseViewer"    component={CourseViewerScreen} />
-  </ResourcesStack.Navigator>
-);
+const ResourcesNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <ResourcesStack.Navigator screenOptions={opts}>
+      <ResourcesStack.Screen name="ResourcesList"   component={ResourcesScreen} />
+      <ResourcesStack.Screen name="ResourceDetail"  component={ResourceDetailScreen} />
+      <ResourcesStack.Screen name="ResourceViewer"  component={ResourceViewerScreen} />
+      <ResourcesStack.Screen name="UploadResource"  component={UploadResourceScreen} />
+      <ResourcesStack.Screen name="MySubmissions"   component={MySubmissionsScreen} />
+      <ResourcesStack.Screen name="CourseViewer"    component={CourseViewerScreen} />
+    </ResourcesStack.Navigator>
+  );
+};
 
 // ─── Courses Stack ────────────────────────────────────────────────────────────
 
 const CoursesStack = createStackNavigator<CoursesStackParamList>();
-const CoursesNavigator = () => (
-  <CoursesStack.Navigator screenOptions={{ headerShown: false }}>
-    <CoursesStack.Screen name="CoursesList" component={VideoCoursesScreen} />
-    <CoursesStack.Screen name="CourseViewer" component={CourseViewerScreen} />
-  </CoursesStack.Navigator>
-);
+const CoursesNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <CoursesStack.Navigator screenOptions={opts}>
+      <CoursesStack.Screen name="CoursesList" component={VideoCoursesScreen} />
+      <CoursesStack.Screen name="CourseViewer" component={CourseViewerScreen} />
+    </CoursesStack.Navigator>
+  );
+};
 
 // ─── Flashcards Stack ────────────────────────────────────────────────────────────
 
 const FlashcardsStack = createStackNavigator<FlashcardsStackParamList>();
-const FlashcardsNavigator = () => (
-  <FlashcardsStack.Navigator screenOptions={{ headerShown: false }}>
-    <FlashcardsStack.Screen name="FlashcardsList" component={FlashcardsScreen} />
-    <FlashcardsStack.Screen name="StudySession"   component={StudySessionScreen} />
-    <FlashcardsStack.Screen name="CreateDeck"     component={CreateDeckScreen} />
-    <FlashcardsStack.Screen name="ScanCreate"     component={ScanCreateScreen} options={{ animation: 'slide_from_bottom' }} />
-  </FlashcardsStack.Navigator>
-);
+const FlashcardsNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <FlashcardsStack.Navigator screenOptions={opts}>
+      <FlashcardsStack.Screen name="FlashcardsList" component={FlashcardsScreen} />
+      <FlashcardsStack.Screen name="StudySession"   component={StudySessionScreen} />
+      <FlashcardsStack.Screen name="CreateDeck"     component={CreateDeckScreen} />
+      <FlashcardsStack.Screen name="ScanCreate"     component={ScanCreateScreen} options={{ animation: 'slide_from_bottom' }} />
+    </FlashcardsStack.Navigator>
+  );
+};
 
 // ─── Housing Stack ───────────────────────────────────────────────────────────
 
 const HousingStack = createStackNavigator<HousingStackParamList>();
-const HousingNavigator = () => (
-  <HousingStack.Navigator screenOptions={{ headerShown: false }}>
-    <HousingStack.Screen name="HousingList" component={HousingScreen} />
-  </HousingStack.Navigator>
-);
+const HousingNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <HousingStack.Navigator screenOptions={opts}>
+      <HousingStack.Screen name="HousingList" component={HousingScreen} />
+    </HousingStack.Navigator>
+  );
+};
 
 // ─── Profile Stack ────────────────────────────────────────────────────────────
 
 const ProfileStack = createStackNavigator<ProfileStackParamList>();
-const ProfileNavigator = () => (
-  <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
-    <ProfileStack.Screen name="ProfileMain"    component={ProfileScreen} />
-    <ProfileStack.Screen name="Badges"         component={BadgesScreen} />
-    <ProfileStack.Screen name="ExamCountdown"  component={ExamCountdownScreen} />
-    <ProfileStack.Screen
-      name="Wrapped"
-      component={WrappedScreen}
-      options={{ animation: 'slide_from_bottom' }}
-    />
-  </ProfileStack.Navigator>
-);
+const ProfileNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <ProfileStack.Navigator screenOptions={opts}>
+      <ProfileStack.Screen name="ProfileMain"    component={ProfileScreen} />
+      <ProfileStack.Screen name="Badges"         component={BadgesScreen} />
+      <ProfileStack.Screen name="ExamCountdown"  component={ExamCountdownScreen} />
+      <ProfileStack.Screen
+        name="Wrapped"
+        component={WrappedScreen}
+        options={{ animation: 'slide_from_bottom' }}
+      />
+    </ProfileStack.Navigator>
+  );
+};
 
 // ─── Explore Stack (groups modules) ────────────────────────────────────────────
 
 const ExploreStack = createStackNavigator<ExploreStackParamList>();
-const ExploreNavigator = () => (
-  <ExploreStack.Navigator screenOptions={{ headerShown: false }}>
-    <ExploreStack.Screen
-      name="Resources"
-      component={() => (
-        <FeatureGate featureKey="resources" defaultEnabled={true}>
-          <ResourcesNavigator />
-        </FeatureGate>
-      )}
-    />
-    <ExploreStack.Screen
-      name="Timetable"
-      component={() => (
-        <FeatureGate featureKey="timetable" defaultEnabled={true}>
-          <TimetableScreen />
-        </FeatureGate>
-      )}
-    />
-    <ExploreStack.Screen
-      name="Courses"
-      component={() => (
-        <FeatureGate featureKey="courses" defaultEnabled={true}>
-          <CoursesNavigator />
-        </FeatureGate>
-      )}
-    />
-    <ExploreStack.Screen
-      name="Flashcards"
-      component={() => (
-        <FeatureGate featureKey="flashcards" defaultEnabled={true}>
-          <FlashcardsNavigator />
-        </FeatureGate>
-      )}
-    />
-    <ExploreStack.Screen
-      name="Jobs"
-      component={() => (
-        <FeatureGate featureKey="jobs" defaultEnabled={true}>
-          <JobsNavigator />
-        </FeatureGate>
-      )}
-    />
-    <ExploreStack.Screen
-      name="Opportunities"
-      component={() => (
-        <FeatureGate featureKey="opportunities" defaultEnabled={true}>
-          <OpportunitiesNavigator />
-        </FeatureGate>
-      )}
-    />
-    <ExploreStack.Screen
-      name="Reminders"
-      component={() => (
-        <FeatureGate featureKey="reminders" defaultEnabled={true}>
-          <RemindersScreen />
-        </FeatureGate>
-      )}
-    />
-    <ExploreStack.Screen
-      name="Housing"
-      component={() => (
-        <FeatureGate featureKey="housing" defaultEnabled={true}>
-          <HousingNavigator />
-        </FeatureGate>
-      )}
-    />
-  </ExploreStack.Navigator>
-);
+const ExploreNavigator = () => {
+  const opts = useModernStackOptions();
+  return (
+    <ExploreStack.Navigator screenOptions={opts}>
+      <ExploreStack.Screen
+        name="Resources"
+        component={() => (
+          <FeatureGate featureKey="resources" defaultEnabled={true}>
+            <ResourcesNavigator />
+          </FeatureGate>
+        )}
+      />
+      <ExploreStack.Screen
+        name="Timetable"
+        component={() => (
+          <FeatureGate featureKey="timetable" defaultEnabled={true}>
+            <TimetableScreen />
+          </FeatureGate>
+        )}
+      />
+      <ExploreStack.Screen
+        name="Courses"
+        component={() => (
+          <FeatureGate featureKey="courses" defaultEnabled={true}>
+            <CoursesNavigator />
+          </FeatureGate>
+        )}
+      />
+      <ExploreStack.Screen
+        name="Flashcards"
+        component={() => (
+          <FeatureGate featureKey="flashcards" defaultEnabled={true}>
+            <FlashcardsNavigator />
+          </FeatureGate>
+        )}
+      />
+      <ExploreStack.Screen
+        name="Jobs"
+        component={() => (
+          <FeatureGate featureKey="jobs" defaultEnabled={true}>
+            <JobsNavigator />
+          </FeatureGate>
+        )}
+      />
+      <ExploreStack.Screen
+        name="Opportunities"
+        component={() => (
+          <FeatureGate featureKey="opportunities" defaultEnabled={true}>
+            <OpportunitiesNavigator />
+          </FeatureGate>
+        )}
+      />
+      <ExploreStack.Screen
+        name="Reminders"
+        component={() => (
+          <FeatureGate featureKey="reminders" defaultEnabled={true}>
+            <RemindersScreen />
+          </FeatureGate>
+        )}
+      />
+      <ExploreStack.Screen
+        name="Housing"
+        component={() => (
+          <FeatureGate featureKey="housing" defaultEnabled={true}>
+            <HousingNavigator />
+          </FeatureGate>
+        )}
+      />
+    </ExploreStack.Navigator>
+  );
+};
 
 // ─── Tab Navigator (3 tabs) ────────────────────────────────────────────────────
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainNavigator = () => {
+  const { colors: C } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottomPad = Math.max(insets.bottom, 10);
+
+  /** Barre inférieure type maquette « education » : bloc vert forêt flottant, Explorer au centre accentué. */
+  const tabBarStyle = {
+    position: 'absolute' as const,
+    bottom: bottomPad - 6,
+    left: 18,
+    right: 18,
+    height: 72,
+    borderRadius: 31,
+    backgroundColor: C.tabBackground,
+    borderTopWidth: 0,
+    paddingHorizontal: 6,
+    paddingTop: Platform.OS === 'ios' ? 8 : 6,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 8,
+    shadowColor: '#052E16',
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.12)',
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: 'rgba(0,0,0,0.06)',
-          borderTopWidth: 1,
-          height: 82,
-          paddingTop: 10,
-          paddingBottom: 16,
-        },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginBottom: 2 },
+        tabBarActiveTintColor: C.tabActive,
+        tabBarInactiveTintColor: C.tabInactive,
+        tabBarStyle,
         tabBarIcon: ({ color, size, focused }) => {
           if (route.name === 'Home') {
             return <AppIcon name={focused ? 'home' : 'homeOutline'} size={24} color={color} />;
           }
           if (route.name === 'Explore') {
-            return <AppIcon name={focused ? 'compass' : 'compassOutline'} size={24} color={color} />;
+            return (
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  marginTop: -10,
+                  borderRadius: 24,
+                  backgroundColor: focused ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)',
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: 'rgba(255,255,255,0.22)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <AppIcon name={focused ? 'compass' : 'compassOutline'} size={size + 4} color={color} />
+              </View>
+            );
           }
-          // Profile
           return <AppIcon name={focused ? 'personCircle' : 'personCircleOutline'} size={26} color={color} />;
         },
       })}

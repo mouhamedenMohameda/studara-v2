@@ -11,9 +11,9 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Job, JobsStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Spacing, BorderRadius, Shadows, Colors, Gradients } from '../../theme';
+import { Spacing, BorderRadius, Shadows, Colors } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
+import { useTabBarContentPadding } from '../../hooks/useTabBarContentPadding';
 
 import { API_BASE } from '../../utils/api';
 import { useQuery } from '@tanstack/react-query';
@@ -25,7 +25,7 @@ import { smoothGoHomeTab } from '../../utils/smoothTabBack';
 type Nav = StackNavigationProp<JobsStackParamList, 'JobsList'>;
 
 const JOB_TYPE_COLORS: Record<string, string> = {
-  stage: '#8B5CF6', cdi: Colors.primary, cdd: '#3B82F6', freelance: '#F59E0B', other: '#64748B',
+  stage: Colors.modules.profile, cdi: Colors.primary, cdd: '#3B82F6', freelance: '#F59E0B', other: '#64748B',
 };
 const AVATAR_PALETTE = ['#EF4444','#F97316','#EAB308','#22C55E','#14B8A6','#3B82F6','#8B5CF6','#EC4899'];
 const avatarColor = (s: string) => AVATAR_PALETTE[(s.charCodeAt(0) + (s.charCodeAt(1) || 0)) % AVATAR_PALETTE.length];
@@ -58,45 +58,50 @@ const formatDate = (iso?: string): string => {
 };
 
 const makeStyles = (C: typeof Colors) => StyleSheet.create({
-  header: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14, gap: 12 },
-  headerSub:   { fontSize: 11, color: 'rgba(255,255,255,0.8)', marginBottom: 3, textAlign: 'right', fontWeight: '700', letterSpacing: 0.4 },
-  headerTitle: { fontSize: 26, fontWeight: '900', color: '#fff', textAlign: 'right', letterSpacing: -0.6 },
+  headerTop: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 12,
+    backgroundColor: C.background,
+  },
+  headerSub:   { fontSize: 11, color: C.textMuted, marginBottom: 3, textAlign: 'right', fontWeight: '700', letterSpacing: 0.4 },
+  headerTitle: { fontSize: 26, fontWeight: '900', color: C.textPrimary, textAlign: 'right', letterSpacing: -0.6 },
   countPill: {
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
-    borderRadius: 18, paddingHorizontal: 16, paddingVertical: 10,
+    backgroundColor: C.primary,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: 16, paddingVertical: 10,
     alignItems: 'center', minWidth: 72,
+    ...Shadows.brand,
   },
   countNum:   { fontSize: 24, fontWeight: '900', color: '#fff', lineHeight: 28, letterSpacing: -0.5 },
   countLabel: { fontSize: 10, color: 'rgba(255,255,255,0.92)', marginTop: 2, fontWeight: '700', letterSpacing: 0.3, textTransform: 'uppercase' },
   myAppBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    alignSelf: 'flex-start', marginHorizontal: 20, marginBottom: 14,
+    alignSelf: 'flex-start', marginHorizontal: 20, marginBottom: 12,
     paddingHorizontal: 14, paddingVertical: 8,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: C.primarySurface,
+    borderRadius: 999, borderWidth: 1, borderColor: C.primarySoft,
   },
-  myAppBtnText: { fontSize: 12, color: '#fff', fontWeight: '800' },
+  myAppBtnText: { fontSize: 12, color: C.primary, fontWeight: '800' },
   searchBar: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: C.surface, borderRadius: 18,
+    backgroundColor: C.surface, borderRadius: BorderRadius.xl,
     marginHorizontal: 16, paddingHorizontal: 16, paddingVertical: 13,
-    marginBottom: 14,
-    shadowColor: '#0F0A1F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 5,
+    marginBottom: 12,
+    borderWidth: 1.5, borderColor: C.borderLight,
+    ...Shadows.xs,
   },
   searchInput: { flex: 1, fontSize: 14, color: C.textPrimary, padding: 0, fontWeight: '500' },
   chip: {
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: C.surfaceVariant,
+    borderWidth: 1, borderColor: C.border,
   },
   chipActive: {
-    backgroundColor: '#fff', borderColor: '#fff',
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 4,
+    backgroundColor: C.primary, borderColor: C.primary,
+    ...Shadows.sm,
   },
-  chipText:       { fontSize: 12, fontWeight: '800', color: '#fff' },
-  chipTextActive: { color: '#F97316', fontWeight: '800' },
+  chipText:       { fontSize: 12, fontWeight: '800', color: C.textSecondary },
+  chipTextActive: { color: '#fff', fontWeight: '800' },
   card: {
     backgroundColor: C.surface, borderRadius: 20, marginBottom: 12,
     flexDirection: 'row', overflow: 'hidden',
@@ -123,10 +128,11 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   retryBtn:   { marginTop: 8, backgroundColor: Colors.primary, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
   retryText:  { color: '#fff', fontWeight: '700', fontSize: 14 },
   backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.surface,
+    borderWidth: 1.5, borderColor: C.border,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
 });
 
@@ -189,6 +195,7 @@ export default function JobsScreen() {
   const { t, lang } = useLanguage();
   const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
+  const listBottomPad = useTabBarContentPadding(16);
   const isAr = lang === 'ar';
 
   const goHomeTab = useCallback(() => {
@@ -319,80 +326,66 @@ export default function JobsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
-      <LinearGradient
-        colors={['#F97316', '#EC4899', '#7C3AED']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          {/* Row 1: title + count pill */}
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={onBackPress}
-              activeOpacity={0.75}
-            >
-              <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={20} color="#fff" />
-            </TouchableOpacity>
-            <View style={{ alignItems: 'flex-end', flex: 1 }}>
-              <Text style={styles.headerSub}>{t('jobs.subtitle')}</Text>
-              <Text style={styles.headerTitle}>{t('jobs.title')}</Text>
-            </View>
-            <View style={styles.countPill}>
-              <Text style={styles.countNum}>{total}</Text>
-              <Text style={styles.countLabel}>{t('jobs.opportunity')}</Text>
-            </View>
-          </View>
-          {/* Row 2: my applications button */}
-          <TouchableOpacity
-            style={styles.myAppBtn}
-            onPress={() => navigation.navigate('MyApplications')}
-            activeOpacity={0.75}
-          >
-            <AppIcon name="briefcaseOutline" size={14} color="rgba(255,255,255,0.85)" />
-            <Text style={styles.myAppBtnText}>{t('jobs.myApplications') || 'طلباتي'}</Text>
-            <AppIcon name="chevronBack" size={12} color="rgba(255,255,255,0.5)" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBackPress} activeOpacity={0.75}>
+            <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={20} color={C.textPrimary} />
           </TouchableOpacity>
-          <View style={styles.searchBar}>
-            <AppIcon name='search' size={16} color={Colors.primary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t('jobs.search.placeholder')}
-              placeholderTextColor="#9CA3AF"
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={() => setActiveSearch(search.trim())}
-              returnKeyType='search'
-              textAlign="right"
-            />
-            {search.length > 0 && (
-              <TouchableOpacity onPress={() => { setSearch(''); setActiveSearch(''); }}>
-                <AppIcon name="closeCircle" size={16} color="#9CA3AF" />
-              </TouchableOpacity>
-            )}
+          <View style={{ alignItems: 'flex-end', flex: 1 }}>
+            <Text style={styles.headerSub}>{t('jobs.subtitle')}</Text>
+            <Text style={styles.headerTitle}>{t('jobs.title')}</Text>
           </View>
-          <FlatList
-            horizontal data={DOMAINS} keyExtractor={d => d}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 14 }}
-            renderItem={({ item: d }) => (
-              <TouchableOpacity
-                style={[styles.chip, domain === d && styles.chipActive]}
-                onPress={() => setDomain(d)}
-              >
-                <Text style={[styles.chipText, domain === d && styles.chipTextActive]}>
-                  {d === 'all' ? t('jobs.filter.all') : (DOMAIN_LABELS[d] ?? d)}
-                </Text>
-              </TouchableOpacity>
-            )}
+          <View style={styles.countPill}>
+            <Text style={styles.countNum}>{total}</Text>
+            <Text style={styles.countLabel}>{t('jobs.opportunity')}</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.myAppBtn}
+          onPress={() => navigation.navigate('MyApplications')}
+          activeOpacity={0.75}
+        >
+          <AppIcon name="briefcaseOutline" size={14} color={C.primary} />
+          <Text style={styles.myAppBtnText}>{t('jobs.myApplications') || 'طلباتي'}</Text>
+          <AppIcon name="chevronBack" size={12} color={C.textMuted} />
+        </TouchableOpacity>
+        <View style={styles.searchBar}>
+          <AppIcon name="search" size={16} color={C.primary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('jobs.search.placeholder')}
+            placeholderTextColor={C.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={() => setActiveSearch(search.trim())}
+            returnKeyType="search"
+            textAlign="right"
           />
-        </SafeAreaView>
-      </LinearGradient>
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => { setSearch(''); setActiveSearch(''); }}>
+              <AppIcon name="closeCircle" size={16} color={C.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+        <FlatList
+          horizontal
+          data={DOMAINS}
+          keyExtractor={d => d}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 14 }}
+          renderItem={({ item: d }) => (
+            <TouchableOpacity style={[styles.chip, domain === d && styles.chipActive]} onPress={() => setDomain(d)}>
+              <Text style={[styles.chipText, domain === d && styles.chipTextActive]}>
+                {d === 'all' ? t('jobs.filter.all') : (DOMAIN_LABELS[d] ?? d)}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      </SafeAreaView>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 80 }} color={Colors.primary} size="large" />
+        <ActivityIndicator style={{ marginTop: 80 }} color={C.primary} size="large" />
       ) : error ? (
         <View style={styles.centered}>
           <AppIcon name="cloudOfflineOutline" size={60} color="#CBD5E1" />
@@ -413,14 +406,14 @@ export default function JobsScreen() {
           data={jobs}
           keyExtractor={j => j.id}
           renderItem={renderJob}
-          contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: listBottomPad }}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews={true}
           maxToRenderPerBatch={10}
           windowSize={7}
           initialNumToRender={8}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={refetch} tintColor={Colors.primary} />
+            <RefreshControl refreshing={refreshing} onRefresh={refetch} tintColor={C.primary} />
           }
         />
       )}

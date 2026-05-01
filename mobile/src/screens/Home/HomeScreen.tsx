@@ -3,13 +3,11 @@ import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
 import { View, StyleSheet, ScrollView, TouchableOpacity, StatusBar, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { HomeSummary } from '../../types';
-import { Colors, Gradients, Spacing, BorderRadius } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
 import { scheduleDailyFlashcardDigest } from '../../utils/notifications';
 import { getStudyStreak, getTodayStudiedCount, getDailyStudyGoal, getLast7DaysActivity, getRecentlyViewedResources, getTodayFocusMinutes, getLastNDaysActivity, ViewedResource, getStreakFreezeCount, getStreakTier, getNextTierTarget, STREAK_TIERS, StreakTier } from '../../utils/offlineStorage';
@@ -23,7 +21,7 @@ import { queryKeys } from '../../utils/queryKeys';
 
 const REMINDER_COLORS: Record<string, string> = {
   exam:       '#DC2626',
-  assignment: '#7C3AED',
+  assignment: Colors.primary,
   course:     '#2563EB',
   other:      '#6B7280',
 };
@@ -37,7 +35,7 @@ const REMINDER_ICONS: Record<string, AppIconName> = {
 
 // Resource type maps for recently-viewed cards
 const RES_COLORS: Record<string, string> = {
-  note: '#8B5CF6', past_exam: '#EF4444', summary: '#10B981',
+  note: Colors.modules.profile, past_exam: '#EF4444', summary: '#10B981',
   exercise: '#F59E0B', project: '#3B82F6', presentation: '#EC4899', video_course: '#6366F1',
 };
 const RES_ICONS: Record<string, AppIconName> = {
@@ -208,6 +206,31 @@ export default function HomeScreen() {
   const greeting = useMemo(() => greetingByHour(lang), [lang]);
   const isRTL = lang === 'ar';
 
+  const heroLead = useMemo(
+    () => (lang === 'ar' ? 'جاهز نكمل؟' : 'On reprend où tu en étais ?'),
+    [lang],
+  );
+
+  const heroMainLine = useMemo(() => {
+    const due = summary?.dueCards ?? 0;
+    if (lang === 'ar') {
+      return due > 0
+        ? `${due} بطاقة تنتظر المراجعة`
+        : 'خطط جلسة قصيرة اليوم ⚡';
+    }
+    return due > 0
+      ? `${due} fiches à revoir`
+      : 'Une session courte, ça suffit ⚡';
+  }, [lang, summary?.dueCards]);
+
+  const heroCtaLabel = useMemo(() => {
+    const due = summary?.dueCards ?? 0;
+    if (lang === 'ar') {
+      return due > 0 ? 'مراجعة البطاقات' : 'تصفّح الموارد';
+    }
+    return due > 0 ? 'Voir mes fiches' : 'Voir les ressources';
+  }, [lang, summary?.dueCards]);
+
   const STUDY_TILES = useMemo(() => [
     {
       key: 'resources', icon: 'library' as const, color: Colors.modules.resources,
@@ -244,7 +267,7 @@ export default function HomeScreen() {
       onPress: () => navigation.navigate('Pomodoro' as any),
     },
     {
-      key: 'daily', icon: 'gameControllerOutline' as const, color: '#7C3AED',
+      key: 'daily', icon: 'gameControllerOutline' as const, color: Colors.primary,
       label: lang === 'ar' ? '🎲 تحدي اليوم' : '🎲 Défi du jour',
       disabled: !(appActiveByKey.daily ?? true),
       onPress: () => navigation.navigate('DailyChallenge' as any),
@@ -261,8 +284,7 @@ export default function HomeScreen() {
     {
       key: 'askzad',
       icon: 'chatbubbleEllipsesOutline' as const,
-      color: '#10B981',
-      gradientColors: ['#059669', '#10B981'] as [string, string],
+      color: Colors.primary,
       label: lang === 'ar' ? 'مساعدك الذكي' : 'Assistant IA',
       description: lang === 'ar' ? 'مساعدك الذكي' : 'Ton assistant IA',
       emoji: '🤖',
@@ -273,8 +295,7 @@ export default function HomeScreen() {
     {
       key: 'whisper',
       icon: 'micOutline' as const,
-      color: '#7C3AED',
-      gradientColors: ['#6D28D9', '#7C3AED'] as [string, string],
+      color: Colors.primaryDark,
       label: lang === 'ar' ? 'ويسبر' : 'Whisper',
       description: lang === 'ar' ? 'تحويل الصوت لنص' : 'Transcription vocale',
       emoji: '🎙️',
@@ -284,8 +305,7 @@ export default function HomeScreen() {
     {
       key: 'ai_summary',
       icon: 'sparkles' as const,
-      color: '#7C3AED',
-      gradientColors: ['#7C3AED', '#5B21B6'] as [string, string],
+      color: Colors.secondaryDark,
       label: lang === 'ar' ? '✨ ملخص ذكي' : '✨ Résumé intelligent',
       description: lang === 'ar' ? 'PDF/صورة → ملخص + PDF' : 'PDF/image → résumé + PDF',
       emoji: '📄',
@@ -300,8 +320,7 @@ export default function HomeScreen() {
     {
       key: 'ai_exercise_correction',
       icon: 'schoolOutline' as const,
-      color: '#2563EB',
-      gradientColors: ['#2563EB', '#0EA5E9'] as [string, string],
+      color: Colors.modules.news,
       label: lang === 'ar' ? '✅ تصحيح تمارين' : '✅ Correction IA',
       description: lang === 'ar' ? 'صورة/نص → حل مفصل + PDF' : 'Photo/texte → correction + PDF',
       emoji: '✅',
@@ -323,7 +342,7 @@ export default function HomeScreen() {
       onPress: () => goToExplore('Jobs'),
     },
     {
-      key: 'opportunities', icon: 'schoolOutline' as const, color: '#7C3AED',
+      key: 'opportunities', icon: 'schoolOutline' as const, color: Colors.primary,
       label: t('opp.nav'),
       disabled: !(appActiveByKey.opportunities ?? true),
       onPress: () => goToExplore('Opportunities'),
@@ -354,47 +373,82 @@ export default function HomeScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 148 }}
         refreshControl={
           <RefreshControl
             refreshing={pullRefreshing}
             onRefresh={onPullRefresh}
-            tintColor={Colors.primary}
+            tintColor={C.primary}
           />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Focus Card ─────────────────────────────────────────────────── */}
+        {/* ── Soft UI chrome: app bar + search pill + hero banner ─────────── */}
         <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
-          <TouchableOpacity
-            onPress={() => goToTab('Profile')}
-            activeOpacity={0.96}
-            style={styles.focusCardWrap}
-          >
-            <LinearGradient
-              colors={Gradients.brand}
-              start={{ x: 0.05, y: 0 }}
-              end={{ x: 0.95, y: 1 }}
-              style={styles.focusCard}
-            >
-              {/* Decorative layers (glass + blobs) */}
-              <View pointerEvents="none" style={styles.focusDecorWrap}>
-                <View style={styles.focusGlass} />
-                <View style={styles.focusBlobA} />
-                <View style={styles.focusBlobB} />
-                <View style={styles.focusBlobC} />
-              </View>
+          {/* App bar maquette (salut • avatar • notif) */}
+          <View style={[styles.appBarRow, isRTL && styles.rowReverse]}>
+            <View style={styles.appBarTextCol}>
+              <Text style={[styles.appBarHello, isRTL && styles.rtlText]} numberOfLines={1}>
+                {greeting}
+              </Text>
+              <Text style={[styles.appBarName, isRTL && styles.rtlText]} numberOfLines={1}>
+                {firstName}
+              </Text>
+            </View>
+            <View style={styles.appBarTrailing}>
+              <TouchableOpacity
+                onPress={() => goToExplore('Reminders')}
+                style={styles.appBarIconBtn}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel={lang === 'ar' ? 'التذكيرات' : 'Rappels'}
+              >
+                <AppIcon name="notificationsOutline" size={22} color={C.textPrimary} />
+                {(summary?.todayReminders?.length ?? 0) > 0 ? <View style={styles.appBarNotifDot} /> : null}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => goToTab('Profile')}
+                style={styles.appBarAvatarBtn}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.appBarAvatarTxt}>{firstName.charAt(0)}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-              {/* Top row: greeting + profile circle */}
-              <View style={styles.focusTop}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.focusGreeting, isRTL && styles.rtlText]}>{greeting}</Text>
-                  <Text style={[styles.focusName, isRTL && styles.rtlText]} numberOfLines={1}>
-                    {firstName}
-                  </Text>
+          {/* Barre recherche pilule (maquettes e‑commerce) */}
+          <TouchableOpacity
+            style={[styles.searchPill, isRTL && styles.rowReverse]}
+            onPress={() => goToExplore('Resources')}
+            activeOpacity={0.78}
+          >
+            <AppIcon name="searchOutline" size={20} color={C.textMuted} />
+            <Text style={[styles.searchPillPlaceholder, isRTL && styles.rtlText]} numberOfLines={1}>
+              {lang === 'ar' ? 'ابحث عن مذكرة، مادة، سنة…' : 'Rechercher ressources, matière, année…'}
+            </Text>
+            <AppIcon name="filterOutline" size={20} color={C.textMuted} />
+          </TouchableOpacity>
+
+          <View style={styles.focusCardWrap}>
+            <View style={[styles.focusCard, { backgroundColor: C.surface, borderColor: C.borderLight }]}>
+              <View style={[styles.heroAccentBolt, { backgroundColor: C.primary }]} />
+
+              <View style={[styles.heroTopRow, isRTL && styles.rowReverse]}>
+                <View style={styles.heroTextBlock}>
+                  <Text style={[styles.heroLead, { color: C.textMuted }, isRTL && styles.rtlText]}>{heroLead}</Text>
+                  <Text style={[styles.heroMain, { color: C.textPrimary }, isRTL && styles.rtlText]}>{heroMainLine}</Text>
+                  <TouchableOpacity
+                    style={[styles.heroCtaPill, { backgroundColor: C.primary }, Shadows.brand]}
+                    onPress={() =>
+                      (summary?.dueCards ?? 0) > 0 ? goToExplore('Flashcards') : goToExplore('Resources')
+                    }
+                    activeOpacity={0.88}
+                  >
+                    <Text style={styles.heroCtaPillText}>{heroCtaLabel}</Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.focusAvatar}>
-                  <Text style={styles.focusAvatarText}>{firstName.charAt(0)}</Text>
+                <View style={[styles.heroEmojiWrap, { backgroundColor: C.primarySurface }]}>
+                  <Text style={styles.heroEmoji} allowFontScaling={false}>📚</Text>
                 </View>
               </View>
 
@@ -480,35 +534,35 @@ export default function HomeScreen() {
                 const pct = dailyGoal > 0 ? Math.min(1, Math.max(0, todayStudied / dailyGoal)) : 0;
                 const studied = Math.min(todayStudied, dailyGoal);
                 return (
-                  <View style={styles.focusGoalRow}>
+                    <View style={styles.focusGoalRow}>
                     <TouchableOpacity
-                      style={styles.focusGoalWrap}
+                      style={[styles.focusGoalWrap, { borderColor: C.borderLight, backgroundColor: C.surfaceVariant }]}
                       onPress={() => goToExplore('Flashcards')}
                       activeOpacity={0.78}
                     >
                       <View style={styles.focusGoalTop}>
-                        <Text style={[styles.focusGoalLabel, isRTL && styles.rtlText]} numberOfLines={1}>
+                        <Text style={[styles.focusGoalLabel, { color: C.textPrimary }, isRTL && styles.rtlText]} numberOfLines={1}>
                           {lang === 'ar' ? '🎯 هدف اليوم' : '🎯 Objectif du jour'}
                         </Text>
-                        <Text style={[styles.focusGoalValue, isRTL && styles.rtlText]} numberOfLines={1}>
+                        <Text style={[styles.focusGoalValue, { color: C.primary }, isRTL && styles.rtlText]} numberOfLines={1}>
                           {studied}/{dailyGoal} {lang === 'ar' ? 'بطاقة' : 'cartes'}
                         </Text>
                       </View>
-                      <View style={styles.focusGoalTrack}>
-                        <View style={[styles.focusGoalFill, { width: `${Math.round(pct * 100)}%` }]} />
+                      <View style={[styles.focusGoalTrack, { backgroundColor: C.border }]}>
+                        <View style={[styles.focusGoalFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: C.primary }]} />
                       </View>
                     </TouchableOpacity>
 
                     <View style={styles.activityDotsWrap}>
                       {activityDots.length === 7 && activityDots.map((active, i) => (
-                        <View key={i} style={[styles.activityDot, active && styles.activityDotFull]} />
+                        <View key={i} style={[styles.activityDot, { backgroundColor: active ? C.primary : C.border }]} />
                       ))}
                     </View>
                   </View>
                 );
               })()}
-            </LinearGradient>
-          </TouchableOpacity>
+            </View>
+          </View>
         </SafeAreaView>
 
         <View style={{ paddingHorizontal: Spacing.lg }}>
@@ -543,28 +597,35 @@ export default function HomeScreen() {
 
           {/* ── Category content ────────────────────────────────────────── */}
           {homeTab === 'study' && (
-            <Section title={lang === 'ar' ? 'أدوات الدراسة' : 'Outils d\'étude'} showMore={false}>
-              <View style={styles.moduleGrid}>
+            <Section
+              title={lang === 'ar' ? 'أدوات الدراسة' : 'Outils d\'étude'}
+              subtitle={lang === 'ar' ? 'اختَر أين تريد أن تذهب' : 'Choisis où tu veux avancer'}
+              showMore={false}
+            >
+              <View style={styles.moduleList}>
                 {STUDY_TILES.map(tile => (
                   <TouchableOpacity
                     key={tile.key}
-                    style={styles.moduleTile}
+                    style={[styles.moduleRow, isRTL && styles.rowReverse]}
                     onPress={tile.disabled ? undefined : tile.onPress}
-                    activeOpacity={0.78}
+                    activeOpacity={0.76}
                     disabled={tile.disabled}
                   >
-                    <View style={[styles.tileIconBox, { backgroundColor: tile.color + '18' }]}>
-                      <AppIcon name={tile.icon} size={22} color={tile.color} />
+                    <View style={[styles.moduleRowIcon, { backgroundColor: tile.color + '22', borderColor: tile.color + '35' }]}>
+                      <AppIcon name={tile.icon} size={24} color={tile.color} />
                     </View>
-                    <Text style={styles.tileLabel} numberOfLines={1}>{tile.label}</Text>
-                    {tile.badge && (
-                      <View style={[styles.tileBadge, { backgroundColor: tile.color + '20' }]}>
-                        <Text style={[styles.tileBadgeText, { color: tile.color }]}>{tile.badge}</Text>
-                      </View>
+                    <View style={styles.moduleRowBody}>
+                      <Text style={[styles.moduleRowTitle, isRTL && styles.rtlText]} numberOfLines={2}>{tile.label}</Text>
+                      {tile.badge ? (
+                        <Text style={[styles.moduleRowBadge, { color: tile.color }, isRTL && styles.rtlText]}>{tile.badge}</Text>
+                      ) : null}
+                    </View>
+                    {!tile.disabled && (
+                      <AppIcon name={isRTL ? 'chevronBack' : 'chevronForward'} size={18} color={C.textMuted} />
                     )}
                     {tile.disabled && (
-                      <View style={styles.soonOverlay} pointerEvents="none">
-                        <Text style={styles.soonText}>{t('common.soon')}</Text>
+                      <View style={[styles.rowSoonBadge, { borderColor: C.border }]}>
+                        <Text style={[styles.rowSoonText, { color: C.textMuted }]}>{t('common.soon')}</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -595,10 +656,10 @@ export default function HomeScreen() {
                       title={tile.label}
                       description={tile.description}
                       badgeText={tile.badge}
-                      gradientColors={tile.gradientColors}
+                      accentColor={tile.color}
                       disabled={tile.disabled}
                       onPress={tile.onPress}
-                      width={260}
+                      width={280}
                       left={<Text style={{ fontSize: 22 }}>{tile.emoji}</Text>}
                     />
                   ))}
@@ -608,23 +669,32 @@ export default function HomeScreen() {
           )}
 
           {homeTab === 'campus' && (
-            <Section title={lang === 'ar' ? 'الحياة الجامعية' : 'Campus'} showMore={false}>
-              <View style={styles.moduleGrid}>
+            <Section
+              title={lang === 'ar' ? 'الحياة الجامعية' : 'Vie de campus'}
+              subtitle={lang === 'ar' ? 'وظائف، سكن، فرص…' : 'Jobs, logement, opportunités…'}
+              showMore={false}
+            >
+              <View style={styles.moduleList}>
                 {COMMUNITY_TILES.map(tile => (
                   <TouchableOpacity
                     key={tile.key}
-                    style={styles.moduleTile}
+                    style={[styles.moduleRow, isRTL && styles.rowReverse]}
                     onPress={tile.disabled ? undefined : tile.onPress}
-                    activeOpacity={0.78}
+                    activeOpacity={0.76}
                     disabled={tile.disabled}
                   >
-                    <View style={[styles.tileIconBox, { backgroundColor: tile.color + '18' }]}>
-                      <AppIcon name={tile.icon} size={22} color={tile.color} />
+                    <View style={[styles.moduleRowIcon, { backgroundColor: tile.color + '22', borderColor: tile.color + '35' }]}>
+                      <AppIcon name={tile.icon} size={24} color={tile.color} />
                     </View>
-                    <Text style={styles.tileLabel} numberOfLines={1}>{tile.label}</Text>
+                    <View style={styles.moduleRowBody}>
+                      <Text style={[styles.moduleRowTitle, isRTL && styles.rtlText]} numberOfLines={2}>{tile.label}</Text>
+                    </View>
+                    {!tile.disabled && (
+                      <AppIcon name={isRTL ? 'chevronBack' : 'chevronForward'} size={18} color={C.textMuted} />
+                    )}
                     {tile.disabled && (
-                      <View style={styles.soonOverlay} pointerEvents="none">
-                        <Text style={styles.soonText}>{t('common.soon')}</Text>
+                      <View style={[styles.rowSoonBadge, { borderColor: C.border }]}>
+                        <Text style={[styles.rowSoonText, { color: C.textMuted }]}>{t('common.soon')}</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -642,7 +712,7 @@ export default function HomeScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -Spacing.lg }}>
                 <View style={{ flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: 10 }}>
                   {recentlyViewed.map(r => {
-                    const color = RES_COLORS[r.type] ?? '#8B5CF6';
+                    const color = RES_COLORS[r.type] ?? Colors.modules.profile;
                     const icon  = RES_ICONS[r.type]  ?? 'documentOutline';
                     return (
                       <TouchableOpacity
@@ -767,12 +837,12 @@ export default function HomeScreen() {
               </>
             ) : (
               <>
-                <View style={[styles.examWidgetAccent, { backgroundColor: '#7C3AED' }]} />
-                <AppIcon name="calendarOutline" size={20} color="#7C3AED" style={{ marginRight: 10 }} />
+                <View style={[styles.examWidgetAccent, { backgroundColor: C.primary }]} />
+                <AppIcon name="calendarOutline" size={20} color={C.primary} style={{ marginRight: 10 }} />
                 <Text style={[styles.examWidgetLabel, { flex: 1, color: '#6B7280' }]}>
                   {lang === 'ar' ? 'أضف امتحاناتك — ابدأ العد التنازلي ⏳' : 'Ajouter tes examens — lance le compte à rebours ⏳'}
                 </Text>
-                <AppIcon name="addCircle" size={22} color="#7C3AED" />
+                <AppIcon name="addCircle" size={22} color={C.primary} />
               </>
             )}
           </TouchableOpacity>
@@ -851,20 +921,53 @@ export default function HomeScreen() {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const Section = ({
-  title, children, onMore, showMore = true,
+  title,
+  subtitle,
+  children,
+  onMore,
+  showMore = true,
 }: {
-  title: string; children: React.ReactNode;
-  onMore?: () => void; showMore?: boolean;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  onMore?: () => void;
+  showMore?: boolean;
 }) => {
   const { t } = useLanguage();
   const { colors: C } = useTheme();
   return (
     <View style={{ marginBottom: 22 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <Text style={{ fontSize: 15, fontWeight: '800', color: C.textPrimary, letterSpacing: -0.2 }}>{title}</Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: subtitle ? 'flex-start' : 'center',
+          marginBottom: subtitle ? 10 : 12,
+          gap: 12,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, minWidth: 0, gap: 12 }}>
+          <View style={{ width: 4, borderRadius: 2, alignSelf: 'stretch', marginTop: 3, backgroundColor: C.primary, minHeight: 22 }} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontSize: 17, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.45 }}>{title}</Text>
+          {subtitle ? (
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: '500',
+                color: C.textSecondary,
+                marginTop: 4,
+                lineHeight: 18,
+              }}
+            >
+              {subtitle}
+            </Text>
+          ) : null}
+          </View>
+        </View>
         {showMore && onMore && (
           <TouchableOpacity onPress={onMore} activeOpacity={0.7}>
-            <Text style={{ fontSize: 13, color: Colors.primary, fontWeight: '600' }}>{t('home.see_all')}</Text>
+            <Text style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>{t('home.see_all')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -880,60 +983,175 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
     writingDirection: 'rtl',
     textAlign: 'right',
   },
+  rowReverse: {
+    flexDirection: 'row-reverse',
+  },
 
-  /* Focus Card */
+  /* App bar + search (Soft UI) */
+  appBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 4,
+    paddingBottom: Spacing.md,
+    gap: Spacing.md,
+  },
+  appBarTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  appBarHello: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.textMuted,
+    letterSpacing: 0.2,
+  },
+  appBarName: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: C.textPrimary,
+    letterSpacing: -0.6,
+    marginTop: 2,
+  },
+  appBarTrailing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  appBarIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.surfaceVariant,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appBarNotifDot: {
+    position: 'absolute',
+    top: 9,
+    right: 11,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.error,
+    borderWidth: 1.5,
+    borderColor: C.surfaceVariant,
+  },
+  appBarAvatarBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: C.primarySurface,
+    borderWidth: 2,
+    borderColor: C.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appBarAvatarTxt: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: C.primary,
+  },
+  searchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.base,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 14,
+    gap: Spacing.sm,
+    backgroundColor: C.surfaceVariant,
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+  },
+  searchPillPlaceholder: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: C.textMuted,
+  },
+
+  /* Hero banner — carte éditoriale (surface) */
   focusCardWrap: {
-    margin: Spacing.lg,
-    marginTop: 14,
-    borderRadius: 30,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    borderRadius: BorderRadius['2xl'],
+    overflow: 'visible',
+    ...Shadows.md,
+  },
+  focusCard: {
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    position: 'relative',
+    borderRadius: BorderRadius['2xl'],
+    borderWidth: 1,
     overflow: 'hidden',
-    shadowColor: '#7C3AED',
-    shadowOpacity: 0.32,
-    shadowRadius: 26,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 16,
   },
-  focusCard: { padding: 22, position: 'relative' },
-  focusDecorWrap: { ...StyleSheet.absoluteFillObject },
-  focusGlass: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  focusBlobA: {
+  heroAccentBolt: {
     position: 'absolute',
-    width: 220, height: 220, borderRadius: 999,
-    top: -120, right: -90,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-  },
-  focusBlobB: {
-    position: 'absolute',
-    width: 260, height: 260, borderRadius: 999,
-    bottom: -160, left: -120,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-  },
-  focusBlobC: {
-    position: 'absolute',
-    width: 140, height: 140, borderRadius: 999,
-    bottom: -40, right: 18,
-    backgroundColor: 'rgba(0,0,0,0.08)',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+    borderTopLeftRadius: BorderRadius['2xl'],
+    borderBottomLeftRadius: BorderRadius['2xl'],
   },
 
-  focusTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
-  focusGreeting: { fontSize: 12, color: 'rgba(255,255,255,0.86)', fontWeight: '800', letterSpacing: 1.1, textTransform: 'uppercase' },
-  focusName: { fontSize: 34, fontWeight: '900', color: '#FFFFFF', marginTop: 4, letterSpacing: -1.1 },
-  focusAvatar: {
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.45)',
-    alignItems: 'center', justifyContent: 'center',
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    marginBottom: Spacing.sm,
   },
-  focusAvatarText: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  heroTextBlock: { flex: 1, minWidth: 0 },
+  heroLead: {
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 6,
+    letterSpacing: 0.25,
+    textTransform: 'uppercase',
+  },
+  heroMain: {
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.65,
+    lineHeight: 28,
+  },
+  heroCtaPill: {
+    alignSelf: 'flex-start',
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: BorderRadius.pill,
+  },
+  heroCtaPillText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  heroEmojiWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.primarySoft,
+  },
+  heroEmoji: {
+    fontSize: 32,
+    lineHeight: 36,
+  },
 
   /* Stats row */
   focusStatsRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 4,
+    marginTop: 10,
   },
   // focusStat* moved to `GlassKpiCard`
 
@@ -946,38 +1164,41 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
   },
   focusGoalTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 8 },
-  focusGoalLabel: { fontSize: 11, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.1 },
-  focusGoalValue: { fontSize: 11, fontWeight: '900', color: 'rgba(255,255,255,0.92)' },
+  focusGoalLabel: { fontSize: 11, fontWeight: '900', letterSpacing: 0.15 },
+  focusGoalValue: { fontSize: 11, fontWeight: '900' },
   focusGoalTrack: {
-    height: 10,
+    height: 8,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
     overflow: 'hidden',
   },
   focusGoalFill: {
     height: '100%',
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.92,
   },
-  activityDotsWrap:  { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  activityDot:       { width: 10, height: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.22)' },
-  activityDotFull:   { backgroundColor: 'rgba(255,255,255,0.92)' },
+  activityDotsWrap:  { flexDirection: 'row', gap: 7, alignItems: 'center' },
+  activityDot:       { width: 11, height: 11, borderRadius: 6 },
 
   /* Recently viewed resource cards */
   recentCard: {
-    width: 120, backgroundColor: C.surface, borderRadius: BorderRadius.card,
-    padding: 11, gap: 6, borderWidth: 1, borderColor: C.border,
+    width: 124,
+    backgroundColor: C.surface,
+    borderRadius: BorderRadius.card,
+    padding: 12,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+    ...Shadows.sm,
   },
   recentIconBox: {
-    width: 34, height: 34, borderRadius: 9,
-    alignItems: 'center', justifyContent: 'center',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   recentTitle:   { fontSize: 12, fontWeight: '700', color: C.textPrimary, lineHeight: 17 },
   recentSubject: { fontSize: 11, fontWeight: '600' },
@@ -990,51 +1211,50 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
 
   /* AI section badge */
   aiSectionBadge: {
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
-    backgroundColor: '#7C3AED',
-    shadowColor: '#7C3AED', shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4,
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.sm,
+    backgroundColor: C.primarySurface,
+    borderWidth: 1,
+    borderColor: C.primarySoft,
   },
-  aiSectionBadgeText: { fontSize: 10, fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 },
+  aiSectionBadgeText: { fontSize: 10, fontWeight: '900', color: C.primary, letterSpacing: 1 },
 
-  /* Home tabs (Étude / IA / Campus) */
+  /* Home tabs — soulignement (pas capsules) */
   homeTabsWrap: {
     flexDirection: 'row',
-    backgroundColor: C.surface,
-    borderRadius: 999,
-    padding: 6,
-    borderWidth: 1,
-    borderColor: C.borderLight,
-    gap: 6,
-    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: C.borderLight,
+    marginBottom: 18,
+    gap: 4,
+    backgroundColor: 'transparent',
   },
   homeTabBtn: {
     flex: 1,
-    borderRadius: 999,
-    paddingVertical: 10,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+    marginBottom: -1,
   },
   homeTabBtnActive: {
-    backgroundColor: Colors.primarySurface,
-    borderWidth: 1,
-    borderColor: Colors.primarySoft,
+    borderBottomColor: C.primary,
   },
   homeTabText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: C.textSecondary,
-    letterSpacing: 0.2,
+    fontSize: 13,
+    fontWeight: '800',
+    color: C.textMuted,
+    letterSpacing: 0.15,
   },
   homeTabTextActive: {
-    color: Colors.primary,
+    color: C.textPrimary,
   },
   homeTabBadge: {
     minWidth: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: Colors.primary,
+    backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
@@ -1048,48 +1268,43 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   communityTile: {
     flex: 1,
     backgroundColor: C.surface,
-    borderRadius: 20, borderWidth: 1, borderColor: C.borderLight,
+    borderRadius: BorderRadius.card, borderWidth: 1, borderColor: C.borderLight,
     padding: 16, gap: 10,
     shadowColor: '#0F0A1F', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
 
-  /* Module grid */
-  moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  moduleTile: {
-    width: '47.5%',
+  moduleList: { gap: 10 },
+  moduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     backgroundColor: C.surface,
-    borderRadius: 20, borderWidth: 1, borderColor: C.borderLight,
-    padding: 16, gap: 10,
-    shadowColor: '#0F0A1F', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-    overflow: 'hidden',
+    borderRadius: BorderRadius.card,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+    ...Shadows.xs,
   },
-  tileIconBox: {
-    width: 46, height: 46, borderRadius: 13,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  tileLabel: { fontSize: 13, fontWeight: '800', color: C.textPrimary, letterSpacing: -0.1 },
-  tileBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 9, paddingVertical: 3,
-    borderRadius: 999,
-  },
-  tileBadgeText: { fontSize: 11, fontWeight: '900', letterSpacing: 0.2 },
-
-  soonOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.70)',
+  moduleRowIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
-  soonText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#111827',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
+  moduleRowBody: { flex: 1, minWidth: 0 },
+  moduleRowTitle: { fontSize: 15, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.35, lineHeight: 21 },
+  moduleRowBadge: { marginTop: 4, fontSize: 13, fontWeight: '800' },
+  rowSoonBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
   },
+  rowSoonText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.35, textTransform: 'uppercase' },
 
   /* Section (kept for compat) */
   section: { marginBottom: 22 },

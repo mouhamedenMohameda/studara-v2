@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
-import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNavigation } from '@react-navigation/native';
@@ -9,8 +9,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList, Faculty, University } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { Input, Button } from '../../components/common';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Gradients, Shadows } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 import {
   FacultyOrInstitut,
   Filiere,
@@ -25,6 +25,7 @@ const YEARS = [1, 2, 3, 4, 5, 6, 7];
 
 const RegisterScreen = () => {
   const navigation = useNavigation<Nav>();
+  const { colors: C, isDark } = useTheme();
   const { register } = useAuth();
   const { structure } = useAcademicStructure();
   const [step, setStep] = useState(1);
@@ -86,29 +87,35 @@ const RegisterScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <LinearGradient colors={Gradients.brand as any} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.topRow}>
-            <TouchableOpacity
-              onPress={() => step === 1 ? safeBack(navigation as any, { name: 'Login' }) : setStep(1)}
-              style={styles.backBtn}
-            >
-              <AppIcon name="arrowBack" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>إنشاء حساب</Text>
-            <View style={{ width: 44 }} />
-          </View>
-          <View style={styles.stepsRow}>
-            {[1, 2].map(s => (
-              <View key={s} style={[styles.stepDot, step >= s && styles.stepDotActive]} />
-            ))}
-          </View>
-          <Text style={styles.stepLabel}>
-            {step === 1 ? '✨ معلومات الحساب' : '🎓 التخصص الجامعي'}
-          </Text>
-        </SafeAreaView>
-      </LinearGradient>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.topRow}>
+          <TouchableOpacity
+            onPress={() => step === 1 ? safeBack(navigation as any, { name: 'Login' }) : setStep(1)}
+            style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}
+          >
+            <AppIcon name="arrowBack" size={22} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: C.textPrimary }]}>إنشاء حساب</Text>
+          <View style={{ width: 46 }} />
+        </View>
+        <View style={styles.stepsRow}>
+          {[1, 2].map(s => (
+            <View
+              key={s}
+              style={[
+                styles.stepDot,
+                { backgroundColor: step >= s ? C.primary : C.borderLight },
+                step >= s && { width: 48 },
+              ]}
+            />
+          ))}
+        </View>
+        <Text style={[styles.stepLabel, { color: C.textSecondary }]}>
+          {step === 1 ? '✨ معلومات الحساب' : '🎓 التخصص الجامعي'}
+        </Text>
+      </SafeAreaView>
 
       <ScrollView
         contentContainerStyle={styles.formContainer}
@@ -216,20 +223,18 @@ const RegisterScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 24, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 8 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 8, paddingBottom: 4 },
   backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#fff', letterSpacing: -0.3 },
-  stepsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 16 },
-  stepDot: { width: 28, height: 7, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.28)' },
-  stepDotActive: { backgroundColor: '#fff', width: 48 },
-  stepLabel: { textAlign: 'center', color: '#fff', marginTop: 10, fontSize: 13, fontWeight: '700', letterSpacing: 0.3 },
-  formContainer: { flexGrow: 1, backgroundColor: Colors.background, padding: Spacing.lg, paddingTop: Spacing.xl, marginTop: -12 },
+  headerTitle: { fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
+  stepsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 12 },
+  stepDot: { width: 28, height: 7, borderRadius: 4 },
+  stepLabel: { textAlign: 'center', marginTop: 10, fontSize: 13, fontWeight: '700', letterSpacing: 0.3, paddingBottom: 16 },
+  formContainer: { flexGrow: 1, backgroundColor: Colors.background, padding: Spacing.lg, paddingTop: Spacing.md },
   card: {
     backgroundColor: Colors.surface, borderRadius: 24, padding: Spacing.xl,
     ...Shadows.md,

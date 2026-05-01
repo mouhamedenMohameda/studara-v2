@@ -2,12 +2,12 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, KeyboardAvoidingView, Platform, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, KeyboardAvoidingView, Platform, FlatList, ActivityIndicator, RefreshControl, StatusBar } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
+import { useTabBarContentPadding } from '../../hooks/useTabBarContentPadding';
 import { useTheme } from '../../context/ThemeContext';
 import { DayOfWeek } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -58,6 +58,7 @@ const TimetableScreen = () => {
   const { t, lang } = useLanguage();
   const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
+  const listBottomPad = useTabBarContentPadding(16);
   const isAr = lang === 'ar';
   const navigation = useNavigation();
   const [courses, setCourses] = useState<any[]>([]);
@@ -286,61 +287,49 @@ const TimetableScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      {/* Header */}
-      <LinearGradient
-        colors={['#6366F1', '#0EA5E9', '#06B6D4']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={onBackPress}
-              activeOpacity={0.75}
-            >
-              <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={20} color="#fff" />
-            </TouchableOpacity>
-            <View>
-              <Text style={styles.headerTitle}>{t('tt.title')}</Text>
-              <Text style={styles.headerSub}>{courses.length}{t('tt.courses_count')}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity style={styles.addBtn} onPress={openAdd} activeOpacity={0.75}>
-                <AppIcon name='add' size={22} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.ocrBtn} onPress={handleOcrImport} disabled={ocrScanning} activeOpacity={0.75}>
-                {ocrScanning
-                  ? <ActivityIndicator size="small" color="#fff" />
-                  : <AppIcon name="cameraOutline" size={20} color="#fff" />}
-              </TouchableOpacity>
-            </View>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBackPress} activeOpacity={0.75}>
+            <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={20} color={C.textPrimary} />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.headerTitle}>{t('tt.title')}</Text>
+            <Text style={styles.headerSub}>{courses.length}{t('tt.courses_count')}</Text>
           </View>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity style={styles.addBtn} onPress={openAdd} activeOpacity={0.75}>
+              <AppIcon name="add" size={22} color={C.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.ocrBtn} onPress={handleOcrImport} disabled={ocrScanning} activeOpacity={0.75}>
+              {ocrScanning
+                ? <ActivityIndicator size="small" color={C.primary} />
+                : <AppIcon name="cameraOutline" size={20} color={C.primary} />}
+            </TouchableOpacity>
+          </View>
+        </View>
 
-          {/* Day selector */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daysRow}>
-            {DAYS.map(d => {
-              const count = courses.filter(c => c.dayOfWeek === d.key).length;
-              const active = activeDay === d.key;
-              return (
-                <TouchableOpacity key={d.key} style={[styles.dayBtn, active && styles.dayBtnActive]} onPress={() => setActiveDay(d.key)}>
-                  <Text style={[styles.dayAr, active && styles.dayTextActive]}>{lang === 'fr' ? d.fr : d.ar}</Text>
-                  {count > 0 && (
-                    <View style={[styles.dayCount, active && styles.dayCountActive]}>
-                      <Text style={[styles.dayCountText, active && { color: '#2563EB' }]}>{count}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </SafeAreaView>
-      </LinearGradient>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daysRow}>
+          {DAYS.map(d => {
+            const count = courses.filter(c => c.dayOfWeek === d.key).length;
+            const active = activeDay === d.key;
+            return (
+              <TouchableOpacity key={d.key} style={[styles.dayBtn, active && styles.dayBtnActive]} onPress={() => setActiveDay(d.key)}>
+                <Text style={[styles.dayAr, active && styles.dayTextActive]}>{lang === 'fr' ? d.fr : d.ar}</Text>
+                {count > 0 && (
+                  <View style={[styles.dayCount, active && styles.dayCountActive]}>
+                    <Text style={[styles.dayCountText, active && styles.dayCountTextActive]}>{count}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </SafeAreaView>
 
       {/* Course list */}
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 60 }} color="#2563EB" size="large" />
+        <ActivityIndicator style={{ marginTop: 60 }} color={C.primary} size="large" />
       ) : activeCourses.length === 0 ? (
         <View style={styles.empty}>
           <AppIcon name="calendarOutline" size={60} color="#D1D5DB" />
@@ -354,7 +343,7 @@ const TimetableScreen = () => {
         <FlatList
           data={activeCourses}
           keyExtractor={c => c.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: listBottomPad }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchCourses(); }} />}
           renderItem={({ item }) => (
             <View style={[styles.courseCard, { borderLeftColor: item.color, borderLeftWidth: 4 }]}>
@@ -401,10 +390,10 @@ const TimetableScreen = () => {
             const count = courses.filter(c => c.dayOfWeek === d.key).length;
             return (
               <TouchableOpacity key={d.key} style={styles.stripDay} onPress={() => setActiveDay(d.key)}>
-                <Text style={[styles.stripLabel, d.key === activeDay && { color: '#2563EB', fontWeight: '700' }]}>{d.en}</Text>
+                <Text style={[styles.stripLabel, d.key === activeDay && { color: C.primary, fontWeight: '700' }]}>{d.en}</Text>
                 <View style={styles.stripDots}>
                   {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
-                    <View key={i} style={[styles.stripDot, d.key === activeDay && { backgroundColor: '#2563EB' }]} />
+                    <View key={i} style={[styles.stripDot, d.key === activeDay && { backgroundColor: C.primary }]} />
                   ))}
                 </View>
               </TouchableOpacity>
@@ -424,7 +413,7 @@ const TimetableScreen = () => {
               <Text style={styles.modalTitle}>{editId ? t('tt.modal.edit') : t('tt.modal.new')}</Text>
               <TouchableOpacity onPress={handleSave} disabled={saving}>
                 {saving
-                  ? <ActivityIndicator color="#2563EB" size="small" />
+                  ? <ActivityIndicator color={C.primary} size="small" />
                   : <Text style={styles.saveText}>{t('tt.modal.save')}</Text>}
               </TouchableOpacity>
             </View>
@@ -497,14 +486,14 @@ const TimetableScreen = () => {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.formLabel}>{t('tt.field.end_time')}</Text>
                   <TouchableOpacity style={styles.timePicker} onPress={() => openTimePicker('end')}>
-                    <AppIcon name="timeOutline" size={16} color="#2563EB" />
+                    <AppIcon name="timeOutline" size={16} color={C.primary} />
                     <Text style={styles.timePickerText}>{form.endTime}</Text>
                   </TouchableOpacity>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.formLabel}>{t('tt.field.start_time')}</Text>
                   <TouchableOpacity style={styles.timePicker} onPress={() => openTimePicker('start')}>
-                    <AppIcon name="timeOutline" size={16} color="#2563EB" />
+                    <AppIcon name="timeOutline" size={16} color={C.primary} />
                     <Text style={styles.timePickerText}>{form.startTime}</Text>
                   </TouchableOpacity>
                 </View>
@@ -557,7 +546,7 @@ const TimetableScreen = () => {
                     }}
                   >
                     <Text style={[styles.tpItemText, selected && styles.tpItemTextActive]}>{item}</Text>
-                    {selected && <AppIcon name='checkmark' size={18} color="#2563EB" />}
+                    {selected && <AppIcon name="checkmark" size={18} color={C.primary} />}
                   </TouchableOpacity>
                 );
               }}
@@ -570,45 +559,46 @@ const TimetableScreen = () => {
 };
 
 const makeStyles = (C: typeof Colors) => StyleSheet.create({
-  header: { paddingBottom: 14, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 10, paddingBottom: 14 },
-  headerTitle: { fontSize: 22, fontWeight: '900', color: '#fff', textAlign: 'right', letterSpacing: -0.4 },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.92)', textAlign: 'right', fontWeight: '700', marginTop: 2 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 8, paddingBottom: 12, backgroundColor: C.background },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: C.textPrimary, textAlign: 'right', letterSpacing: -0.4 },
+  headerSub: { fontSize: 12, color: C.textMuted, textAlign: 'right', fontWeight: '700', marginTop: 2 },
   backBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.26)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.surface,
+    borderWidth: 1.5, borderColor: C.border,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
   addBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.26)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.primarySurface,
+    borderWidth: 1.5, borderColor: C.primarySoft,
     alignItems: 'center', justifyContent: 'center',
   },
   ocrBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.primarySurface,
+    borderWidth: 1.5, borderColor: C.primarySoft,
     alignItems: 'center', justifyContent: 'center',
   },
-  daysRow: { paddingHorizontal: Spacing.lg, gap: 8, paddingBottom: 10 },
+  daysRow: { paddingHorizontal: Spacing.lg, gap: 8, paddingBottom: 12 },
   dayBtn: {
     paddingHorizontal: 16, paddingVertical: 9, borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.26)',
+    backgroundColor: C.surfaceVariant,
+    borderWidth: 1, borderColor: C.border,
     alignItems: 'center', minWidth: 58,
   },
   dayBtnActive: {
-    backgroundColor: '#fff', borderColor: '#fff',
-    shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 5,
+    backgroundColor: C.primary, borderColor: C.primary,
+    ...Shadows.sm,
   },
-  dayAr: { fontSize: 13, fontWeight: '800', color: '#fff' },
-  dayTextActive: { color: '#6366F1' },
-  dayCount: { width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center', marginTop: 3 },
-  dayCountActive: { backgroundColor: '#E0E7FF' },
-  dayCountText: { fontSize: 10, color: '#fff', fontWeight: '800' },
-  listContent: { padding: Spacing.lg, gap: 10, paddingBottom: 100 },
+  dayAr: { fontSize: 13, fontWeight: '800', color: C.textSecondary },
+  dayTextActive: { color: '#fff' },
+  dayCount: { width: 18, height: 18, borderRadius: 9, backgroundColor: C.borderLight, alignItems: 'center', justifyContent: 'center', marginTop: 3 },
+  dayCountActive: { backgroundColor: 'rgba(255,255,255,0.35)' },
+  dayCountText: { fontSize: 10, color: C.textMuted, fontWeight: '800' },
+  dayCountTextActive: { color: '#fff' },
+  listContent: { padding: Spacing.lg, gap: 10, paddingBottom: 24 },
   courseCard: {
     backgroundColor: C.surface, borderRadius: BorderRadius['2xl'],
     padding: Spacing.base, flexDirection: 'row', gap: 12,
@@ -627,7 +617,7 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   actionBtn: { padding: 4 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   emptyTitle: { fontSize: 17, color: C.textSecondary, fontWeight: '600' },
-  emptyAdd: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#6366F1', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 999, marginTop: 4, shadowColor: '#6366F1', shadowOpacity: 0.35, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  emptyAdd: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primary, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 999, marginTop: 4, ...Shadows.brand },
   emptyAddText: { color: '#fff', fontWeight: '800', letterSpacing: 0.3 },
   weekStrip: { flexDirection: 'row', backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingVertical: 8, paddingHorizontal: Spacing.sm },
   stripDay: { flex: 1, alignItems: 'center', gap: 4 },
@@ -637,17 +627,17 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
   modalTitle: { fontSize: 17, fontWeight: '700', color: C.textPrimary },
   cancelText: { fontSize: 15, color: Colors.error },
-  saveText: { fontSize: 15, fontWeight: '700', color: '#2563EB' },
+  saveText: { fontSize: 15, fontWeight: '700', color: C.primary },
   modalBody: { padding: Spacing.lg },
   formLabel: { fontSize: 12, fontWeight: '700', color: C.textMuted, textAlign: 'right', marginBottom: 6, marginTop: 12 },
   formInput: { borderWidth: 1.5, borderColor: C.border, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, paddingVertical: 11, fontSize: 15, color: C.textPrimary, backgroundColor: C.surfaceWarm },
   dayChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.surface },
-  dayChipActive: { backgroundColor: '#EFF6FF', borderColor: '#2563EB' },
+  dayChipActive: { backgroundColor: C.primarySurface, borderColor: C.primary },
   dayChipText: { fontSize: 13, color: C.textMuted },
-  dayChipTextActive: { color: '#2563EB', fontWeight: '700' },
+  dayChipTextActive: { color: C.primary, fontWeight: '700' },
   timeRow: { flexDirection: 'row', gap: 12 },
-  timePicker: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: '#EFF6FF', borderRadius: BorderRadius.md, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: '#F8FAFF', justifyContent: 'center' },
-  timePickerText: { fontSize: 16, fontWeight: '700', color: '#2563EB' },
+  timePicker: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: C.primarySoft, borderRadius: BorderRadius.md, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: C.primarySurface, justifyContent: 'center' },
+  timePickerText: { fontSize: 16, fontWeight: '700', color: C.primary },
   colorsRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
   colorDot: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: 'transparent' },
   colorDotActive: { borderColor: C.textPrimary, transform: [{ scale: 1.1 }] },
@@ -655,9 +645,9 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   tpSheet: { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '60%' },
   tpHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, borderBottomWidth: 1, borderBottomColor: C.border },
   tpItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.xl, paddingVertical: 13, borderBottomWidth: 0.5, borderBottomColor: C.borderLight },
-  tpItemActive: { backgroundColor: '#EFF6FF' },
+  tpItemActive: { backgroundColor: C.primarySurface },
   tpItemText: { fontSize: 18, color: C.textPrimary, fontWeight: '500' },
-  tpItemTextActive: { color: '#2563EB', fontWeight: '700' },
+  tpItemTextActive: { color: C.primary, fontWeight: '700' },
 });
 
 export default TimetableScreen;

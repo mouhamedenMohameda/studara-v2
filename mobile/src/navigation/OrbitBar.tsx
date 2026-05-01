@@ -17,8 +17,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Gradients } from '../theme';
+import { Colors } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
 // ── Arc geometry — computed ONCE at module level ─────────────────────────────
@@ -39,7 +38,7 @@ export type OrbitTabName =
   | 'Flashcards' | 'Jobs' | 'Reminders' | 'Housing' | 'Profile';
 
 const SATELLITES: { name: OrbitTabName; icon: AppIconName; color: string }[] = [
-  { name: 'Resources',  icon: 'libraryOutline',   color: '#7C3AED' },
+  { name: 'Resources',  icon: 'libraryOutline',   color: Colors.primary },
   { name: 'Timetable',  icon: 'calendarOutline',  color: '#0EA5E9' },
   { name: 'Flashcards', icon: 'albumsOutline',    color: '#06B6D4' },
   { name: 'Jobs',       icon: 'briefcaseOutline', color: '#F97316' },
@@ -225,16 +224,11 @@ function OrbitBar({ activeTab, onTabPress }: OrbitBarProps) {
           activeOpacity={0.85}
           style={styles.commandBtnWrap}
         >
-          <LinearGradient
-            colors={Gradients.brand as any}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.commandBtn}
-          >
+          <View style={[styles.commandBtn, { backgroundColor: C.primary }]}>
             <Animated.View style={{ transform: [{ rotate: I.plusRot }] }}>
               <AppIcon name='add' size={30} color="#FFFFFF" />
             </Animated.View>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
 
         {/* Profile */}

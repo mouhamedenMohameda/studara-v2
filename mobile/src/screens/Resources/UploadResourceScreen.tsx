@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as DocumentPicker from 'expo-document-picker';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 import { ResourceType, Faculty, University } from '../../types';
 import { ResourcesStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -35,6 +35,7 @@ const YEARS = ['1', '2', '3', '4', '5', '6', '7'];
 
 const UploadResourceScreen = () => {
   const navigation  = useNavigation<Nav>();
+  const { colors: C, isDark } = useTheme();
   const { token, user } = useAuth();
   const faculties = useFaculties();
 
@@ -163,31 +164,24 @@ const UploadResourceScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      {/* Header */}
-      <LinearGradient
-        colors={Gradients.brand as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => safeBack(navigation as any, { name: 'Explore', params: { screen: 'Resources' } })} style={styles.backBtn}>
-              <AppIcon name="arrowBack" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>📤 رفع مورد جديد</Text>
-            <View style={{ width: 44 }} />
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={[styles.headerRow, { paddingBottom: 12 }]}>
+          <TouchableOpacity onPress={() => safeBack(navigation as any, { name: 'Explore', params: { screen: 'Resources' } })} style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}>
+            <AppIcon name="arrowBack" size={22} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: C.textPrimary }]}>📤 رفع مورد جديد</Text>
+          <View style={{ width: 46 }} />
+        </View>
+      </SafeAreaView>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
           {/* Note banner */}
           <View style={styles.infoBanner}>
-            <AppIcon name="shieldCheckmarkOutline" size={20} color="#7C3AED" />
+            <AppIcon name="shieldCheckmarkOutline" size={20} color={Colors.primary} />
             <Text style={styles.infoText}>سيتم مراجعة المورد من قِبَل فريق الإشراف قبل نشره للطلاب</Text>
           </View>
 
@@ -376,7 +370,7 @@ const UploadResourceScreen = () => {
                 <Text style={styles.videoBannerText}>الصق رابط YouTube أو Google Drive هنا</Text>
               </View>
               <TextInput
-                style={[styles.input, videoUrl.trim() && { borderColor: '#7C3AED' }]}
+                style={[styles.input, videoUrl.trim() && { borderColor: Colors.primary }]}
                 placeholder="https://youtu.be/..."
                 placeholderTextColor={Colors.textMuted}
                 value={videoUrl}
@@ -396,10 +390,10 @@ const UploadResourceScreen = () => {
                 <AppIcon
                   name={pickedFile ? 'documentAttach' : 'cloudUploadOutline'}
                   size={26}
-                  color="#7C3AED"
+                  color="Colors.primary"
                 />
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                  <Text style={[styles.filePickerText, pickedFile && { color: '#7C3AED', fontWeight: '700' }]}
+                  <Text style={[styles.filePickerText, pickedFile && { color: Colors.primary, fontWeight: '700' }]}
                     numberOfLines={1}>
                     {pickedFile ? pickedFile.name : 'اختر ملفًا (PDF, DOCX, PPTX…)'}
                   </Text>
@@ -469,21 +463,21 @@ const UploadResourceScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 20, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 10 },
-  headerTitle: { fontSize: 19, fontWeight: '900', color: '#fff', letterSpacing: -0.3 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: 8 },
+  headerTitle: { fontSize: 19, fontWeight: '900', letterSpacing: -0.3 },
   backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
   content: { padding: Spacing.lg, gap: 4, paddingBottom: 120 },
   infoBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: '#EDE9FE', borderRadius: BorderRadius.md, padding: Spacing.md, marginBottom: 8,
+    backgroundColor: Colors.primarySurface, borderRadius: BorderRadius.md, padding: Spacing.md, marginBottom: 8,
+    borderWidth: 1, borderColor: Colors.primarySoft,
   },
-  infoText: { flex: 1, fontSize: 13, color: '#5B21B6', textAlign: 'right', lineHeight: 20 },
+  infoText: { flex: 1, fontSize: 13, color: Colors.primaryDark, textAlign: 'right', lineHeight: 20 },
   field: { marginBottom: Spacing.md },
   label: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary, textAlign: 'right', marginBottom: 7 },
   input: {
@@ -493,12 +487,12 @@ const styles = StyleSheet.create({
   },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: BorderRadius.full, borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#fff' },
-  chipActive: { backgroundColor: '#EDE9FE', borderColor: '#7C3AED' },
+  chipActive: { backgroundColor: '#EDE9FE', borderColor: Colors.primary },
   chipText: { fontSize: 13, color: Colors.textMuted },
-  chipTextActive: { color: '#7C3AED', fontWeight: '700' },
+  chipTextActive: { color: Colors.primary, fontWeight: '700' },
   yearRow: { flexDirection: 'row', gap: 12, justifyContent: 'flex-end' },
   yearCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#E5E7EB', backgroundColor: '#fff' },
-  yearCircleActive: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  yearCircleActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   yearText: { fontSize: 16, fontWeight: '700', color: Colors.textMuted },
   yearTextActive: { color: '#fff' },
   filePicker: {
@@ -515,7 +509,7 @@ const styles = StyleSheet.create({
   videoBannerText: { fontSize: 12, color: '#BE123C', flex: 1, textAlign: 'right' },
   submitBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#7C3AED', borderRadius: BorderRadius.lg, paddingVertical: 14, marginTop: 8,
+    backgroundColor: Colors.primary, borderRadius: BorderRadius.lg, paddingVertical: 14, marginTop: 8,
   },
   submitText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
@@ -523,7 +517,7 @@ const styles = StyleSheet.create({
   successIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
   successTitle: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
   successBody: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
-  successBtn: { backgroundColor: '#7C3AED', paddingHorizontal: 40, paddingVertical: 12, borderRadius: BorderRadius.full, marginTop: 8, width: '100%', alignItems: 'center' },
+  successBtn: { backgroundColor: Colors.primary, paddingHorizontal: 40, paddingVertical: 12, borderRadius: BorderRadius.full, marginTop: 8, width: '100%', alignItems: 'center' },
   successBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   successBtnSecondary: { paddingVertical: 10, width: '100%', alignItems: 'center' },
   successBtnSecondaryText: { color: Colors.textSecondary, fontWeight: '600', fontSize: 14 },

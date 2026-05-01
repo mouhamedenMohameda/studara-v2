@@ -3,8 +3,7 @@ import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TouchableOpacity, ActivityIndicator, StyleSheet, ViewStyle, TextStyle, View } from 'react-native';
 
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Shadows, Gradients } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'gradient' | 'accent' | 'success';
 type Size = 'sm' | 'md' | 'lg';
@@ -64,7 +63,6 @@ const Button: React.FC<ButtonProps> = ({
     </View>
   );
 
-  // Gradient variant — distinctive Gen-Z signature button
   if (variant === 'gradient' && !disabled) {
     return (
       <TouchableOpacity
@@ -73,24 +71,14 @@ const Button: React.FC<ButtonProps> = ({
         activeOpacity={0.85}
         style={[
           styles.base,
-          { paddingVertical: 0, paddingHorizontal: 0 },
+          VARIANTS.primary,
+          { paddingVertical: sizeStyle.paddingVertical, paddingHorizontal: sizeStyle.paddingHorizontal },
           fullWidth && styles.fullWidth,
           (disabled || loading) && styles.disabled,
-          Shadows.brand,
           style,
         ]}
       >
-        <LinearGradient
-          colors={Gradients.brand}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[
-            styles.gradientInner,
-            { paddingVertical: sizeStyle.paddingVertical, paddingHorizontal: sizeStyle.paddingHorizontal },
-          ]}
-        >
-          {renderInner()}
-        </LinearGradient>
+        {renderInner()}
       </TouchableOpacity>
     );
   }
@@ -160,7 +148,7 @@ const VARIANTS: Record<Exclude<Variant, 'gradient'>, ViewStyle> = {
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

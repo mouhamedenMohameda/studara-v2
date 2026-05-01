@@ -8,8 +8,6 @@ import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { View, StyleSheet, TouchableOpacity, Animated, Share, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useAuth }     from '../../context/AuthContext';
@@ -28,15 +26,16 @@ import { safeBack } from '../../utils/safeBack';
 const SLIDE_DURATION = 5000;
 const NUM_SLIDES = 5;
 
-const BG_COLORS: [string, string][] = [
-  ['#5B21B6', '#1E1040'],   // 0 — intro (violet)
-  ['#065F46', '#022C1E'],   // 1 — sessions (emerald)
-  ['#B45309', '#451A03'],   // 2 — streak (amber)
-  ['#1E3A8A', '#0F1729'],   // 3 — heatmap (indigo)
-  ['#BE185D', '#2A0414'],   // 4 — share (pink)
+/** Fond plein par slide (sombre cohérent avec le vert Studara). */
+const SLIDE_BACKGROUND: string[] = [
+  '#15251C', // intro
+  '#0B2418', // sessions
+  '#261A0D', // streak
+  '#101E18', // heatmap
+  '#1F1423', // share
 ];
 
-const ACCENT_COLORS = ['#C4B5FD', '#6EE7B7', '#FCD34D', '#93C5FD', '#F9A8D4'];
+const ACCENT_COLORS = ['#86EFAC', '#34D399', '#FCD34D', '#6EE7B7', '#F9A8D4'];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -143,7 +142,7 @@ export default function WrappedScreen() {
   // ── Loading splash ────────────────────────────────────────────────────────
   if (!loaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0F0B2E', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#0B1A13', alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ fontSize: 44 }}>✨</Text>
         <Text style={{ color: 'rgba(255,255,255,0.5)', marginTop: 12, fontSize: 14 }}>
           {t('wrapped.loading')}
@@ -264,8 +263,8 @@ export default function WrappedScreen() {
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor={BG_COLORS[slide][0]} />
-      <LinearGradient colors={BG_COLORS[slide]} style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" backgroundColor={SLIDE_BACKGROUND[slide]} />
+      <View style={{ flex: 1, backgroundColor: SLIDE_BACKGROUND[slide] }}>
         <SafeAreaView style={{ flex: 1 }}>
 
           {/* ── Progress segments ──────────────────────────────────────────── */}
@@ -306,7 +305,7 @@ export default function WrappedScreen() {
           )}
 
         </SafeAreaView>
-      </LinearGradient>
+      </View>
     </View>
   );
 }

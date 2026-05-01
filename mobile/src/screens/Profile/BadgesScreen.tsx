@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
-import { View, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useQuery } from '@tanstack/react-query';
@@ -12,9 +12,9 @@ import { useAuth } from '../../context/AuthContext';
 import { queryKeys } from '../../utils/queryKeys';
 import { Badge, ProfileStackParamList } from '../../types';
 import { safeBack } from '../../utils/safeBack';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Shadows, BorderRadius, Gradients } from '../../theme';
+import { Colors, Shadows, BorderRadius } from '../../theme';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 
 type Nav = StackNavigationProp<ProfileStackParamList, 'Badges'>;
 
@@ -22,6 +22,7 @@ const BadgesScreen = () => {
   const { lang, t } = useLanguage();
   const navigation = useNavigation<Nav>();
   const { token } = useAuth();
+  const { colors: C, isDark } = useTheme();
 
   const { data: badges = [], isLoading } = useQuery<Badge[]>({
     queryKey: queryKeys.badges(),
@@ -58,44 +59,36 @@ const BadgesScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background }}>
-        <ActivityIndicator color={Colors.primary} size="large" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: C.background }}>
+        <ActivityIndicator color={C.primary} size="large" />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      {/* Header */}
-      <LinearGradient
-        colors={Gradients.brand as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => safeBack(navigation)} style={styles.backBtn}>
-              <AppIcon name="chevronBack" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>
-              🏅 {t('badges.title')}
-            </Text>
-            <View style={{ width: 40 }} />
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => safeBack(navigation)} style={[styles.backBtn, { backgroundColor: C.surface, borderColor: C.border }]}>
+            <AppIcon name="chevronBack" size={22} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: C.textPrimary }]}>{'🏅 '}{t('badges.title')}</Text>
+          <View style={{ width: 46 }} />
+        </View>
+        <View style={[styles.headerStatsWrap, { backgroundColor: C.primarySurface, borderColor: C.primarySoft }]}>
+          <View style={styles.statPill}>
+            <Text style={[styles.statNum, { color: C.primary }]}>{earned.length}</Text>
+            <Text style={[styles.statLbl, { color: C.textSecondary }]}>{t('badges.earned_label')}</Text>
           </View>
-          <View style={styles.headerStats}>
-            <View style={styles.statPill}>
-              <Text style={styles.statNum}>{earned.length}</Text>
-              <Text style={styles.statLbl}>{t('badges.earned_label')}</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statPill}>
-              <Text style={styles.statNum}>{badges.length}</Text>
-              <Text style={styles.statLbl}>{t('badges.total_label')}</Text>
-            </View>
+          <View style={[styles.statDivider, { backgroundColor: C.border }]} />
+          <View style={styles.statPill}>
+            <Text style={[styles.statNum, { color: C.textPrimary }]}>{badges.length}</Text>
+            <Text style={[styles.statLbl, { color: C.textSecondary }]}>{t('badges.total_label')}</Text>
           </View>
-        </SafeAreaView>
-      </LinearGradient>
+        </View>
+      </SafeAreaView>
 
       <FlatList
         data={[...earned, ...locked]}
@@ -106,7 +99,7 @@ const BadgesScreen = () => {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           earned.length > 0 ? (
-            <Text style={styles.sectionLabel}>
+            <Text style={[styles.sectionLabel, { color: C.textSecondary }]}>
               {t('badges.earned_section')} ({earned.length})
             </Text>
           ) : null
@@ -114,7 +107,7 @@ const BadgesScreen = () => {
         ListEmptyComponent={
           <View style={{ alignItems: 'center', paddingTop: 80 }}>
             <Text style={{ fontSize: 48 }}>🏅</Text>
-            <Text style={{ fontSize: 16, color: Colors.textMuted, marginTop: 12 }}>
+            <Text style={{ fontSize: 16, color: C.textMuted, marginTop: 12 }}>
               {t('badges.empty')}
             </Text>
           </View>
@@ -125,22 +118,29 @@ const BadgesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 24, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 14 },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
-    alignItems: 'center', justifyContent: 'center',
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12,
   },
-  headerTitle: { fontSize: 19, fontWeight: '900', color: '#fff', letterSpacing: -0.3 },
-  headerStats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28, paddingBottom: 4 },
+  backBtn: {
+    width: 46, height: 46, borderRadius: 23,
+    borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
+  },
+  headerTitle: { fontSize: 19, fontWeight: '900', letterSpacing: -0.3, flex: 1, textAlign: 'center' },
+  headerStatsWrap: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28,
+    marginHorizontal: 16, paddingVertical: 14, paddingHorizontal: 20, borderRadius: BorderRadius.card,
+    borderWidth: 1, marginBottom: 8,
+    ...Shadows.xs,
+  },
   statPill: { alignItems: 'center' },
-  statNum: { fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: -0.6 },
-  statLbl: { fontSize: 11, color: 'rgba(255,255,255,0.92)', fontWeight: '700', letterSpacing: 0.3, textTransform: 'uppercase', marginTop: 2 },
-  statDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.35)' },
+  statNum: { fontSize: 28, fontWeight: '900', letterSpacing: -0.6 },
+  statLbl: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3, textTransform: 'uppercase', marginTop: 2 },
+  statDivider: { width: 1, height: 36 },
   grid: { padding: 16, paddingBottom: 120 },
-  sectionLabel: { fontSize: 13, fontWeight: '800', color: Colors.textSecondary, marginBottom: 12, letterSpacing: 0.3 },
+  sectionLabel: { fontSize: 13, fontWeight: '800', marginBottom: 12, letterSpacing: 0.3 },
   badgeCard: {
     flex: 1, margin: 6, borderRadius: 18, backgroundColor: Colors.surface, alignItems: 'center',
     paddingVertical: 18, paddingHorizontal: 8, ...Shadows.sm,

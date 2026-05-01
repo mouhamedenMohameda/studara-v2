@@ -9,8 +9,6 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Linking, Platform, Acti
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { LinearGradient } from 'expo-linear-gradient';
-
 import { useSubscription } from '../../context/SubscriptionContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -26,15 +24,16 @@ import {
 
 type Nav = StackNavigationProp<RootStackParamList, 'Paywall'>;
 
-const PLAN_GRADIENT: Record<string, [string, string]> = {
-  essential:     ['#6D28D9', '#4F46E5'],
-  course_pdf:    ['#059669', '#0D9488'],
-  elite_pass_7d: ['#D97706', '#EA580C'],
-  elite_monthly: ['#DC2626', '#7C2D12'],
+/** Couleur dominante du bandeau forfait (pas de dégradé). */
+const PLAN_ACCENT: Record<string, string> = {
+  essential:     Colors.primary,
+  course_pdf:    '#059669',
+  elite_pass_7d: '#D97706',
+  elite_monthly: '#DC2626',
 };
 
-function planGradient(code: string): [string, string] {
-  return PLAN_GRADIENT[code] ?? ['#6D28D9', '#4F46E5'];
+function planAccent(code: string): string {
+  return PLAN_ACCENT[code] ?? Colors.primary;
 }
 
 function pricePeriodLabel(plan: PaywallCatalogPlan, isAr: boolean): string {
@@ -185,7 +184,7 @@ export default function PaywallScreen() {
     '#DC2626';
 
   const currentPlan = catalog.find((p) => p.code === selectedCode) ?? catalog[0];
-  const grad = currentPlan ? planGradient(currentPlan.code) : planGradient('essential');
+  const accentCol = currentPlan ? planAccent(currentPlan.code) : planAccent('essential');
   const selling = currentPlan ? PLAN_SELLING_COPY[currentPlan.code] : undefined;
 
   const handleContactUs = (plan: PaywallCatalogPlan) => {
@@ -204,12 +203,7 @@ export default function PaywallScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient
-          colors={['#8B5CF6', '#EC4899', '#F97316']}
-          style={styles.header}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
+        <View style={[styles.header, { backgroundColor: Colors.primary }]}>
           <Text style={styles.headerIcon}>📚</Text>
           <Text style={styles.headerTitle}>Studara+</Text>
           <Text
@@ -231,15 +225,15 @@ export default function PaywallScreen() {
               {status === 'expired' ? '⚠️' : status === 'active' ? '✅' : '⏳'} {statusLabel}
             </Text>
           </View>
-        </LinearGradient>
+        </View>
 
         <View
           style={[
             styles.infoBanner,
-            { borderColor: isAr ? '#C4B5FD' : '#A5B4FC', direction: layoutDirection },
+            { borderColor: '#86EFAC', backgroundColor: '#ECFDF5', direction: layoutDirection },
           ]}
         >
-          <AppIcon name="informationCircleOutline" size={22} color="#4F46E5" />
+          <AppIcon name="informationCircleOutline" size={22} color={Colors.primary} />
           <Text
             style={[
               styles.infoBannerText,
@@ -359,12 +353,7 @@ export default function PaywallScreen() {
 
             {currentPlan && (
               <View style={styles.planCard}>
-                <LinearGradient
-                  colors={grad}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[styles.planCardHeader, isRTL && styles.planCardHeaderRtl]}
-                >
+                <View style={[styles.planCardHeader, { backgroundColor: accentCol }, isRTL && styles.planCardHeaderRtl]}>
                   {currentPlan.code === 'course_pdf' && (
                     <View
                       style={[
@@ -404,7 +393,7 @@ export default function PaywallScreen() {
                   >
                     {pricePeriodLabel(currentPlan, isAr)}
                   </Text>
-                </LinearGradient>
+                </View>
 
                 <View style={styles.planFeatures}>
                   <Text
@@ -444,7 +433,7 @@ export default function PaywallScreen() {
                                 </Text>
                                 <AppIcon name="checkmarkCircle"
                                   size={20}
-                                  color={grad[0]}
+                                  color={accentCol}
                                   style={styles.bulletIcon}
                                 />
                               </>
@@ -452,7 +441,7 @@ export default function PaywallScreen() {
                               <>
                                 <AppIcon name="checkmarkCircle"
                                   size={20}
-                                  color={grad[0]}
+                                  color={accentCol}
                                   style={styles.bulletIcon}
                                 />
                                 <Text
@@ -489,12 +478,7 @@ export default function PaywallScreen() {
                   onPress={() => handleContactUs(currentPlan)}
                   activeOpacity={0.85}
                 >
-                  <LinearGradient
-                    colors={grad}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.ctaBtnGrad}
-                  >
+                  <View style={[styles.ctaBtnGrad, { backgroundColor: accentCol }]}>
                     <Text
                       style={[
                         styles.ctaBtnText,
@@ -503,7 +487,7 @@ export default function PaywallScreen() {
                     >
                       {isAr ? '📧 طلب هذا العرض' : '📧 Demander ce forfait'}
                     </Text>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
               </View>
             )}
@@ -601,7 +585,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EEF2FF',
     borderWidth: 1,
   },
-  infoBannerText: { flex: 1, fontSize: 13, color: '#312E81', lineHeight: 20, fontWeight: '600' },
+  infoBannerText: { flex: 1, fontSize: 13, color: '#14532D', lineHeight: 20, fontWeight: '600' },
 
   warnBanner: {
     flexDirection: 'row',
@@ -755,7 +739,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bonusStat: { flex: 1, alignItems: 'center' },
-  bonusNum: { fontSize: 28, fontWeight: '900', color: '#7C3AED' },
+  bonusNum: { fontSize: 28, fontWeight: '900', color: Colors.primary },
   bonusLbl: { fontSize: 11, color: '#6B7280', marginTop: 3 },
   bonusDivider: { width: 1, height: 40, backgroundColor: '#E5E7EB', marginHorizontal: 16 },
   bonusInfo: { backgroundColor: '#EDE9FE', borderRadius: 12, padding: 12, marginTop: 12 },
@@ -774,7 +758,7 @@ const styles = StyleSheet.create({
   uploadBtnText: { fontSize: 14, fontWeight: '800', color: Colors.primary },
 
   refreshBtn: { alignItems: 'center', padding: 10 },
-  refreshText: { fontSize: 13, color: '#7C3AED', fontWeight: '600' },
+  refreshText: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
   logoutBtn: { alignItems: 'center', padding: 8 },
   logoutText: { fontSize: 13, color: '#9CA3AF' },
   footer: { textAlign: 'center', fontSize: 11, color: '#9CA3AF', marginTop: 20, paddingHorizontal: 16 },

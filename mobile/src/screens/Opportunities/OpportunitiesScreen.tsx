@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
 
 import { AppIcon } from '@/icons';
@@ -15,7 +14,8 @@ import { Opportunity, OpportunitiesStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Colors } from '../../theme';
+import { BorderRadius, Colors, Shadows } from '../../theme';
+import { useTabBarContentPadding } from '../../hooks/useTabBarContentPadding';
 import { API_BASE } from '../../utils/api';
 import { queryKeys } from '../../utils/queryKeys';
 import { smoothGoHomeTab } from '../../utils/smoothTabBack';
@@ -24,7 +24,7 @@ type Nav = StackNavigationProp<OpportunitiesStackParamList, 'OpportunitiesList'>
 
 const TYPE_COLORS: Record<string, string> = {
   program: '#3B82F6',
-  scholarship: '#7C3AED',
+  scholarship: Colors.primary,
   exchange: '#2563EB',
   internship: '#F97316',
   fellowship: '#10B981',
@@ -60,16 +60,29 @@ const formatDate = (iso?: string): string => {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const makeStyles = (C: any) => StyleSheet.create({
-  header: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14, gap: 12 },
-  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.8)', marginBottom: 3, textAlign: 'right', fontWeight: '700', letterSpacing: 0.4 },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: '#fff', textAlign: 'right', letterSpacing: -0.6 },
-  countPill: { backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', borderRadius: 18, paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center', minWidth: 72 },
+const makeStyles = (C: typeof Colors) => StyleSheet.create({
+  headerTop: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 12,
+    backgroundColor: C.background,
+  },
+  headerSub: { fontSize: 11, color: C.textMuted, marginBottom: 3, textAlign: 'right', fontWeight: '700', letterSpacing: 0.4 },
+  headerTitle: { fontSize: 24, fontWeight: '900', color: C.textPrimary, textAlign: 'right', letterSpacing: -0.6 },
+  countPill: {
+    backgroundColor: C.primary, borderRadius: BorderRadius.md, paddingHorizontal: 16, paddingVertical: 10,
+    alignItems: 'center', minWidth: 72, ...Shadows.brand,
+  },
   countNum: { fontSize: 24, fontWeight: '900', color: '#fff', lineHeight: 28, letterSpacing: -0.5 },
   countLabel: { fontSize: 10, color: 'rgba(255,255,255,0.92)', marginTop: 2, fontWeight: '700', letterSpacing: 0.3, textTransform: 'uppercase' },
-  backBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.surface, borderRadius: 18, marginHorizontal: 16, paddingHorizontal: 16, paddingVertical: 13, marginBottom: 14, shadowColor: '#0F0A1F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 5 },
+  backBtn: {
+    width: 46, height: 46, borderRadius: 23, backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border,
+    alignItems: 'center', justifyContent: 'center', ...Shadows.xs,
+  },
+  searchBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.surface, borderRadius: BorderRadius.xl,
+    marginHorizontal: 16, paddingHorizontal: 16, paddingVertical: 13, marginBottom: 12,
+    borderWidth: 1.5, borderColor: C.borderLight, ...Shadows.xs,
+  },
   searchInput: { flex: 1, fontSize: 14, color: C.textPrimary, padding: 0, fontWeight: '500' },
   card: { backgroundColor: C.surface, borderRadius: 20, marginBottom: 12, flexDirection: 'row', overflow: 'hidden', shadowColor: '#0F0A1F', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3, borderWidth: 1, borderColor: C.borderLight },
   accentBar: { width: 5 },
@@ -150,8 +163,9 @@ export default function OpportunitiesScreen() {
   const navigation = useNavigation<Nav>();
   const { token, refreshAccessToken, logout } = useAuth();
   const { t, lang } = useLanguage();
-  const { colors: C } = useTheme();
+  const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
+  const listBottomPad = useTabBarContentPadding(16);
   const isAr = lang === 'ar';
 
   const goHomeTab = useCallback(() => { smoothGoHomeTab(navigation as any); }, [navigation]);
@@ -222,46 +236,44 @@ export default function OpportunitiesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
-      <LinearGradient colors={['#0EA5E9', '#7C3AED', '#EC4899']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity style={styles.backBtn} onPress={onBackPress} activeOpacity={0.75}>
-              <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={20} color="#fff" />
-            </TouchableOpacity>
-            <View style={{ alignItems: 'flex-end', flex: 1 }}>
-              <Text style={styles.headerSub}>{t('opp.subtitle')}</Text>
-              <Text style={styles.headerTitle}>{t('opp.title')}</Text>
-            </View>
-            <View style={styles.countPill}>
-              <Text style={styles.countNum}>{total}</Text>
-              <Text style={styles.countLabel}>{t('opp.countLabel')}</Text>
-            </View>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBackPress} activeOpacity={0.75}>
+            <AppIcon name={isAr ? 'arrowForward' : 'arrowBack'} size={20} color={C.textPrimary} />
+          </TouchableOpacity>
+          <View style={{ alignItems: 'flex-end', flex: 1 }}>
+            <Text style={styles.headerSub}>{t('opp.subtitle')}</Text>
+            <Text style={styles.headerTitle}>{t('opp.title')}</Text>
           </View>
+          <View style={styles.countPill}>
+            <Text style={styles.countNum}>{total}</Text>
+            <Text style={styles.countLabel}>{t('opp.countLabel')}</Text>
+          </View>
+        </View>
 
-          <View style={styles.searchBar}>
-            <AppIcon name="search" size={16} color={Colors.primary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t('opp.search.placeholder')}
-              placeholderTextColor="#9CA3AF"
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={() => setActiveSearch(search.trim())}
-              returnKeyType="search"
-              textAlign="right"
-            />
-            {search.length > 0 && (
-              <TouchableOpacity onPress={() => { setSearch(''); setActiveSearch(''); }}>
-                <AppIcon name="closeCircle" size={16} color="#9CA3AF" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+        <View style={styles.searchBar}>
+          <AppIcon name="search" size={16} color={C.primary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('opp.search.placeholder')}
+            placeholderTextColor={C.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={() => setActiveSearch(search.trim())}
+            returnKeyType="search"
+            textAlign="right"
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => { setSearch(''); setActiveSearch(''); }}>
+              <AppIcon name="closeCircle" size={16} color={C.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </SafeAreaView>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 80 }} color={Colors.primary} size="large" />
+        <ActivityIndicator style={{ marginTop: 80 }} color={C.primary} size="large" />
       ) : error ? (
         <View style={styles.centered}>
           <AppIcon name="cloudOfflineOutline" size={60} color="#CBD5E1" />
@@ -282,13 +294,13 @@ export default function OpportunitiesScreen() {
           data={opportunities}
           keyExtractor={o => o.id}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: listBottomPad }}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews
           maxToRenderPerBatch={10}
           windowSize={7}
           initialNumToRender={8}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetch} tintColor={Colors.primary} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetch} tintColor={C.primary} />}
         />
       )}
     </View>

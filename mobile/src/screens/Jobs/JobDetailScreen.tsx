@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AppIcon, type AppIconName } from '@/icons';
 import { Text } from '@/ui/Text';
 import { View, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Linking, Alert } from 'react-native';
@@ -8,8 +8,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Job, JobsStackParamList } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Gradients } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { BorderRadius, Colors, Shadows } from '../../theme';
 import { safeBack } from '../../utils/safeBack';
 import {
   saveJobApplication, getJobApplication, removeJobApplication,
@@ -19,7 +19,7 @@ import {
 type Route = RouteProp<JobsStackParamList, 'JobDetail'>;
 
 const JOB_TYPE_COLORS: Record<string, string> = {
-  stage: '#8B5CF6', cdi: Colors.primary, cdd: '#3B82F6', freelance: '#F59E0B', other: '#64748B',
+  stage: Colors.modules.profile, cdi: Colors.primary, cdd: '#3B82F6', freelance: '#F59E0B', other: '#64748B',
 };
 const AVATAR_PALETTE = ['#EF4444','#F97316','#EAB308','#22C55E','#14B8A6','#3B82F6','#8B5CF6','#EC4899'];
 const avatarColor = (s: string) => AVATAR_PALETTE[(s.charCodeAt(0) + (s.charCodeAt(1) || 0)) % AVATAR_PALETTE.length];
@@ -88,7 +88,88 @@ const formatDescription = (raw: string): DescLine[] => {
   });
 };
 
+const makeStyles = (C: typeof Colors) => StyleSheet.create({
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: C.background,
+  },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: C.textPrimary, letterSpacing: -0.2 },
+  backBtn: {
+    width: 46, height: 46, borderRadius: 23, backgroundColor: C.surface,
+    borderWidth: 1.5, borderColor: C.border, alignItems: 'center', justifyContent: 'center', ...Shadows.xs,
+  },
+  heroCard: {
+    backgroundColor: C.surface, borderRadius: 22, padding: 20, marginBottom: 12,
+    shadowColor: '#0F0A1F', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    borderWidth: 1, borderColor: C.borderLight,
+  },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  avatar: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#fff', fontWeight: '800', fontSize: 21 },
+  typeBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
+  typeBadgeText: { fontSize: 12, fontWeight: '700' },
+  jobTitle: { fontSize: 20, fontWeight: '800', color: C.textPrimary, textAlign: 'right', lineHeight: 28, marginBottom: 6 },
+  companyName: { fontSize: 14, color: C.textMuted, textAlign: 'right', fontWeight: '500', marginBottom: 14 },
+  accentLine: { height: 3, width: 44, borderRadius: BorderRadius.sm, alignSelf: 'flex-end' },
+  infoCard: {
+    backgroundColor: C.surface, borderRadius: 18, paddingVertical: 4, paddingHorizontal: 6,
+    marginBottom: 10,
+    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
+    borderWidth: 1, borderColor: C.borderLight,
+  },
+  infoRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
+    gap: 12, padding: 10, borderRadius: 12,
+  },
+  infoRight: { flex: 1, alignItems: 'flex-end' },
+  infoIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  infoLabel: { fontSize: 11, color: C.textMuted, marginBottom: 2 },
+  infoValue: { fontSize: 14, fontWeight: '600', color: C.textPrimary, textAlign: 'right' },
+  infoTag: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 },
+  infoTagText: { fontSize: 10, fontWeight: '700' },
+  section: {
+    backgroundColor: C.surface, borderRadius: 18, padding: 16, marginBottom: 10,
+    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
+    borderWidth: 1, borderColor: C.borderLight,
+  },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, justifyContent: 'flex-end', marginBottom: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: '800', color: C.textPrimary },
+  sectionBody: { fontSize: 14, color: C.textSecondary, lineHeight: 24, textAlign: 'right' },
+  applyBar: {
+    backgroundColor: C.surface, paddingHorizontal: 16, paddingTop: 10,
+    borderTopWidth: 1, borderTopColor: C.borderLight,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8,
+    gap: 10,
+  },
+  statusRow: { flexDirection: 'row', gap: 8, justifyContent: 'space-between' },
+  statusBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 4, paddingVertical: 7, borderRadius: 10,
+    borderWidth: 1.5, borderColor: C.border, backgroundColor: C.surfaceVariant,
+  },
+  statusBtnText: { fontSize: 11, fontWeight: '600', color: C.textMuted },
+  applyBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, borderRadius: 14, paddingVertical: 14, ...Shadows.sm,
+  },
+  applyBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+});
+type DetailStyles = ReturnType<typeof makeStyles>;
+
 const DescriptionBlock = ({ text }: { text: string }) => {
+  const { colors: C } = useTheme();
+  const descStyles = useMemo(() => StyleSheet.create({
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, marginBottom: 4 },
+    headerBar: { width: 3, height: 16, borderRadius: 2, backgroundColor: C.primaryDark, flexShrink: 0 },
+    headerText: { fontSize: 13, fontWeight: '800', color: C.primaryDark, flex: 1 },
+    bulletRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 3 },
+    bulletDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.primary, marginTop: 8, flexShrink: 0 },
+    bulletText: { flex: 1, fontSize: 13.5, color: C.textPrimary, lineHeight: 21 },
+    paraText: { fontSize: 13.5, color: C.textSecondary, lineHeight: 22 },
+  }), [C]);
   const lines = formatDescription(text);
   return (
     <View style={{ gap: 2 }}>
@@ -115,42 +196,37 @@ const DescriptionBlock = ({ text }: { text: string }) => {
   );
 };
 
-const descStyles = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, marginBottom: 4 },
-  headerBar: { width: 3, height: 16, borderRadius: 2, backgroundColor: Colors.primaryDark, flexShrink: 0 },
-  headerText: { fontSize: 13, fontWeight: '800', color: Colors.primaryDark, flex: 1 },
-  bulletRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 3 },
-  bulletDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.primary, marginTop: 8, flexShrink: 0 },
-  bulletText: { flex: 1, fontSize: 13.5, color: '#374151', lineHeight: 21 },
-  paraText: { fontSize: 13.5, color: '#475569', lineHeight: 22 },
-});
-
-const InfoRow = ({ icon, label, value, color, tag }: {
+function InfoJobRow({ sx, icon, label, value, color, tag }: {
+  sx: DetailStyles;
   icon: AppIconName; label: string; value: string; color: string; tag?: string;
-}) => (
-  <View style={styles.infoRow}>
-    <View style={styles.infoRight}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
-        <Text style={styles.infoValue}>{value}</Text>
-        {tag && (
-          <View style={[styles.infoTag, { backgroundColor: color + '18' }]}>
-            <Text style={[styles.infoTagText, { color }]}>{tag}</Text>
-          </View>
-        )}
+}) {
+  return (
+    <View style={sx.infoRow}>
+      <View style={sx.infoRight}>
+        <Text style={sx.infoLabel}>{label}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+          <Text style={sx.infoValue}>{value}</Text>
+          {tag && (
+            <View style={[sx.infoTag, { backgroundColor: color + '18' }]}>
+              <Text style={[sx.infoTagText, { color }]}>{tag}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+      <View style={[sx.infoIcon, { backgroundColor: color + '15' }]}>
+        <AppIcon name={icon} size={17} color={color} />
       </View>
     </View>
-    <View style={[styles.infoIcon, { backgroundColor: color + '15' }]}>
-      <AppIcon name={icon} size={17} color={color} />
-    </View>
-  </View>
-);
+  );
+}
 
 export default function JobDetailScreen() {
   const navigation = useNavigation();
   const { params: { job } } = useRoute<Route>();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
+  const { colors: C, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [application, setApplication] = useState<JobApplication | null>(null);
 
   useEffect(() => {
@@ -201,27 +277,23 @@ export default function JobDetailScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
 
-      <LinearGradient
-        colors={['#F97316', '#EC4899', '#7C3AED']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => safeBack(navigation as any, { name: 'Explore', params: { screen: 'Jobs' } })} style={styles.backBtn}>
-              <AppIcon name="arrowBack" size={20} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t('job.detail.header')}</Text>
-            <View style={{ width: 44 }} />
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => safeBack(navigation as any, { name: 'Explore', params: { screen: 'Jobs' } })}
+            style={styles.backBtn}
+          >
+            <AppIcon name="arrowBack" size={20} color={C.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('job.detail.header')}</Text>
+          <View style={{ width: 46 }} />
+        </View>
+      </SafeAreaView>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
 
         {/* Hero */}
         <View style={styles.heroCard}>
@@ -242,20 +314,30 @@ export default function JobDetailScreen() {
 
         {/* Info */}
         <View style={styles.infoCard}>
-          {!!job.location && <InfoRow icon='locationOutline' label={t('job.detail.location')} value={job.location} color="#3B82F6" />}
-          {!!job.domain && <InfoRow icon='briefcaseOutline' label={t('job.detail.domain')} value={DOMAIN_LABELS[job.domain] ?? job.domain} color={typeColor} />}
-          {!!job.deadline && (
-            <InfoRow icon='calendarOutline' label={t('job.detail.deadline')} value={formatDate(job.deadline)}
-              color={expired ? '#EF4444' : '#10B981'} tag={expired ? t('job.detail.expired_tag') : undefined} />
+          {!!job.location && (
+            <InfoJobRow sx={styles} icon="locationOutline" label={t('job.detail.location')} value={job.location} color="#3B82F6" />
           )}
-          <InfoRow icon='timeOutline' label={t('job.detail.published')} value={formatDate(job.createdAt)} color="#6B7280" />
+          {!!job.domain && (
+            <InfoJobRow sx={styles} icon="briefcaseOutline" label={t('job.detail.domain')} value={DOMAIN_LABELS[job.domain] ?? job.domain} color={typeColor} />
+          )}
+          {!!job.deadline && (
+            <InfoJobRow
+              sx={styles}
+              icon="calendarOutline"
+              label={t('job.detail.deadline')}
+              value={formatDate(job.deadline)}
+              color={expired ? '#EF4444' : '#10B981'}
+              tag={expired ? t('job.detail.expired_tag') : undefined}
+            />
+          )}
+          <InfoJobRow sx={styles} icon="timeOutline" label={t('job.detail.published')} value={formatDate(job.createdAt)} color="#6B7280" />
         </View>
 
         {/* Description */}
         {!!job.description && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <AppIcon name="documentTextOutline" size={15} color={Colors.primaryDark} />
+              <AppIcon name="documentTextOutline" size={15} color={C.primary} />
               <Text style={styles.sectionTitle}>{t('job.detail.description')}</Text>
             </View>
             <DescriptionBlock text={job.description} />
@@ -266,7 +348,7 @@ export default function JobDetailScreen() {
         {!!job.requirements && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <AppIcon name="checkmarkCircleOutline" size={15} color={Colors.primaryDark} />
+              <AppIcon name="checkmarkCircleOutline" size={15} color={C.primary} />
               <Text style={styles.sectionTitle}>{t('job.detail.requirements')}</Text>
             </View>
             <DescriptionBlock text={job.requirements} />
@@ -280,8 +362,8 @@ export default function JobDetailScreen() {
         <View style={styles.statusRow}>
           {([
             { key: 'applied',   label: 'تقدّمت',  icon: 'sendOutline',        color: '#2563EB' },
-            { key: 'interview', label: 'مقابلة',  icon: 'peopleOutline',      color: '#7C3AED' },
-            { key: 'offer',     label: 'عرض',     icon: 'checkmarkCircleOutline', color: Colors.primary },
+            { key: 'interview', label: 'مقابلة',  icon: 'peopleOutline',      color: C.primary },
+            { key: 'offer',     label: 'عرض',     icon: 'checkmarkCircleOutline', color: C.primaryDark },
             { key: 'rejected',  label: 'رُفضت',  icon: 'closeCircleOutline', color: '#DC2626' },
           ] as { key: JobApplicationStatus; label: string; icon: AppIconName; color: string }[]).map(s => {
             const active = application?.status === s.key;
@@ -292,14 +374,14 @@ export default function JobDetailScreen() {
                 onPress={() => handleApplicationStatus(s.key)}
                 activeOpacity={0.75}
               >
-                <AppIcon name={s.icon} size={15} color={active ? s.color : '#94A3B8'} />
+                <AppIcon name={s.icon} size={15} color={active ? s.color : C.textMuted} />
                 <Text style={[styles.statusBtnText, active && { color: s.color, fontWeight: '700' }]}>{s.label}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
         <TouchableOpacity
-          style={[styles.applyBtn, { backgroundColor: expired ? '#94A3B8' : Colors.primary }]}
+          style={[styles.applyBtn, { backgroundColor: expired ? C.textMuted : C.primary }]}
           onPress={handleApply}
           activeOpacity={0.85}
         >
@@ -312,76 +394,3 @@ export default function JobDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  headerRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16,
-  },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: '#fff', letterSpacing: -0.2 },
-  backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  heroCard: {
-    backgroundColor: Colors.surface, borderRadius: 22, padding: 20, marginBottom: 12,
-    shadowColor: '#0F0A1F', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
-    borderWidth: 1, borderColor: Colors.borderLight,
-  },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  avatar: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontWeight: '800', fontSize: 21 },
-  typeBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
-  typeBadgeText: { fontSize: 12, fontWeight: '700' },
-  jobTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', textAlign: 'right', lineHeight: 28, marginBottom: 6 },
-  companyName: { fontSize: 14, color: '#64748B', textAlign: 'right', fontWeight: '500', marginBottom: 14 },
-  accentLine: { height: 3, width: 44, borderRadius: 3, alignSelf: 'flex-end' },
-  infoCard: {
-    backgroundColor: '#fff', borderRadius: 18, paddingVertical: 4, paddingHorizontal: 6,
-    marginBottom: 10,
-    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
-  },
-  infoRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
-    gap: 12, padding: 10, borderRadius: 12,
-  },
-  infoRight: { flex: 1, alignItems: 'flex-end' },
-  infoIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  infoLabel: { fontSize: 11, color: '#94A3B8', marginBottom: 2 },
-  infoValue: { fontSize: 14, fontWeight: '600', color: '#1E293B', textAlign: 'right' },
-  infoTag: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 },
-  infoTagText: { fontSize: 10, fontWeight: '700' },
-  section: {
-    backgroundColor: '#fff', borderRadius: 18, padding: 16, marginBottom: 10,
-    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
-  },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, justifyContent: 'flex-end', marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
-  sectionBody: { fontSize: 14, color: '#475569', lineHeight: 24, textAlign: 'right' },
-  applyBar: {
-    backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 10,
-    borderTopWidth: 1, borderTopColor: '#F1F5F9',
-    shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8,
-    gap: 10,
-  },
-  statusRow: {
-    flexDirection: 'row', gap: 8, justifyContent: 'space-between',
-  },
-  statusBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 4, paddingVertical: 7, borderRadius: 10,
-    borderWidth: 1.5, borderColor: '#E2E8F0', backgroundColor: '#F8FAFC',
-  },
-  statusBtnText: { fontSize: 11, fontWeight: '600', color: '#94A3B8' },
-  applyBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, borderRadius: 14, paddingVertical: 14,
-  },
-  applyBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-});

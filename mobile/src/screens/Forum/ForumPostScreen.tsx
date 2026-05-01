@@ -5,7 +5,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { AppIcon } from '@/icons';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
-import { View, StyleSheet, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
@@ -14,8 +14,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { apiRequest } from '../../utils/api';
 import { ForumPost, ForumReply, RootStackParamList } from '../../types';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Gradients } from '../../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
 import { safeBack } from '../../utils/safeBack';
 
 type Route = RouteProp<RootStackParamList, 'ForumPost'>;
@@ -163,21 +162,22 @@ export default function ForumPostScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      <LinearGradient colors={Gradients.brand as any} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-      <SafeAreaView edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.background} />
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => safeBack(navigation)} style={styles.backBtn}>
-            <AppIcon name={isAr ? 'chevronForward' : 'chevronBack'} size={22} color="#fff" />
+            <AppIcon name={isAr ? 'chevronForward' : 'chevronBack'} size={22} color={C.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>{t('forum.title').replace('💬 ', '')}</Text>
-          {post?.userId === user?.id && (
+          {post?.userId === user?.id ? (
             <TouchableOpacity onPress={handleDeletePost} style={{ padding: 8 }}>
-              <AppIcon name="trashOutline" size={20} color="#fff" />
+              <AppIcon name="trashOutline" size={20} color={Colors.error} />
             </TouchableOpacity>
+          ) : (
+            <View style={{ width: 36 }} />
           )}
         </View>
       </SafeAreaView>
-      </LinearGradient>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FlatList
@@ -250,15 +250,16 @@ export default function ForumPostScreen() {
 const makeStyles = (C: any, isDark: boolean) => StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md,
-    paddingTop: 6, paddingBottom: 14, gap: 10,
+    paddingTop: 8, paddingBottom: 14, gap: 10,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: C.surface,
+    borderWidth: 1.5, borderColor: C.border,
     alignItems: 'center', justifyContent: 'center',
+    ...Shadows.xs,
   },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '900', color: '#fff', letterSpacing: -0.3 },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.3 },
 
   postCard: {
     backgroundColor: C.surface, borderRadius: 20, padding: Spacing.base,
@@ -270,7 +271,7 @@ const makeStyles = (C: any, isDark: boolean) => StyleSheet.create({
   postTitle: { fontSize: 17, fontWeight: '700', color: C.textPrimary, marginBottom: 8 },
   subjectChip: {
     alignSelf: 'flex-start',
-    backgroundColor: isDark ? '#1E1B4B' : '#EDE9FE',
+    backgroundColor: C.primarySurface,
     borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 10,
   },
   subjectText: { fontSize: 11, color: Colors.primary, fontWeight: '600' },
@@ -297,7 +298,7 @@ const makeStyles = (C: any, isDark: boolean) => StyleSheet.create({
   replyHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   replyAvatar: {
     width: 30, height: 30, borderRadius: 15,
-    backgroundColor: isDark ? '#1E1B4B' : '#EDE9FE',
+    backgroundColor: C.primarySurface,
     alignItems: 'center', justifyContent: 'center',
   },
   replyAuthor: { fontSize: 13, fontWeight: '700', color: C.textPrimary },
