@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, View } from 'react-native';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SubscriptionProvider } from '../context/SubscriptionContext';
 import { RootStackParamList } from '../types';
 import { Colors } from '../theme';
@@ -293,6 +294,7 @@ const linking = {
 const AppNavigator = () => {
   const navRef = useNavigationContainerRef<RootStackParamList>();
   const { isAuthenticated } = useAuth();
+  const { isRTL } = useLanguage();
   const [navReady, setNavReady] = useState(false);
   const navigationTheme = useAppNavigationTheme();
 
@@ -366,6 +368,7 @@ const AppNavigator = () => {
       ref={navRef}
       onReady={() => setNavReady(true)}
       theme={navigationTheme}
+      direction={isRTL ? 'rtl' : 'ltr'}
     >
       <SubscriptionProvider>
         <RootNavigator />

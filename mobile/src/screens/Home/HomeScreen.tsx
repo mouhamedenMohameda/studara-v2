@@ -43,21 +43,41 @@ const RES_ICONS: Record<string, AppIconName> = {
   exercise: 'pencil', project: 'rocket', presentation: 'easel', video_course: 'playCircle',
 };
 
-const greetingByHour = (lang: string): string => {
-  const h = new Date().getHours();
-  if (lang !== 'ar') {
-    if (h < 5)  return 'Bonne nuit 🌙';
-    if (h < 12) return 'Bonjour ☀️';
-    if (h < 17) return 'Bon après-midi 🌤';
-    if (h < 21) return 'Bonsoir 🏙';
-    return 'Bonne nuit 🌙';
-  }
-  if (h < 5)  return 'ليلة سعيدة 🌙';
-  if (h < 12) return 'صباح الخير ☀️';
-  if (h < 17) return 'مساء النور 🌤';
-  if (h < 21) return 'مساء الخير 🌆';
-  return 'ليلة سعيدة 🌙';
+// ─── Grille Accueil : sections par onglet (types regroupés, pas de mélange) ───
+
+type StudyTile = {
+  key: string;
+  icon: AppIconName;
+  color: string;
+  label: string;
+  badge?: string;
+  disabled: boolean;
+  onPress: () => void;
 };
+type StudySection = { sectionKey: string; title: string; subtitle: string; tiles: StudyTile[] };
+
+type AIFeatureTile = {
+  key: string;
+  icon: AppIconName;
+  color: string;
+  label: string;
+  description: string;
+  emoji: string;
+  disabled: boolean;
+  badge?: string;
+  onPress: () => void;
+};
+type AISection = { sectionKey: string; title: string; subtitle: string; tiles: AIFeatureTile[] };
+
+type CampusTile = {
+  key: string;
+  icon: AppIconName;
+  color: string;
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+};
+type CampusSection = { sectionKey: string; title: string; subtitle: string; tiles: CampusTile[] };
 
 const formatTime = (iso: string): string => {
   const d = new Date(iso);
@@ -184,8 +204,8 @@ export default function HomeScreen() {
   }), [t]);
 
   const firstName = useMemo(
-    () => user?.fullName?.split(' ')[0] ?? (lang === 'fr' ? 'Étudiant' : 'طالب'),
-    [user?.fullName, lang],
+    () => user?.fullName?.split(' ')[0] ?? t('home.guest_name'),
+    [user?.fullName, t],
   );
 
   const goToExplore = useCallback((screen: 'Resources' | 'Timetable' | 'Courses' | 'Flashcards' | 'Jobs' | 'Opportunities' | 'Reminders' | 'Housing') => {
@@ -203,169 +223,241 @@ export default function HomeScreen() {
     (navigation as any)?.navigate?.(tabName);
   }, [navigation]);
 
-  const greeting = useMemo(() => greetingByHour(lang), [lang]);
-  const isRTL = lang === 'ar';
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 5) return t('home.greeting.night_late');
+    if (h < 12) return t('home.greeting.morning');
+    if (h < 17) return t('home.greeting.afternoon');
+    if (h < 21) return t('home.greeting.evening');
+    return t('home.greeting.night_late');
+  }, [t]);
 
-  const heroLead = useMemo(
-    () => (lang === 'ar' ? 'جاهز نكمل؟' : 'On reprend où tu en étais ?'),
-    [lang],
-  );
+  const isRTL = lang === 'ar';
 
   const heroMainLine = useMemo(() => {
     const due = summary?.dueCards ?? 0;
-    if (lang === 'ar') {
-      return due > 0
-        ? `${due} بطاقة تنتظر المراجعة`
-        : 'خطط جلسة قصيرة اليوم ⚡';
-    }
-    return due > 0
-      ? `${due} fiches à revoir`
-      : 'Une session courte, ça suffit ⚡';
-  }, [lang, summary?.dueCards]);
+    if (due > 0) return `${due} ${t('home.hero.due_cards_suffix')}`;
+    return t('home.hero.relax_line');
+  }, [summary?.dueCards, t]);
 
   const heroCtaLabel = useMemo(() => {
     const due = summary?.dueCards ?? 0;
-    if (lang === 'ar') {
-      return due > 0 ? 'مراجعة البطاقات' : 'تصفّح الموارد';
-    }
-    return due > 0 ? 'Voir mes fiches' : 'Voir les ressources';
-  }, [lang, summary?.dueCards]);
+    return due > 0 ? t('home.hero.cta_review') : t('home.hero.cta_browse');
+  }, [summary?.dueCards, t]);
 
-  const STUDY_TILES = useMemo(() => [
+  const STUDY_SECTIONS = useMemo((): StudySection[] => [
     {
-      key: 'resources', icon: 'library' as const, color: Colors.modules.resources,
-      label: t('home.nav.resources'),
-      badge: summary?.totalResources ? `${summary.totalResources}` : undefined,
-      disabled: !(appActiveByKey.resources ?? true),
-      onPress: () => goToExplore('Resources'),
+      sectionKey: 'learn',
+      title: t('home.study.learn.title'),
+      subtitle: t('home.study.learn.sub'),
+      tiles: [
+        {
+          key: 'resources', icon: 'library', color: Colors.modules.resources,
+          label: t('home.nav.resources'),
+          badge: summary?.totalResources ? `${summary.totalResources}` : undefined,
+          disabled: !(appActiveByKey.resources ?? true),
+          onPress: () => goToExplore('Resources'),
+        },
+        {
+          key: 'flashcards', icon: 'albums', color: Colors.modules.flashcards,
+          label: t('home.nav.flashcards'),
+          badge: summary?.dueCards ? `${summary.dueCards}` : undefined,
+          disabled: !(appActiveByKey.flashcards ?? true),
+          onPress: () => goToExplore('Flashcards'),
+        },
+        {
+          key: 'courses', icon: 'playCircleOutline', color: '#3B82F6',
+          label: t('home.nav.courses'),
+          disabled: !(appActiveByKey.courses ?? true),
+          onPress: () => goToExplore('Courses'),
+        },
+      ],
     },
     {
-      key: 'timetable', icon: 'calendar' as const, color: Colors.modules.timetable,
-      label: t('home.nav.timetable'),
-      disabled: !(appActiveByKey.timetable ?? true),
-      onPress: () => goToExplore('Timetable'),
+      sectionKey: 'plan',
+      title: t('home.study.plan.title'),
+      subtitle: t('home.study.plan.sub'),
+      tiles: [
+        {
+          key: 'timetable', icon: 'calendar', color: Colors.modules.timetable,
+          label: t('home.nav.timetable'),
+          disabled: !(appActiveByKey.timetable ?? true),
+          onPress: () => goToExplore('Timetable'),
+        },
+        {
+          key: 'reminders', icon: 'alarm', color: Colors.modules.reminders,
+          label: t('home.nav.reminders'),
+          badge: summary?.todayReminders?.length ? `${summary.todayReminders.length}` : undefined,
+          disabled: !(appActiveByKey.reminders ?? true),
+          onPress: () => goToExplore('Reminders'),
+        },
+      ],
     },
     {
-      key: 'flashcards', icon: 'albums' as const, color: Colors.modules.flashcards,
-      label: t('home.nav.flashcards'),
-      badge: summary?.dueCards ? `${summary.dueCards}` : undefined,
-      disabled: !(appActiveByKey.flashcards ?? true),
-      onPress: () => goToExplore('Flashcards'),
+      sectionKey: 'rhythm',
+      title: t('home.study.rhythm.title'),
+      subtitle: t('home.study.rhythm.sub'),
+      tiles: [
+        {
+          key: 'focus', icon: 'timerOutline', color: '#EF4444',
+          label: t('home.tile.focus_label'),
+          badge: todayFocus > 0 ? `${todayFocus}${t('home.tile.focus_min_badge')}` : undefined,
+          disabled: !(appActiveByKey.focus ?? true),
+          onPress: () => navigation.navigate('Pomodoro' as any),
+        },
+        {
+          key: 'daily', icon: 'gameControllerOutline', color: Colors.primary,
+          label: t('home.tile.daily_challenge'),
+          disabled: !(appActiveByKey.daily ?? true),
+          onPress: () => navigation.navigate('DailyChallenge' as any),
+        },
+      ],
     },
     {
-      key: 'reminders', icon: 'alarm' as const, color: Colors.modules.reminders,
-      label: t('home.nav.reminders'),
-      badge: summary?.todayReminders?.length ? `${summary.todayReminders.length}` : undefined,
-      disabled: !(appActiveByKey.reminders ?? true),
-      onPress: () => goToExplore('Reminders'),
+      sectionKey: 'account',
+      title: t('home.study.account.title'),
+      subtitle: t('home.study.account.sub'),
+      tiles: [
+        {
+          key: 'profile', icon: 'personOutline', color: Colors.textSecondary,
+          label: t('home.nav.profile'),
+          disabled: !(appActiveByKey.profile ?? true),
+          onPress: () => navigation.navigate('Profile'),
+        },
+      ],
     },
-    {
-      key: 'focus', icon: 'timerOutline' as const, color: '#EF4444',
-      label: lang === 'ar' ? '🍅 تركيز' : '🍅 Focus',
-      badge: todayFocus > 0 ? `${todayFocus}${lang === 'ar' ? 'د' : 'm'}` : undefined,
-      disabled: !(appActiveByKey.focus ?? true),
-      onPress: () => navigation.navigate('Pomodoro' as any),
-    },
-    {
-      key: 'daily', icon: 'gameControllerOutline' as const, color: Colors.primary,
-      label: lang === 'ar' ? '🎲 تحدي اليوم' : '🎲 Défi du jour',
-      disabled: !(appActiveByKey.daily ?? true),
-      onPress: () => navigation.navigate('DailyChallenge' as any),
-    },
-    {
-      key: 'profile', icon: 'personOutline' as const, color: Colors.textSecondary,
-      label: t('home.nav.profile'),
-      disabled: !(appActiveByKey.profile ?? true),
-      onPress: () => navigation.navigate('Profile'),
-    },
-  ], [t, summary?.totalResources, summary?.dueCards, summary?.todayReminders?.length, goToExplore, lang, todayFocus, navigation, appActiveByKey]);
+  ], [t, summary?.totalResources, summary?.dueCards, summary?.todayReminders?.length, goToExplore, todayFocus, navigation, appActiveByKey]);
 
-  const AI_TILES = useMemo(() => [
+  const AI_SECTIONS = useMemo((): AISection[] => [
     {
-      key: 'askzad',
-      icon: 'chatbubbleEllipsesOutline' as const,
-      color: Colors.primary,
-      label: lang === 'ar' ? 'مساعدك الذكي' : 'Assistant IA',
-      description: lang === 'ar' ? 'مساعدك الذكي' : 'Ton assistant IA',
-      emoji: '🤖',
-      disabled: !(appActiveByKey.askzad ?? false),
-      badge: !(appActiveByKey.askzad ?? false) ? t('common.soon') : undefined,
-      onPress: () => navigation.navigate('AskZad' as any),
+      sectionKey: 'assist',
+      title: t('home.ai.chat.title'),
+      subtitle: t('home.ai.chat.sub'),
+      tiles: [
+        {
+          key: 'askzad',
+          icon: 'chatbubbleEllipsesOutline',
+          color: Colors.primary,
+          label: t('home.ai.askzad.label'),
+          description: t('home.ai.askzad.desc'),
+          emoji: '🤖',
+          disabled: !(appActiveByKey.askzad ?? false),
+          badge: !(appActiveByKey.askzad ?? false) ? t('common.soon') : undefined,
+          onPress: () => navigation.navigate('AskZad' as any),
+        },
+        {
+          key: 'whisper',
+          icon: 'micOutline',
+          color: Colors.primaryDark,
+          label: t('home.ai.whisper.label'),
+          description: t('home.ai.whisper.desc'),
+          emoji: '🎙️',
+          disabled: !(appActiveByKey.whisper ?? true),
+          onPress: () => navigation.navigate('VoiceNotes' as any),
+        },
+      ],
     },
     {
-      key: 'whisper',
-      icon: 'micOutline' as const,
-      color: Colors.primaryDark,
-      label: lang === 'ar' ? 'ويسبر' : 'Whisper',
-      description: lang === 'ar' ? 'تحويل الصوت لنص' : 'Transcription vocale',
-      emoji: '🎙️',
-      disabled: !(appActiveByKey.whisper ?? true),
-      onPress: () => navigation.navigate('VoiceNotes' as any),
+      sectionKey: 'docs',
+      title: t('home.ai.docs.title'),
+      subtitle: t('home.ai.docs.sub'),
+      tiles: [
+        {
+          key: 'ai_summary',
+          icon: 'sparkles',
+          color: Colors.secondaryDark,
+          label: t('home.ai.summary.label'),
+          description: t('home.ai.summary.desc'),
+          emoji: '📄',
+          disabled: !(appActiveByKey.ai_summary ?? false) || !(paygActiveByKey.ai_summary ?? false),
+          badge: (!(appActiveByKey.ai_summary ?? false) || !(paygActiveByKey.ai_summary ?? false)) ? t('common.soon') : undefined,
+          onPress: () => {
+            const root = (navigation as any)?.getParent?.()?.getParent?.();
+            if (root?.navigate) root.navigate('AISummaryImport');
+            else navigation.navigate('AISummaryImport' as any);
+          },
+        },
+        {
+          key: 'ai_exercise_correction',
+          icon: 'schoolOutline',
+          color: Colors.modules.news,
+          label: t('home.ai.correction.label'),
+          description: t('home.ai.correction.desc'),
+          emoji: '✅',
+          disabled: !(appActiveByKey.ai_exercise_correction ?? false) || !(paygActiveByKey.ai_exercise_correction ?? false),
+          badge: (!(appActiveByKey.ai_exercise_correction ?? false) || !(paygActiveByKey.ai_exercise_correction ?? false)) ? t('common.soon') : undefined,
+          onPress: () => {
+            const root = (navigation as any)?.getParent?.()?.getParent?.();
+            if (root?.navigate) root.navigate('AIExerciseImport');
+            else navigation.navigate('AIExerciseImport' as any);
+          },
+        },
+      ],
     },
-    {
-      key: 'ai_summary',
-      icon: 'sparkles' as const,
-      color: Colors.secondaryDark,
-      label: lang === 'ar' ? '✨ ملخص ذكي' : '✨ Résumé intelligent',
-      description: lang === 'ar' ? 'PDF/صورة → ملخص + PDF' : 'PDF/image → résumé + PDF',
-      emoji: '📄',
-      disabled: !(appActiveByKey.ai_summary ?? false) || !(paygActiveByKey.ai_summary ?? false),
-      badge: (!(appActiveByKey.ai_summary ?? false) || !(paygActiveByKey.ai_summary ?? false)) ? t('common.soon') : undefined,
-      onPress: () => {
-        const root = (navigation as any)?.getParent?.()?.getParent?.();
-        if (root?.navigate) root.navigate('AISummaryImport');
-        else navigation.navigate('AISummaryImport' as any);
-      },
-    },
-    {
-      key: 'ai_exercise_correction',
-      icon: 'schoolOutline' as const,
-      color: Colors.modules.news,
-      label: lang === 'ar' ? '✅ تصحيح تمارين' : '✅ Correction IA',
-      description: lang === 'ar' ? 'صورة/نص → حل مفصل + PDF' : 'Photo/texte → correction + PDF',
-      emoji: '✅',
-      disabled: !(appActiveByKey.ai_exercise_correction ?? false) || !(paygActiveByKey.ai_exercise_correction ?? false),
-      badge: (!(appActiveByKey.ai_exercise_correction ?? false) || !(paygActiveByKey.ai_exercise_correction ?? false)) ? t('common.soon') : undefined,
-      onPress: () => {
-        const root = (navigation as any)?.getParent?.()?.getParent?.();
-        if (root?.navigate) root.navigate('AIExerciseImport');
-        else navigation.navigate('AIExerciseImport' as any);
-      },
-    },
-  ], [lang, navigation, t, paygActiveByKey.ai_summary, paygActiveByKey.ai_exercise_correction, appActiveByKey]);
+  ], [navigation, t, paygActiveByKey.ai_summary, paygActiveByKey.ai_exercise_correction, appActiveByKey]);
 
-  const COMMUNITY_TILES = useMemo(() => [
+  const CAMPUS_SECTIONS = useMemo((): CampusSection[] => [
     {
-      key: 'jobs', icon: 'briefcaseOutline' as const, color: Colors.modules.jobs,
-      label: t('tab.jobs'),
-      disabled: !(appActiveByKey.jobs ?? true),
-      onPress: () => goToExplore('Jobs'),
+      sectionKey: 'employment',
+      title: t('home.campus.job.title'),
+      subtitle: t('home.campus.job.sub'),
+      tiles: [
+        {
+          key: 'jobs',
+          icon: 'briefcaseOutline',
+          color: Colors.modules.jobs,
+          label: t('tab.jobs'),
+          disabled: !(appActiveByKey.jobs ?? true),
+          onPress: () => goToExplore('Jobs'),
+        },
+      ],
     },
     {
-      key: 'opportunities', icon: 'schoolOutline' as const, color: Colors.primary,
-      label: t('opp.nav'),
-      disabled: !(appActiveByKey.opportunities ?? true),
-      onPress: () => goToExplore('Opportunities'),
+      sectionKey: 'mobility',
+      title: t('home.campus.mobility.title'),
+      subtitle: t('home.campus.mobility.sub'),
+      tiles: [
+        {
+          key: 'opportunities',
+          icon: 'schoolOutline',
+          color: Colors.primary,
+          label: t('opp.nav'),
+          disabled: !(appActiveByKey.opportunities ?? true),
+          onPress: () => goToExplore('Opportunities'),
+        },
+      ],
     },
     {
-      key: 'housing', icon: 'homeOutline' as const, color: '#F59E0B',
-      label: lang === 'ar' ? '🏠 سكن' : '🏠 Logement',
-      disabled: !(appActiveByKey.housing ?? true),
-      onPress: () => goToExplore('Housing'),
+      sectionKey: 'housing',
+      title: t('home.campus.housing.title'),
+      subtitle: t('home.campus.housing.sub'),
+      tiles: [
+        {
+          key: 'housing',
+          icon: 'homeOutline',
+          color: '#F59E0B',
+          label: t('home.campus.housing.tile'),
+          disabled: !(appActiveByKey.housing ?? true),
+          onPress: () => goToExplore('Housing'),
+        },
+      ],
     },
     {
-      key: 'courses', icon: 'playCircleOutline' as const, color: '#3B82F6',
-      label: lang === 'ar' ? '🎬 دروس فيديو' : '🎬 Cours vidéo',
-      disabled: !(appActiveByKey.courses ?? true),
-      onPress: () => goToExplore('Courses'),
+      sectionKey: 'community',
+      title: t('home.campus.community.title'),
+      subtitle: t('home.campus.community.sub'),
+      tiles: [
+        {
+          key: 'forum',
+          icon: 'chatbubblesOutline',
+          color: '#0D9488',
+          label: t('home.campus.forum.tile'),
+          disabled: !(appActiveByKey.forum ?? true),
+          onPress: () => navigation.navigate('Forum' as any),
+        },
+      ],
     },
-    {
-      key: 'forum', icon: 'chatbubblesOutline' as const, color: '#F59E0B',
-      label: lang === 'ar' ? '💬 المنتدى' : '💬 Forum Q&A',
-      disabled: !(appActiveByKey.forum ?? true),
-      onPress: () => navigation.navigate('Forum' as any),
-    },
-  ], [t, goToExplore, lang, navigation, appActiveByKey]);
+  ], [t, goToExplore, navigation, appActiveByKey]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
@@ -386,7 +478,7 @@ export default function HomeScreen() {
         {/* ── Soft UI chrome: app bar + search pill + hero banner ─────────── */}
         <SafeAreaView edges={['top']} style={{ backgroundColor: C.background }}>
           {/* App bar maquette (salut • avatar • notif) */}
-          <View style={[styles.appBarRow, isRTL && styles.rowReverse]}>
+          <View style={styles.appBarRow}>
             <View style={styles.appBarTextCol}>
               <Text style={[styles.appBarHello, isRTL && styles.rtlText]} numberOfLines={1}>
                 {greeting}
@@ -401,7 +493,7 @@ export default function HomeScreen() {
                 style={styles.appBarIconBtn}
                 activeOpacity={0.75}
                 accessibilityRole="button"
-                accessibilityLabel={lang === 'ar' ? 'التذكيرات' : 'Rappels'}
+                accessibilityLabel={t('home.a11y.reminders')}
               >
                 <AppIcon name="notificationsOutline" size={22} color={C.textPrimary} />
                 {(summary?.todayReminders?.length ?? 0) > 0 ? <View style={styles.appBarNotifDot} /> : null}
@@ -418,13 +510,13 @@ export default function HomeScreen() {
 
           {/* Barre recherche pilule (maquettes e‑commerce) */}
           <TouchableOpacity
-            style={[styles.searchPill, isRTL && styles.rowReverse]}
+            style={styles.searchPill}
             onPress={() => goToExplore('Resources')}
             activeOpacity={0.78}
           >
             <AppIcon name="searchOutline" size={20} color={C.textMuted} />
             <Text style={[styles.searchPillPlaceholder, isRTL && styles.rtlText]} numberOfLines={1}>
-              {lang === 'ar' ? 'ابحث عن مذكرة، مادة، سنة…' : 'Rechercher ressources, matière, année…'}
+              {t('home.search.placeholder')}
             </Text>
             <AppIcon name="filterOutline" size={20} color={C.textMuted} />
           </TouchableOpacity>
@@ -433,9 +525,9 @@ export default function HomeScreen() {
             <View style={[styles.focusCard, { backgroundColor: C.surface, borderColor: C.borderLight }]}>
               <View style={[styles.heroAccentBolt, { backgroundColor: C.primary }]} />
 
-              <View style={[styles.heroTopRow, isRTL && styles.rowReverse]}>
+              <View style={styles.heroTopRow}>
                 <View style={styles.heroTextBlock}>
-                  <Text style={[styles.heroLead, { color: C.textMuted }, isRTL && styles.rtlText]}>{heroLead}</Text>
+                  <Text style={[styles.heroLead, { color: C.textMuted }, isRTL && styles.rtlText]}>{t('home.hero.lead')}</Text>
                   <Text style={[styles.heroMain, { color: C.textPrimary }, isRTL && styles.rtlText]}>{heroMainLine}</Text>
                   <TouchableOpacity
                     style={[styles.heroCtaPill, { backgroundColor: C.primary }, Shadows.brand]}
@@ -501,13 +593,13 @@ export default function HomeScreen() {
                           text={
                             <>
                               {tierInfo ? tierInfo.emoji + ' ' : (streak >= 7 ? '🔥🔥' : '🔥') + ' '}
-                              {streak} {lang === 'ar' ? 'يوم' : 'j'}
+                              {streak} {t('home.chip.streak_day')}
                               {freezeCount > 0 ? '  ❄️' : ''}
                             </>
                           }
                           subText={
                             next && streak < next.target
-                              ? `${next.target - streak} ${lang === 'ar' ? 'يوماً لـ' : 'j →'}${next.emoji}`
+                              ? `${next.target - streak} ${t('home.chip.tier_gap')}${next.emoji}`
                               : undefined
                           }
                         />
@@ -517,11 +609,11 @@ export default function HomeScreen() {
                       <GlassChip text={`⭐ ${summary!.xp} XP`} />
                     )}
                     {todayFocus > 0 && (
-                      <GlassChip text={`🍅 ${todayFocus} ${lang === 'ar' ? 'دقيقة' : 'min'}`} />
+                      <GlassChip text={`🍅 ${todayFocus} ${t('home.chip.focus_min')}`} />
                     )}
                     {summary?.nextExam && (
                       <GlassChip
-                        text={`📅 ${summary.nextExam.subject} · ${summary.nextExam.daysLeft}${lang === 'ar' ? 'ي' : 'j'}`}
+                        text={`📅 ${summary.nextExam.subject} · ${summary.nextExam.daysLeft}${t('home.exam.row_day_letter')}`}
                         onPress={() => goToTab('Profile')}
                       />
                     )}
@@ -542,10 +634,10 @@ export default function HomeScreen() {
                     >
                       <View style={styles.focusGoalTop}>
                         <Text style={[styles.focusGoalLabel, { color: C.textPrimary }, isRTL && styles.rtlText]} numberOfLines={1}>
-                          {lang === 'ar' ? '🎯 هدف اليوم' : '🎯 Objectif du jour'}
+                          {t('home.goal.title')}
                         </Text>
                         <Text style={[styles.focusGoalValue, { color: C.primary }, isRTL && styles.rtlText]} numberOfLines={1}>
-                          {studied}/{dailyGoal} {lang === 'ar' ? 'بطاقة' : 'cartes'}
+                          {studied}/{dailyGoal} {t('home.goal.cards_unit')}
                         </Text>
                       </View>
                       <View style={[styles.focusGoalTrack, { backgroundColor: C.border }]}>
@@ -570,9 +662,9 @@ export default function HomeScreen() {
           {/* ── Home Tab Bar (3 categories) ─────────────────────────────── */}
           <View style={styles.homeTabsWrap}>
             {([
-              { key: 'study' as const, label: lang === 'ar' ? 'الدراسة' : 'Étude' },
-              { key: 'ai' as const, label: lang === 'ar' ? 'الذكاء' : 'IA' },
-              { key: 'campus' as const, label: lang === 'ar' ? 'الحرم' : 'Campus' },
+              { key: 'study' as const, label: t('home.tab.learn') },
+              { key: 'ai' as const, label: t('home.tab.copilot') },
+              { key: 'campus' as const, label: t('home.tab.campus') },
             ]).map(tab => {
               const active = homeTab === tab.key;
               return (
@@ -597,116 +689,127 @@ export default function HomeScreen() {
 
           {/* ── Category content ────────────────────────────────────────── */}
           {homeTab === 'study' && (
-            <Section
-              title={lang === 'ar' ? 'أدوات الدراسة' : 'Outils d\'étude'}
-              subtitle={lang === 'ar' ? 'اختَر أين تريد أن تذهب' : 'Choisis où tu veux avancer'}
-              showMore={false}
-            >
-              <View style={styles.moduleList}>
-                {STUDY_TILES.map(tile => (
-                  <TouchableOpacity
-                    key={tile.key}
-                    style={[styles.moduleRow, isRTL && styles.rowReverse]}
-                    onPress={tile.disabled ? undefined : tile.onPress}
-                    activeOpacity={0.76}
-                    disabled={tile.disabled}
-                  >
-                    <View style={[styles.moduleRowIcon, { backgroundColor: tile.color + '22', borderColor: tile.color + '35' }]}>
-                      <AppIcon name={tile.icon} size={24} color={tile.color} />
-                    </View>
-                    <View style={styles.moduleRowBody}>
-                      <Text style={[styles.moduleRowTitle, isRTL && styles.rtlText]} numberOfLines={2}>{tile.label}</Text>
-                      {tile.badge ? (
-                        <Text style={[styles.moduleRowBadge, { color: tile.color }, isRTL && styles.rtlText]}>{tile.badge}</Text>
-                      ) : null}
-                    </View>
-                    {!tile.disabled && (
-                      <AppIcon name={isRTL ? 'chevronBack' : 'chevronForward'} size={18} color={C.textMuted} />
-                    )}
-                    {tile.disabled && (
-                      <View style={[styles.rowSoonBadge, { borderColor: C.border }]}>
-                        <Text style={[styles.rowSoonText, { color: C.textMuted }]}>{t('common.soon')}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Section>
+            <View style={{ marginBottom: 8 }}>
+              {STUDY_SECTIONS.map(section => (
+                <Section
+                  key={section.sectionKey}
+                  title={section.title}
+                  subtitle={section.subtitle}
+                  showMore={false}
+                >
+                  <View style={styles.moduleList}>
+                    {section.tiles.map(tile => (
+                      <TouchableOpacity
+                        key={tile.key}
+                        style={styles.moduleRow}
+                        onPress={tile.disabled ? undefined : tile.onPress}
+                        activeOpacity={0.76}
+                        disabled={tile.disabled}
+                      >
+                        <View style={[styles.moduleRowIcon, { backgroundColor: tile.color + '22', borderColor: tile.color + '35' }]}>
+                          <AppIcon name={tile.icon} size={24} color={tile.color} />
+                        </View>
+                        <View style={styles.moduleRowBody}>
+                          <Text style={[styles.moduleRowTitle, isRTL && styles.rtlText]} numberOfLines={2}>{tile.label}</Text>
+                          {tile.badge ? (
+                            <Text style={[styles.moduleRowBadge, { color: tile.color }, isRTL && styles.rtlText]}>{tile.badge}</Text>
+                          ) : null}
+                        </View>
+                        {!tile.disabled && (
+                          <AppIcon name={isRTL ? 'chevronBack' : 'chevronForward'} size={18} color={C.textMuted} />
+                        )}
+                        {tile.disabled && (
+                          <View style={[styles.rowSoonBadge, { borderColor: C.border }]}>
+                            <Text style={[styles.rowSoonText, { color: C.textMuted }]}>{t('common.soon')}</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </Section>
+              ))}
+            </View>
           )}
 
           {homeTab === 'ai' && (
-            <View style={{ marginBottom: 22 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 6 }}>
-                <View style={styles.aiSectionBadge}>
-                  <Text style={styles.aiSectionBadgeText}>✨ AI</Text>
-                </View>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: C.textPrimary, letterSpacing: -0.2 }}>
-                  {lang === 'ar' ? 'الذكاء الاصطناعي' : 'Intelligence Artificielle'}
-                </Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginHorizontal: -Spacing.lg }}
-              >
-                <View style={{ flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: 10 }}>
-                  {AI_TILES.map(tile => (
-                    <FeatureCard
-                      key={tile.key}
-                      title={tile.label}
-                      description={tile.description}
-                      badgeText={tile.badge}
-                      accentColor={tile.color}
-                      disabled={tile.disabled}
-                      onPress={tile.onPress}
-                      width={280}
-                      left={<Text style={{ fontSize: 22 }}>{tile.emoji}</Text>}
-                    />
-                  ))}
-                </View>
-              </ScrollView>
+            <View style={{ marginBottom: 8 }}>
+              {AI_SECTIONS.map(section => (
+                <Section
+                  key={section.sectionKey}
+                  title={section.title}
+                  subtitle={section.subtitle}
+                  showMore={false}
+                >
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ marginHorizontal: -Spacing.lg }}
+                  >
+                    <View style={{ flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: 10, paddingBottom: 2 }}>
+                      {section.tiles.map(tile => (
+                        <FeatureCard
+                          key={tile.key}
+                          title={tile.label}
+                          description={tile.description}
+                          badgeText={tile.badge}
+                          accentColor={tile.color}
+                          disabled={tile.disabled}
+                          onPress={tile.onPress}
+                          width={280}
+                          left={<Text style={{ fontSize: 22 }}>{tile.emoji}</Text>}
+                        />
+                      ))}
+                    </View>
+                  </ScrollView>
+                </Section>
+              ))}
             </View>
           )}
 
           {homeTab === 'campus' && (
-            <Section
-              title={lang === 'ar' ? 'الحياة الجامعية' : 'Vie de campus'}
-              subtitle={lang === 'ar' ? 'وظائف، سكن، فرص…' : 'Jobs, logement, opportunités…'}
-              showMore={false}
-            >
-              <View style={styles.moduleList}>
-                {COMMUNITY_TILES.map(tile => (
-                  <TouchableOpacity
-                    key={tile.key}
-                    style={[styles.moduleRow, isRTL && styles.rowReverse]}
-                    onPress={tile.disabled ? undefined : tile.onPress}
-                    activeOpacity={0.76}
-                    disabled={tile.disabled}
-                  >
-                    <View style={[styles.moduleRowIcon, { backgroundColor: tile.color + '22', borderColor: tile.color + '35' }]}>
-                      <AppIcon name={tile.icon} size={24} color={tile.color} />
-                    </View>
-                    <View style={styles.moduleRowBody}>
-                      <Text style={[styles.moduleRowTitle, isRTL && styles.rtlText]} numberOfLines={2}>{tile.label}</Text>
-                    </View>
-                    {!tile.disabled && (
-                      <AppIcon name={isRTL ? 'chevronBack' : 'chevronForward'} size={18} color={C.textMuted} />
-                    )}
-                    {tile.disabled && (
-                      <View style={[styles.rowSoonBadge, { borderColor: C.border }]}>
-                        <Text style={[styles.rowSoonText, { color: C.textMuted }]}>{t('common.soon')}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Section>
+            <View style={{ marginBottom: 8 }}>
+              {CAMPUS_SECTIONS.map(section => (
+                <Section
+                  key={section.sectionKey}
+                  title={section.title}
+                  subtitle={section.subtitle}
+                  showMore={false}
+                >
+                  <View style={styles.moduleList}>
+                    {section.tiles.map(tile => (
+                      <TouchableOpacity
+                        key={tile.key}
+                        style={styles.moduleRow}
+                        onPress={tile.disabled ? undefined : tile.onPress}
+                        activeOpacity={0.76}
+                        disabled={tile.disabled}
+                      >
+                        <View style={[styles.moduleRowIcon, { backgroundColor: tile.color + '22', borderColor: tile.color + '35' }]}>
+                          <AppIcon name={tile.icon} size={24} color={tile.color} />
+                        </View>
+                        <View style={styles.moduleRowBody}>
+                          <Text style={[styles.moduleRowTitle, isRTL && styles.rtlText]} numberOfLines={2}>{tile.label}</Text>
+                        </View>
+                        {!tile.disabled && (
+                          <AppIcon name={isRTL ? 'chevronBack' : 'chevronForward'} size={18} color={C.textMuted} />
+                        )}
+                        {tile.disabled && (
+                          <View style={[styles.rowSoonBadge, { borderColor: C.border }]}>
+                            <Text style={[styles.rowSoonText, { color: C.textMuted }]}>{t('common.soon')}</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </Section>
+              ))}
+            </View>
           )}
 
           {/* ── Recently Viewed Resources ────────────────────────────────── */}
           {recentlyViewed.length > 0 && (
             <Section
-              title={lang === 'ar' ? 'آخر ما شاهدته' : 'Récemment consultés'}
+              title={t('home.section.recent')}
               onMore={() => goToExplore('Resources')}
             >
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -Spacing.lg }}>
@@ -760,7 +863,7 @@ export default function HomeScreen() {
           {/* ── 28-Day Study Heatmap (GitHub-style contribution graph) ────── */}
           {heatmapData.length === 28 && (
             <Section
-              title={lang === 'ar' ? '🗓 28 يوم من الدراسة' : '🗓 28 jours d\'activité'}
+              title={t('home.heatmap.title')}
               showMore={false}
             >
               {(() => {
@@ -793,13 +896,13 @@ export default function HomeScreen() {
                     {/* Legend */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 4 }}>
                       <Text style={{ fontSize: 10, color: C.textMuted }}>
-                        {lang === 'ar' ? 'أقل' : 'Moins'}
+                        {t('home.heatmap.less')}
                       </Text>
                       {[C.border, Colors.primary + '38', Colors.primary + '70', Colors.primary].map((c, i) => (
                         <View key={i} style={[styles.heatCell, { backgroundColor: c }]} />
                       ))}
                       <Text style={{ fontSize: 10, color: C.textMuted }}>
-                        {lang === 'ar' ? 'أكثر' : 'Plus'}
+                        {t('home.heatmap.more')}
                       </Text>
                     </View>
                   </View>
@@ -819,7 +922,7 @@ export default function HomeScreen() {
                 <View style={[styles.examWidgetAccent, { backgroundColor: summary.nextExam.color }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.examWidgetLabel}>
-                    {lang === 'ar' ? '📌 الامتحان القادم' : '📌 Prochain examen'}
+                    {t('home.exam.next_title')}
                   </Text>
                   <Text style={styles.examWidgetSubject} numberOfLines={1}>
                     {summary.nextExam.subject}
@@ -830,17 +933,22 @@ export default function HomeScreen() {
                     {summary.nextExam.daysLeft}
                   </Text>
                   <Text style={[styles.examCountdownUnit, { color: summary.nextExam.color }]}>
-                    {lang === 'ar' ? 'يوم' : 'j'}
+                    {t('home.exam.day_unit')}
                   </Text>
                 </View>
-                <AppIcon name="chevronForward" size={16} color="#9CA3AF" style={{ marginLeft: 4 }} />
+                <AppIcon
+                  name={isRTL ? 'chevronBack' : 'chevronForward'}
+                  size={16}
+                  color="#9CA3AF"
+                  style={{ marginStart: 4 }}
+                />
               </>
             ) : (
               <>
                 <View style={[styles.examWidgetAccent, { backgroundColor: C.primary }]} />
-                <AppIcon name="calendarOutline" size={20} color={C.primary} style={{ marginRight: 10 }} />
+                <AppIcon name="calendarOutline" size={20} color={C.primary} style={{ marginEnd: 10 }} />
                 <Text style={[styles.examWidgetLabel, { flex: 1, color: '#6B7280' }]}>
-                  {lang === 'ar' ? 'أضف امتحاناتك — ابدأ العد التنازلي ⏳' : 'Ajouter tes examens — lance le compte à rebours ⏳'}
+                  {t('home.exam.add_hint')}
                 </Text>
                 <AppIcon name="addCircle" size={22} color={C.primary} />
               </>
@@ -933,8 +1041,11 @@ const Section = ({
   onMore?: () => void;
   showMore?: boolean;
 }) => {
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const { colors: C } = useTheme();
+  const titleTextStyle = isRTL
+    ? { writingDirection: 'rtl' as const, textAlign: 'right' as const }
+    : { writingDirection: 'ltr' as const, textAlign: 'left' as const };
   return (
     <View style={{ marginBottom: 22 }}>
       <View
@@ -949,16 +1060,19 @@ const Section = ({
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, minWidth: 0, gap: 12 }}>
           <View style={{ width: 4, borderRadius: 2, alignSelf: 'stretch', marginTop: 3, backgroundColor: C.primary, minHeight: 22 }} />
           <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontSize: 17, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.45 }}>{title}</Text>
+          <Text style={[{ fontSize: 17, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.45 }, titleTextStyle]}>{title}</Text>
           {subtitle ? (
             <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '500',
-                color: C.textSecondary,
-                marginTop: 4,
-                lineHeight: 18,
-              }}
+              style={[
+                {
+                  fontSize: 13,
+                  fontWeight: '500',
+                  color: C.textSecondary,
+                  marginTop: 4,
+                  lineHeight: 18,
+                },
+                titleTextStyle,
+              ]}
             >
               {subtitle}
             </Text>
@@ -967,7 +1081,7 @@ const Section = ({
         </View>
         {showMore && onMore && (
           <TouchableOpacity onPress={onMore} activeOpacity={0.7}>
-            <Text style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>{t('home.see_all')}</Text>
+            <Text style={[{ fontSize: 13, color: C.primary, fontWeight: '600' }, titleTextStyle]}>{t('home.see_all')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -982,9 +1096,6 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   rtlText: {
     writingDirection: 'rtl',
     textAlign: 'right',
-  },
-  rowReverse: {
-    flexDirection: 'row-reverse',
   },
 
   /* App bar + search (Soft UI) */
@@ -1030,7 +1141,7 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
   appBarNotifDot: {
     position: 'absolute',
     top: 9,
-    right: 11,
+    end: 11,
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -1209,15 +1320,6 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
     minWidth: 0,
   },
 
-  /* AI section badge */
-  aiSectionBadge: {
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.sm,
-    backgroundColor: C.primarySurface,
-    borderWidth: 1,
-    borderColor: C.primarySoft,
-  },
-  aiSectionBadgeText: { fontSize: 10, fontWeight: '900', color: C.primary, letterSpacing: 1 },
-
   /* Home tabs — soulignement (pas capsules) */
   homeTabsWrap: {
     flexDirection: 'row',
@@ -1318,7 +1420,7 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
     backgroundColor: C.surface, borderRadius: 16,
     borderWidth: 1, borderColor: C.borderLight,
     overflow: 'hidden', marginBottom: 8, gap: 12,
-    paddingRight: 14, paddingVertical: 14,
+    paddingEnd: 14, paddingVertical: 14,
     shadowColor: '#0F0A1F', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2,
   },
   timelineBar: { width: 5, alignSelf: 'stretch', borderRadius: 0 },
@@ -1358,15 +1460,15 @@ const makeStyles = (C: typeof Colors) => StyleSheet.create({
     backgroundColor: C.surface,
     borderRadius: 20, borderWidth: 1, borderColor: C.borderLight,
     overflow: 'hidden', marginBottom: 22,
-    paddingVertical: 16, paddingRight: 16,
+    paddingVertical: 16, paddingEnd: 16,
     shadowColor: '#0F0A1F', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 3,
   },
-  examWidgetAccent:  { width: 5, alignSelf: 'stretch', borderRadius: 0, marginRight: 14 },
+  examWidgetAccent:  { width: 5, alignSelf: 'stretch', borderRadius: 0, marginEnd: 14 },
   examWidgetLabel:   { fontSize: 11, fontWeight: '800', color: C.textMuted, marginBottom: 4, letterSpacing: 0.4, textTransform: 'uppercase' },
   examWidgetSubject: { fontSize: 16, fontWeight: '900', color: C.textPrimary, letterSpacing: -0.2 },
   examCountdownBubble: {
     alignItems: 'center', justifyContent: 'center',
-    borderRadius: 16, paddingHorizontal: 16, paddingVertical: 10, marginLeft: 12,
+    borderRadius: 16, paddingHorizontal: 16, paddingVertical: 10, marginStart: 12,
     minWidth: 64,
   },
   examCountdownNum:  { fontSize: 28, fontWeight: '900', lineHeight: 32, letterSpacing: -0.8 },

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Dimensions } from 'react-native';
+import { Dimensions, I18nManager } from 'react-native';
 import { AR, FR, EN, ES, TranslationKey } from '../i18n/translations';
 
 export type Lang = 'ar' | 'fr' | 'en' | 'es';
@@ -99,6 +99,16 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setLangState(newLang);
     AsyncStorage.setItem(STORAGE_LANG_KEY, newLang).catch(() => {});
   }, []);
+
+  // Keep native layout direction in sync with in-app language (Arabic = RTL).
+  // Screens should rely on this + logical margins (start/end); avoid stacking row-reverse on top.
+  useEffect(() => {
+    I18nManager.allowRTL(true);
+    const wantRtl = lang === 'ar';
+    if (I18nManager.isRTL !== wantRtl) {
+      I18nManager.forceRTL(wantRtl);
+    }
+  }, [lang]);
 
   const t = useCallback((key: TranslationKey): string => {
     const dict = lang === 'fr' ? FR : lang === 'en' ? EN : lang === 'es' ? ES : AR;

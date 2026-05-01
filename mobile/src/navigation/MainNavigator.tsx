@@ -236,8 +236,8 @@ const MainNavigator = () => {
   const tabBarStyle = {
     position: 'absolute' as const,
     bottom: bottomPad - 6,
-    left: 18,
-    right: 18,
+    start: 18,
+    end: 18,
     height: 72,
     borderRadius: 31,
     backgroundColor: C.tabBackground,

@@ -19,7 +19,6 @@ import {
   Alert,
   Image,
   Platform,
-  I18nManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -35,7 +34,6 @@ import { safeBack } from '../../utils/safeBack';
 import { PAYG_FEATURES, getPaygFeature, PaygModelPrice } from '../../constants/paygFeatures';
 
 type TabKey = 'overview' | 'wallet';
-const isRtl = I18nManager.isRTL;
 
 // ── Subscription / usage types (catalog module) ────────────────────────────────
 interface SubscriptionSnap {
@@ -147,7 +145,7 @@ function formatMru(n: number): string {
 export default function BillingHubScreen() {
   const navigation = useNavigation<any>();
   const { token } = useAuth();
-  const { lang, isAr } = useLanguage();
+  const { lang, isAr, isRTL } = useLanguage();
   const { colors: C, isDark } = useTheme();
   const { refetch: refetchGlobalSub } = useSubscription();
 
@@ -619,7 +617,7 @@ export default function BillingHubScreen() {
                 style={s.walletHeroCta}
               >
                 <Text style={s.walletHeroCtaText}>{isAr ? 'إدارة المحفظة' : 'Gérer le wallet'}</Text>
-                <AppIcon name={isRtl ? 'chevronBack' : 'chevronForward'} size={16} color="#fff" />
+                <AppIcon name={isRTL ? 'chevronBack' : 'chevronForward'} size={16} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>

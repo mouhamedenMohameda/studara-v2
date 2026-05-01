@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, I18nManager } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/ui/Text';
 import { AppIcon } from '@/icons';
@@ -10,8 +10,6 @@ import { apiRequest } from '../../utils/api';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../theme';
 import { safeBack } from '../../utils/safeBack';
 import { useNavigation } from '@react-navigation/native';
-
-const isRtl = I18nManager.isRTL;
 
 type HistoryRow = {
   id: string;
@@ -29,7 +27,7 @@ type HistoryRow = {
 export default function AISummaryHistoryScreen() {
   const navigation = useNavigation<any>();
   const { token } = useAuth();
-  const { isAr } = useLanguage();
+  const { isAr, isRTL } = useLanguage();
   const { colors: C } = useTheme();
 
   const [loading, setLoading] = useState(true);
@@ -65,7 +63,7 @@ export default function AISummaryHistoryScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.background }} edges={['top', 'bottom']}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => safeBack(navigation)} style={s.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <AppIcon name={isRtl ? 'chevronForward' : 'chevronBack'} size={22} color={C.textPrimary} />
+          <AppIcon name={isRTL ? 'chevronForward' : 'chevronBack'} size={22} color={C.textPrimary} />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: C.textPrimary }]}>{isAr ? 'سجل الملخصات' : 'Historique des résumés'}</Text>
         <View style={{ width: 34 }} />
@@ -120,7 +118,7 @@ export default function AISummaryHistoryScreen() {
                         {when}{r.price_mru ? ` · ${r.price_mru} ${isAr ? 'أوقية' : 'MRU'}` : ''}
                       </Text>
                     </View>
-                    <AppIcon name={isRtl ? 'chevronBack' : 'chevronForward'} size={18} color={C.textSecondary} />
+                    <AppIcon name={isRTL ? 'chevronBack' : 'chevronForward'} size={18} color={C.textSecondary} />
                   </TouchableOpacity>
                 );
               })}
