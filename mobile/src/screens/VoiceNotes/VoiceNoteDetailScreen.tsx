@@ -78,8 +78,8 @@ const AI_ACTIONS: ActionConfig[] = [
     mode: 'flashcards',
     icon: 'albumsOutline',
     labelFr: 'Flashcards', labelAr: 'بطاقات',
-    descFr:  '8-15 Q/R pour réviser le cours',
-    descAr:  '8-15 سؤال وجواب للمراجعة',
+    descFr:  'Révision — nombre de cartes adapté au volume du cours',
+    descAr:  'مراجعة — عدد بطاقات حسب طول المحاضرة',
     gradient: [WHISPER_COLOR, '#14532D'],
   },
 ];
@@ -264,6 +264,9 @@ export default function VoiceNoteDetailScreen() {
   const [transcript, setTranscript]       = useState(initialNote.transcript ?? '');
   const [isEditingTranscript, setIsEditing] = useState(false);
   const [isSaving, setIsSaving]           = useState(false);
+  // True while the full note is being fetched on mount — hide the language banner
+  // during this window to avoid a false-positive flash for notes that DO have a language.
+  const [noteLoading, setNoteLoading]     = useState(!initialNote.language);
 
   /** Heuristiques « passages à vérifier » — GET /voice-notes/:id/confidence-hints */
   const [confidenceHints, setConfidenceHints] = useState<TranscriptConfidenceHints | null>(null);
@@ -282,10 +285,13 @@ export default function VoiceNoteDetailScreen() {
       .then(r => r.ok ? r.json() : null)
       .then((data: VoiceNote | null) => {
         if (!data) return;
-        setNote(data);
+        // Preserve language from navigation params if the API doesn't return one
+        // (e.g. list endpoint previously didn't include it, or migration not yet applied)
+        setNote({ ...data, language: data.language ?? initialNote.language });
         setTranscript(data.transcript ?? '');
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setNoteLoading(false));
   }, [initialNote.id, token]);
 
   // ── Polling si la note est en "processing" — recharge jusqu'à "done"/"failed" ──
@@ -299,7 +305,7 @@ export default function VoiceNoteDetailScreen() {
         });
         if (!res.ok) return;
         const data: VoiceNote = await res.json();
-        setNote(data);
+        setNote(prev => ({ ...data, language: data.language ?? prev.language ?? initialNote.language }));
         setTranscript(data.transcript ?? '');
         if (data.status !== 'processing') clearInterval(interval);
       } catch {}
@@ -461,6 +467,54 @@ export default function VoiceNoteDetailScreen() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [transcriptTab, setTranscriptTab]     = useState<'raw' | 'clean'>('raw');
 
+  /**
+   * Draft = valeur du pas-à-pas ; locked = nombre réellement validé (obligatoire pour lancer /enhance).
+   */
+  const [fcDraft, setFcDraft]   = useState(1);
+  const [fcLocked, setFcLocked] = useState<number | null>(null);
+  const [langPatching, setLangPatching] = useState(false);
+
+  const flashcardBoundsKey =
+    note.flashcard_bounds &&
+    `${note.flashcard_bounds.min}-${note.flashcard_bounds.max}-${note.flashcard_bounds.word_count}`;
+
+  useEffect(() => {
+    const fb = note.flashcard_bounds;
+    if (!fb || !flashcardBoundsKey) return;
+    const mid = Math.min(Math.max(fb.default_count, fb.min), fb.max);
+    setFcDraft(mid);
+    setFcLocked(null);
+  }, [flashcardBoundsKey]);
+
+  const patchNoteLanguage = async (l: 'ar' | 'fr') => {
+    if (!token) return;
+    // Update local state immediately so the banner disappears and AI actions unblock.
+    setNote(prev => ({ ...prev, language: l }));
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Persist to backend in the background (best-effort).
+    setLangPatching(true);
+    try {
+      const res = await fetch(`${API_BASE}/voice-notes/${note.id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ language: l }),
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data) setNote(prev => ({ ...data, language: data.language ?? prev.language }));
+      }
+      // If API fails (e.g. backend not yet deployed), the local state already has the language.
+      // The user can use AI actions in this session; next open will show the banner again until deployed.
+    } catch {
+      // Silently ignore — local state is already updated.
+    } finally {
+      setLangPatching(false);
+    }
+  };
+
   // ── Sauvegarder la transcription éditée ──────────────────────────────────
   const saveTranscript = async () => {
     if (!token) return;
@@ -474,7 +528,9 @@ export default function VoiceNoteDetailScreen() {
         },
         body: JSON.stringify({ transcript }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+      setNote(data as VoiceNote);
       setIsEditing(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e: any) {
@@ -516,6 +572,27 @@ export default function VoiceNoteDetailScreen() {
   // ── Action IA ─────────────────────────────────────────────────────────────
   const handleEnhance = async (mode: VoiceNoteEnhanceMode) => {
     if (!token || !transcript) return;
+
+    if (mode === 'flashcards') {
+      if (note.language !== 'ar' && note.language !== 'fr') {
+        Alert.alert(
+          isAr ? 'اللغة مطلوبة' : 'Langue requise',
+          isAr
+            ? 'حدّد لغة النسخ العربية أو الفرنسية في الأعلى لتوليد بطاقات بلغة واحدة فقط.'
+            : 'Indique la langue de la note (arabe ou français) pour des flashcards dans la même langue que le cours.',
+        );
+        return;
+      }
+      if (fcLocked == null) {
+        Alert.alert(
+          isAr ? 'أكد عدد البطاقات' : 'Confirme le nombre',
+          isAr
+            ? 'اضغط «تأكيد العدد» بعد اختيار كم بطاقة تريد، ثم ابدأ التوليد.'
+            : 'Appuie sur « Valider le nombre » après avoir choisi combien de cartes tu veux — c’est ce qui est facturé.',
+        );
+        return;
+      }
+    }
 
     // Pause audio before opening modal (iOS pageSheet interrupts audio session)
     if (isPlaying) {
@@ -608,6 +685,9 @@ export default function VoiceNoteDetailScreen() {
           mode,
           subject: note.subject ?? '',
           enhancement_model: selectedModel,
+          ...(mode === 'flashcards' && fcLocked != null
+            ? { flashcard_count: fcLocked }
+            : {}),
         }),
       });
 
@@ -656,6 +736,7 @@ export default function VoiceNoteDetailScreen() {
 
       setShowResultModal(true);
     } catch (e: any) {
+      Alert.alert(t('vn.error'), e.message ?? t('vn.ai_error'));
     } finally {
       setEnhanceLoading(false);
       setActiveAction(null);
@@ -1267,6 +1348,40 @@ export default function VoiceNoteDetailScreen() {
             </View>
           ) : (
             <>
+            {!noteLoading && note.status === 'done' && note.language !== 'ar' && note.language !== 'fr' ? (
+              <View
+                style={[
+                  styles.languageFixBanner,
+                  { borderColor: C.border, backgroundColor: C.surfaceVariant },
+                ]}
+              >
+                <Text style={[styles.languageFixTitle, { color: C.textPrimary, textAlign: isAr ? 'right' : 'left' }]}>
+                  {isAr ? 'لغة النسخ غير محفوظة' : 'Langue du cours non enregistrée'}
+                </Text>
+                <Text style={[styles.languageFixSub, { color: C.textMuted, textAlign: isAr ? 'right' : 'left' }]}>
+                  {isAr
+                    ? 'اختر اللغة لتطابق البطاقات والملخص مع نص المحاضرة.'
+                    : 'Choisis la langue du transcript : les flashcards resteront uniquement dans cette langue.'}
+                </Text>
+                <View style={[styles.languageFixRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                  <TouchableOpacity
+                    style={[styles.languageFixChip, { borderColor: C.border }]}
+                    disabled={langPatching}
+                    onPress={() => patchNoteLanguage('ar')}
+                  >
+                    <Text style={{ fontWeight: '800', color: C.textPrimary }}>🇲🇷 {t('vn.lang.ar')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.languageFixChip, { borderColor: C.border }]}
+                    disabled={langPatching}
+                    onPress={() => patchNoteLanguage('fr')}
+                  >
+                    <Text style={{ fontWeight: '800', color: C.textPrimary }}>🇫🇷 {t('vn.lang.fr')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+
             <View style={styles.modelSelectorWrap}>
               <Text style={styles.modelSelectorLabel}>
                 {isAr ? 'نموذج الذكاء الاصطناعي' : 'Modèle IA'}
@@ -1300,6 +1415,67 @@ export default function VoiceNoteDetailScreen() {
               </ScrollView>
             </View>
 
+            {note.flashcard_bounds && note.status === 'done' ? (
+              <View style={styles.flashcardQtyBlock}>
+                <View style={[styles.flashcardQtyWrap, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={[styles.flashcardQtyLabel, { color: C.textPrimary, textAlign: isAr ? 'right' : 'left' }]}>
+                      {isAr ? 'عدد البطاقات' : 'Nombre de flashcards'}
+                    </Text>
+                    <Text style={[styles.flashcardQtyHint, { color: C.textMuted, textAlign: isAr ? 'right' : 'left' }]}>
+                      {isAr
+                        ? `حوالي ${note.flashcard_bounds.word_count} كلمة — يُسمح ${note.flashcard_bounds.min}-${note.flashcard_bounds.max}. يُحمَّل السعر بحسب هذا العدد.`
+                        : `~${note.flashcard_bounds.word_count} mots — autorisé : ${note.flashcard_bounds.min}–${note.flashcard_bounds.max}. Le prix est proportionnel au nombre choisi.`}
+                    </Text>
+                  </View>
+                  <View style={[styles.flashcardQtyStepper, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={isAr ? 'تقليل' : 'Moins'}
+                      style={[styles.flashcardQtyBtn, { borderColor: C.border }]}
+                      onPress={() => {
+                        const { min } = note.flashcard_bounds!;
+                        setFcDraft(n => Math.max(min, n - 1));
+                        setFcLocked(null);
+                      }}
+                      disabled={fcDraft <= note.flashcard_bounds.min || enhanceLoading}
+                    >
+                      <Text style={[styles.flashcardQtyBtnTxt, { color: C.textPrimary }]}>−</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.flashcardQtyValue, { color: WHISPER_COLOR }]}>{fcDraft}</Text>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={isAr ? 'زيادة' : 'Plus'}
+                      style={[styles.flashcardQtyBtn, { borderColor: C.border }]}
+                      onPress={() => {
+                        const { max } = note.flashcard_bounds!;
+                        setFcDraft(n => Math.min(max, n + 1));
+                        setFcLocked(null);
+                      }}
+                      disabled={fcDraft >= note.flashcard_bounds!.max || enhanceLoading}
+                    >
+                      <Text style={[styles.flashcardQtyBtnTxt, { color: C.textPrimary }]}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={[styles.flashcardConfirmBtn, { backgroundColor: fcLocked != null ? WHISPER_COLOR + '33' : WHISPER_COLOR }]}
+                  onPress={() => {
+                    setFcLocked(fcDraft);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }}
+                  disabled={enhanceLoading}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.flashcardConfirmBtnTxt, { color: fcLocked != null ? WHISPER_COLOR : '#FFFFFF' }]}>
+                    {fcLocked != null
+                      ? (isAr ? `✓ عدد البطاقات: ${fcLocked}` : `✓ ${fcLocked} cartes`)
+                      : (isAr ? 'تأكيد العدد' : 'Valider le nombre')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
             <View style={[styles.actionDefinitionBox, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
               <AppIcon name="informationCircleOutline" size={18} color={C.textMuted} />
               <View style={{ flex: 1 }}>
@@ -1314,7 +1490,7 @@ export default function VoiceNoteDetailScreen() {
                         '• الملخص: توليد ملخص واحد.',
                         '• إعادة الصياغة: توليد نسخة واحدة مرتبة.',
                         '• الدرس: توليد درس كامل واحد.',
-                        '• البطاقات: توليد مجموعة واحدة (8–15 بطاقة).',
+                        '• البطاقات: تأكيد العدد أولاً — السعر يتناسب مع عدد البطاقات (مرجع 12).',
                       ].join('\n')
                     : [
                         '• Tarification : au volume (nombre de caractères traités).',
@@ -1322,7 +1498,7 @@ export default function VoiceNoteDetailScreen() {
                         '• Résumé : 1 génération.',
                         '• Réécriture : 1 génération.',
                         '• Cours IA : 1 génération.',
-                        '• Flashcards : 1 deck (8–15 cartes).',
+                        '• Flashcards : valider un nombre puis lancer — coût ∝ nombre de cartes (réf. 12 = base).',
                       ].join('\n')}
                 </Text>
               </View>
@@ -1340,7 +1516,11 @@ export default function VoiceNoteDetailScreen() {
                   <TouchableOpacity
                     style={[styles.actionRow, isDone && styles.actionRowDone, isLast && { borderBottomWidth: 0 }]}
                     onPress={() => handleEnhance(action.mode)}
-                    disabled={enhanceLoading}
+                    disabled={
+                      enhanceLoading
+                      || (action.mode === 'flashcards'
+                        && (note.language !== 'ar' && note.language !== 'fr' || fcLocked == null))
+                    }
                     activeOpacity={0.75}
                   >
                     <View style={[styles.actionIcon, { backgroundColor: action.gradient[0] }]}>
@@ -1963,6 +2143,26 @@ function makeStyles(C: typeof Colors) {
       marginRight: Spacing.sm,
       ...Shadows.brand,
     },
+    languageFixBanner: {
+      marginBottom: Spacing.sm,
+      marginHorizontal: 2,
+      borderRadius: BorderRadius.md,
+      borderWidth: 1,
+      padding: 12,
+      gap: 6,
+    },
+    languageFixTitle: { fontSize: 13, fontWeight: '800' },
+    languageFixSub: { fontSize: 12, lineHeight: 18 },
+    languageFixRow: { gap: 10, marginTop: 6 },
+    languageFixChip: {
+      flex: 1,
+      paddingVertical: 10,
+      alignItems: 'center',
+      borderRadius: 12,
+      borderWidth: 1,
+      backgroundColor: C.surface,
+    },
+    flashcardQtyBlock: { gap: 10, marginBottom: Spacing.sm, marginHorizontal: 2 },
     // ── Action rows ────────────────────────────────────────────────────────
     actionsContainer: {
       backgroundColor: C.surface,
@@ -2009,6 +2209,36 @@ function makeStyles(C: typeof Colors) {
       marginTop: 2,
     },
     modelChipSubActive: { color: WHISPER_COLOR + 'CC' },
+
+    flashcardQtyWrap: {
+      marginBottom: Spacing.sm,
+      marginHorizontal: 2,
+      alignItems: 'center',
+      gap: 14,
+      paddingVertical: 6,
+      paddingHorizontal: 2,
+      flexWrap: 'wrap',
+    },
+    flashcardQtyLabel: { fontSize: 13, fontWeight: '800' },
+    flashcardQtyHint: { fontSize: 11, marginTop: 6, lineHeight: 17 },
+    flashcardQtyStepper: { alignItems: 'center', gap: 10, flexShrink: 0 },
+    flashcardQtyBtn: {
+      width: 40,
+      height: 38,
+      borderRadius: 12,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: C.surface,
+    },
+    flashcardQtyBtnTxt: { fontSize: 20, fontWeight: '600', marginTop: -2 },
+    flashcardQtyValue: { fontSize: 17, fontWeight: '900', minWidth: 32, textAlign: 'center' },
+    flashcardConfirmBtn: {
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    flashcardConfirmBtnTxt: { fontSize: 14, fontWeight: '800' },
 
     // ── Pricing definition (what counts as one action) ────────────────────
     actionDefinitionBox: {

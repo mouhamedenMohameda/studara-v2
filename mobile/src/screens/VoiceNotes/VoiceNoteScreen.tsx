@@ -294,7 +294,8 @@ export default function VoiceNoteScreen() {
   // ── Métadonnées ────────────────────────────────────────────────────────────
   const [title, setTitle]       = useState('');
   const [subject, setSubject]   = useState('');
-  const [lang2, setLang2]       = useState<'ar' | 'fr'>('ar');
+  /** Obligatoire avant enregistrement ou import — aucune langue par défaut */
+  const [lang2, setLang2]       = useState<'ar' | 'fr' | null>(null);
   const [diarize, setDiarize]   = useState(false);
   const [transcriptionModel, setTranscriptionModel] = useState<'gpt-4o-transcribe' | 'gpt-4o-mini-transcribe' | 'groq-whisper' | 'google-chirp'>('gpt-4o-transcribe');
 
@@ -483,7 +484,7 @@ export default function VoiceNoteScreen() {
           setIsChunking(true);
           const form = new FormData();
           form.append('audio', { uri: chunkUri, name: 'chunk.m4a', type: 'audio/m4a' } as any);
-          if (lang2) form.append('language', lang2);
+          form.append('language', lang2!);
           const chunkRes = await fetch(`${API_BASE}/voice-notes/partial-transcribe`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
@@ -544,6 +545,16 @@ export default function VoiceNoteScreen() {
   const stopAndUpload = async () => {
     if (!token) return;
     if (isStoppingRef.current) return; // already stopping
+    if (!lang2) {
+      Alert.alert(
+        isAr ? 'اختر اللغة' : 'Choisis la langue',
+        isAr
+          ? 'تعذر الإرسال: لم تُحدد لغة التسجيل.'
+          : 'Impossible d’envoyer sans langue sélectionnée.',
+      );
+      return;
+    }
+    const recordLang = lang2;
 
     // Signal chunk timer to bail out of its current/next cycle
     isStoppingRef.current = true;
@@ -590,7 +601,7 @@ export default function VoiceNoteScreen() {
       try {
         const form2 = new FormData();
         form2.append('audio', { uri, name: 'final_chunk.m4a', type: 'audio/m4a' } as any);
-        if (lang2) form2.append('language', lang2);
+        form2.append('language', recordLang);
         const partialRes = await fetch(`${API_BASE}/voice-notes/partial-transcribe`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -609,7 +620,7 @@ export default function VoiceNoteScreen() {
       form.append('audio', { uri, name: recordingFilename, type: 'audio/m4a' } as any);
       if (title)               form.append('title', title);
       if (subject)             form.append('subject', subject);
-      if (lang2)               form.append('language', lang2);
+      form.append('language', recordLang);
       if (diarize)             form.append('diarize', 'true');
       form.append('transcription_model', transcriptionModel);
       if (combinedTranscript)  form.append('pre_transcript', combinedTranscript);
@@ -639,7 +650,7 @@ export default function VoiceNoteScreen() {
       await fetchNotes();
       setTitle('');
       setSubject('');
-      setLang2('ar');
+      setLang2(null);
       startPolling();
 
       // Naviguer vers le détail même en mode processing (l'écran poll lui aussi)
@@ -663,6 +674,15 @@ export default function VoiceNoteScreen() {
   // ── Upload depuis la bibliothèque ──────────────────────────────────────
   const uploadFromLibrary = async () => {
     if (!token) return;
+    if (!lang2) {
+      Alert.alert(
+        isAr ? 'اختر اللغة' : 'Choisis la langue',
+        isAr
+          ? 'حدد العربية أو الفرنسية قبل رفع الملف، ليتطابق النسخ والبطاقات مع لغة المحاضرة.'
+          : 'Sélectionne arabe ou français avant d’envoyer le fichier ; transcription et flashcards suivront cette langue.',
+      );
+      return;
+    }
     let asset: any = null; // Declared here to be accessible in catch block
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -682,9 +702,9 @@ export default function VoiceNoteScreen() {
 
       const form = new FormData();
       form.append('audio', { uri, name, type: mime } as any);
-      if (title)   form.append('title', title || name.replace(/\.[^.]+$/, ''));
-      if (subject) form.append('subject', subject);
-      if (lang2)   form.append('language', lang2);
+      if (title)      form.append('title', title || name.replace(/\.[^.]+$/, ''));
+      if (subject)    form.append('subject', subject);
+      form.append('language', lang2);
       if (diarize) form.append('diarize', 'true');
       form.append('transcription_model', transcriptionModel);
       form.append('duration_s', '0');
@@ -701,7 +721,7 @@ export default function VoiceNoteScreen() {
       await fetchNotes();
       setTitle('');
       setSubject('');
-      setLang2('ar');
+      setLang2(null);
       startPolling();
       // La transcription se fait en arrière-plan — on navigue vers le détail (status: processing)
       navigation.navigate('VoiceNoteDetail', { note: data as VoiceNote });
@@ -1052,7 +1072,12 @@ export default function VoiceNoteScreen() {
                   <View style={styles.recordRing}>
                     <View style={styles.recordRingInner}>
                       <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                        <TouchableOpacity onPress={startRecording} activeOpacity={0.85} style={styles.recordBtnShadow}>
+                        <TouchableOpacity
+                          onPress={startRecording}
+                          activeOpacity={0.85}
+                          style={[styles.recordBtnShadow, !lang2 ? { opacity: 0.45 } : undefined]}
+                          disabled={!lang2}
+                        >
                           <View style={[styles.recordBtn, { backgroundColor: RECORD_COLOR }]}>
                             <AppIcon name='mic' size={34} color="#fff" />
                           </View>
@@ -1068,9 +1093,9 @@ export default function VoiceNoteScreen() {
 
               <View style={styles.bentoStack}>
                 <TouchableOpacity
-                  style={styles.importCard}
+                  style={[styles.importCard, !lang2 ? { opacity: 0.5 } : undefined]}
                   onPress={uploadFromLibrary}
-                  disabled={isUploading}
+                  disabled={isUploading || !lang2}
                   activeOpacity={0.78}
                 >
                   <View style={[StyleSheet.absoluteFillObject, { backgroundColor: C.primary + '16' }]} />
@@ -1173,7 +1198,7 @@ export default function VoiceNoteScreen() {
 
             <View style={styles.langDiarizeRow}>
               <View style={styles.langBlock}>
-                <Text style={styles.idleSectionLabelMuted}>🌐 {isAr ? 'اللغة' : 'Langue'}</Text>
+                <Text style={styles.idleSectionLabelMuted}>🌐 {isAr ? 'اللغة (مطلوب)' : 'Langue (obligatoire)'}</Text>
                 <View style={styles.segmentControl}>
                   {(['ar', 'fr'] as const).map(l => (
                     <TouchableOpacity

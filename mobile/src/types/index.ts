@@ -322,6 +322,14 @@ export interface ExamCountdown {
 export type VoiceNoteStatus = 'processing' | 'done' | 'failed';
 export type VoiceNoteEnhanceMode = 'summary' | 'rewrite' | 'flashcards' | 'course';
 
+/** Présent sur GET/PATCH /voice-notes/:id quand transcript prêt (Whisper Studio) */
+export interface VoiceNoteFlashcardBounds {
+  min: number;
+  max: number;
+  word_count: number;
+  default_count: number;
+}
+
 /** Structured output from the gpt-4o / gpt-4o-mini enhancement step */
 export interface EnhancedTranscript {
   clean_transcript:  string;
@@ -390,6 +398,8 @@ export interface VoiceNote {
   unclear_segments?: string[];
   ai_course?: string;            // full AI-generated course (Wikipedia-enriched)
   transcript_versions?: TranscriptVersion[];  // history of previous transcripts
+  /** Borne min/max du nombre de flashcards (calcul serveur selon longueur du transcript) */
+  flashcard_bounds?: VoiceNoteFlashcardBounds;
   created_at: string;
   updated_at: string;
 }

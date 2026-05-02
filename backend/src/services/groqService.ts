@@ -34,6 +34,9 @@ import path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 
+import { buildWhisperStudioFlashcardPrompt } from './whisperStudioFlashcardPrompt';
+import { WHISPER_FLASHCARD_HARD_MAX } from './whisperStudioFlashcardBounds';
+
 const execFileP = promisify(execFile);
 
 const GROQ_BASE        = 'https://api.groq.com/openai/v1';
@@ -263,7 +266,7 @@ export async function transcribeAudio(
 
 // ─── 2. Amélioration du transcript (LLaMA) ───────────────────────────────────
 
-const ENHANCE_PROMPTS: Record<EnhanceMode, (t: string, s: string) => string> = {
+const ENHANCE_PROMPTS: Record<Exclude<EnhanceMode, 'flashcards'>, (t: string, s: string) => string> = {
 
   // ── Résumé : 5 points max, pas d'intro ni conclusion ────────────────────
   summary: (transcript, subject) =>
@@ -287,18 +290,6 @@ const ENHANCE_PROMPTS: Record<EnhanceMode, (t: string, s: string) => string> = {
     + `4. Garde les formules, définitions et chiffres exacts\n`
     + `5. Langue : arabe si le cours est en arabe, français sinon\n`
     + `IMPORTANT : Maximum 350 mots. Pas de répétitions. Chaque phrase apporte une info nouvelle.`,
-
-  // ── Flashcards : JSON strict ─────────────────────────────────────────────
-  flashcards: (transcript, subject) =>
-    `Tu es un assistant pédagogique. Transcription d'un cours sur "${subject}" :\n\n`
-    + `"""\n${transcript}\n"""\n\n`
-    + `Génère 8 à 12 flashcards question/réponse en JSON strict UNIQUEMENT (aucun texte avant/après).\n`
-    + `Règles :\n`
-    + `- Question : courte (≤ 10 mots), en arabe ou français\n`
-    + `- Réponse : concise (≤ 20 mots), factuelle\n`
-    + `- Ignore les mots mal transcrits sauf si le contexte les clarifie\n`
-    + `Format :\n`
-    + `[{"front": "?", "back": "réponse courte"}, ...]`,
 };
 
 /**
@@ -312,7 +303,12 @@ export async function enhanceTranscript(
   transcript: string,
   mode: EnhanceMode,
   subject: string = 'cours',
-  limits?: { inputCharsMax?: number; outputTokensMax?: number },
+  limits?: {
+    inputCharsMax?: number;
+    outputTokensMax?: number;
+    flashcardCount?: number;
+    deckLanguage?: 'ar' | 'fr';
+  },
 ): Promise<EnhanceResult> {
   const key = getKey();
 
@@ -327,7 +323,16 @@ export async function enhanceTranscript(
     ? transcript.slice(0, maxChars) + '\n\n[...transcription tronquée pour traitement]'
     : transcript;
 
-  const prompt = ENHANCE_PROMPTS[mode](safeTranscript, subject);
+  const flashcardCardCount = Math.max(
+    1,
+    Math.min(WHISPER_FLASHCARD_HARD_MAX, Math.floor(limits?.flashcardCount ?? 10)),
+  );
+  const deckLang: 'ar' | 'fr' = limits?.deckLanguage === 'ar' ? 'ar' : 'fr';
+
+  const prompt =
+    mode === 'flashcards'
+      ? buildWhisperStudioFlashcardPrompt(safeTranscript, subject, flashcardCardCount, deckLang)
+      : ENHANCE_PROMPTS[mode](safeTranscript, subject);
 
   const MAX_TOKENS: Record<EnhanceMode, number> = {
     summary:    900,
@@ -366,7 +371,10 @@ export async function enhanceTranscript(
       throw new Error('Réponse LLaMA invalide pour les flashcards (JSON attendu)');
     }
     const cards: FlashcardPair[] = JSON.parse(jsonMatch[0]);
-    return { mode, cards };
+    const capped = Array.isArray(cards)
+      ? cards.slice(0, Math.min(flashcardCardCount, WHISPER_FLASHCARD_HARD_MAX))
+      : [];
+    return { mode, cards: capped };
   }
 
   return { mode, text: content };

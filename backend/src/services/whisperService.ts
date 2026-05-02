@@ -18,6 +18,8 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
+import { buildWhisperStudioFlashcardPrompt } from './whisperStudioFlashcardPrompt';
+import { WHISPER_FLASHCARD_HARD_MAX } from './whisperStudioFlashcardBounds';
 
 // ─── Model constants ──────────────────────────────────────────────────────────
 
@@ -48,8 +50,8 @@ const FLASHCARDS_INPUT_CHARS_MAX_BY_MODEL: Record<string, number> = {
   [ENHANCEMENT_MODEL_CHEAP]:   18_000,
 };
 const FLASHCARDS_OUTPUT_TOKENS_MAX_BY_MODEL: Record<string, number> = {
-  [ENHANCEMENT_MODEL_DEFAULT]: 900,
-  [ENHANCEMENT_MODEL_CHEAP]:   1100,
+  [ENHANCEMENT_MODEL_DEFAULT]: 1400,
+  [ENHANCEMENT_MODEL_CHEAP]:   1600,
 };
 
 const COURSE_INPUT_CHARS_MAX = 18_000;
@@ -120,6 +122,10 @@ export interface EnhanceOptions {
     outputTokensMax?: number;
     /** For course generation: max Wikipedia/context chars appended */
     wikiCharsMax?: number;
+    /** Whisper Studio flashcards — nombre demandé par l’utilisateur (validé route) */
+    flashcardCount?: number;
+    /** Langue exclusive des recto/verso (alignée sur la note) */
+    deckLanguage?: 'ar' | 'fr';
   };
 }
 
@@ -1062,15 +1068,6 @@ Règles STRICTES :
 
 // ─── 4. Legacy EnhanceResult wrapper (keeps route contract stable) ─────────────
 
-const FLASHCARD_ENHANCE_PROMPT = (transcript: string, subject: string) =>
-  `Subject: "${subject}". Transcript:\n"""\n${transcript}\n"""\n\n`
-  + `Generate 8–12 question/answer flashcards as strict JSON ONLY (no text before/after).\n`
-  + `Rules:\n`
-  + `- Question: ≤10 words, in Arabic or French\n`
-  + `- Answer: concise (≤20 words), factual\n`
-  + `- Ignore unintelligible segments\n`
-  + `Format: [{"front": "?", "back": "short answer"}, ...]`;
-
 /**
  * Backward-compatible enhanceTranscript() wrapper.
  * Routes to structured enhancement for summary/rewrite,
@@ -1098,11 +1095,19 @@ async function generateFlashcards(
 ): Promise<FlashcardPair[]> {
   const key   = getKey();
   const model = pickEnhancementModel(opts);
+  const cardCount = Math.max(
+    1,
+    Math.min(
+      WHISPER_FLASHCARD_HARD_MAX,
+      Math.floor(opts.limits?.flashcardCount ?? 10),
+    ),
+  );
+  const deckLang: 'ar' | 'fr' = opts.limits?.deckLanguage === 'ar' ? 'ar' : 'fr';
 
   const inputCharsMax =
     Math.max(1000, Math.floor(opts.limits?.inputCharsMax ?? (FLASHCARDS_INPUT_CHARS_MAX_BY_MODEL[model] ?? 15_000)));
   const outputTokensMax =
-    Math.max(200, Math.floor(opts.limits?.outputTokensMax ?? (FLASHCARDS_OUTPUT_TOKENS_MAX_BY_MODEL[model] ?? 900)));
+    Math.max(200, Math.floor(opts.limits?.outputTokensMax ?? (FLASHCARDS_OUTPUT_TOKENS_MAX_BY_MODEL[model] ?? 1400)));
 
   const safeTranscript = clampInput(
     transcript,
@@ -1118,7 +1123,10 @@ async function generateFlashcards(
     },
     body: JSON.stringify({
       model,
-      messages: [{ role: 'user', content: FLASHCARD_ENHANCE_PROMPT(safeTranscript, subject) }],
+      messages: [{
+        role: 'user',
+        content: buildWhisperStudioFlashcardPrompt(safeTranscript, subject, cardCount, deckLang),
+      }],
       temperature: 0.3,
       max_tokens: outputTokensMax,
     }),
@@ -1136,7 +1144,7 @@ async function generateFlashcards(
   if (!jsonMatch) throw new Error('Invalid flashcard response (expected JSON array)');
 
   const raw = JSON.parse(jsonMatch[0]) as FlashcardPair[];
-  // Safety: keep output bounded even if model ignores instructions.
-  return Array.isArray(raw) ? raw.slice(0, 15) : [];
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, Math.min(cardCount, WHISPER_FLASHCARD_HARD_MAX));
 }
 

@@ -51,6 +51,11 @@ import {
   transcribeAudio as transcribeAudioChirp,
 } from '../services/chirpService';
 import { analyzeTranscriptConfidence } from '../services/transcriptConfidenceHeuristics';
+import {
+  attachFlashcardBoundsToVoiceNote,
+  flashcardBoundsFromTranscript,
+  WHISPER_FLASHCARD_HARD_MAX,
+} from '../services/whisperStudioFlashcardBounds';
 
 // ─── Supported model identifiers (sent by the mobile app) ────────────────────
 const VALID_TRANSCRIPTION_MODELS = [
@@ -127,13 +132,13 @@ const BASELINE_ENHANCEMENT: Record<EnhancementModelKey, {
     price: 1.50,
     summary:    { inputCharsMax: 20_000, outputTokensMax: 1600 },
     rewrite:    { inputCharsMax: 20_000, outputTokensMax: 1600 },
-    flashcards: { inputCharsMax: 15_000, outputTokensMax: 900  },
+    flashcards: { inputCharsMax: 15_000, outputTokensMax: 1400 },
   },
   'gpt-4o-mini': {
     price: 0.10,
     summary:    { inputCharsMax: 25_000, outputTokensMax: 1800 },
     rewrite:    { inputCharsMax: 25_000, outputTokensMax: 1800 },
-    flashcards: { inputCharsMax: 18_000, outputTokensMax: 1100 },
+    flashcards: { inputCharsMax: 18_000, outputTokensMax: 1600 },
   },
   'groq-llama': {
     price: 0.15,
@@ -189,12 +194,12 @@ function computeEnhancementBilling(params: {
     'gpt-4o': {
       summary:    20_000 + 6_400, // 1600 tokens ≈ 6400 chars
       rewrite:    20_000 + 6_400,
-      flashcards: 15_000 + 3_600, // 900 tokens ≈ 3600 chars
+      flashcards: 15_000 + 5_600, // 1400 tokens ≈ 5600 chars
     },
     'gpt-4o-mini': {
       summary:    25_000 + 7_200, // 1800 tokens ≈ 7200 chars
       rewrite:    25_000 + 7_200,
-      flashcards: 18_000 + 4_400, // 1100 tokens ≈ 4400 chars
+      flashcards: 18_000 + 6_400, // 1600 tokens ≈ 6400 chars
     },
     'groq-llama': {
       summary:    20_000 + 3_600, // 900 tokens
@@ -220,9 +225,40 @@ function computeEnhancementBilling(params: {
   };
 }
 
+/** Tarif flashcards : coût de base « par action » (volume caractères) × (nombre de cartes / 12). */
+function computeFlashcardEnhancementBilling(params: {
+  model: EnhancementModelKey;
+  inputChars: number;
+  outputChars: number;
+  cardCount: number;
+}): EnhancementBilling & {
+  card_count: number;
+  baseline_card_count: number;
+  multiplier_vs_baseline: number;
+} {
+  const baseBill = computeEnhancementBilling({
+    model: params.model,
+    mode: 'flashcards',
+    inputChars: params.inputChars,
+    outputChars: params.outputChars,
+  });
+  const baselineCardCount = 12;
+  const c = Math.max(1, Math.floor(params.cardCount));
+  const multiplier = c / baselineCardCount;
+  const costMru = round4(Math.max(0.0001, baseBill.costMru * multiplier));
+  return {
+    ...baseBill,
+    costMru,
+    card_count: c,
+    baseline_card_count: baselineCardCount,
+    multiplier_vs_baseline: round4(multiplier),
+  };
+}
+
 function getEnhancementLimits(
   modelKey: EnhancementModelKey,
   mode: EnhanceMode,
+  flashOpts?: { cardCount: number },
 ): ActionLimits {
   const baseline = BASELINE_ENHANCEMENT[modelKey];
   const currentPrice = ENHANCEMENT_PRICE_PER_ACTION[modelKey] ?? baseline.price;
@@ -231,9 +267,17 @@ function getEnhancementLimits(
   const factor = Math.max(0.25, Math.min(4, factorRaw));
 
   const base = baseline[mode];
+  const refCards = 12;
+  let effectiveOut = base.outputTokensMax;
+  if (mode === 'flashcards' && flashOpts?.cardCount != null && flashOpts.cardCount > 0) {
+    const c = flashOpts.cardCount;
+    effectiveOut = Math.ceil(base.outputTokensMax * Math.max(0.5, c / refCards));
+    effectiveOut = Math.min(effectiveOut, 8000);
+  }
+
   return {
     inputCharsMax:   scaleLimit(base.inputCharsMax,   factor, 4000, 60_000),
-    outputTokensMax: scaleLimit(base.outputTokensMax, factor, 300,  8000),
+    outputTokensMax: scaleLimit(effectiveOut, factor, 300, 8000),
   };
 }
 
@@ -387,10 +431,17 @@ router.post('/partial-transcribe', authenticate, uploadTemp.single('audio'), asy
   if (!audioFile) { res.status(400).json({ error: 'Missing audio chunk' }); return; }
 
   const { language } = req.body as { language?: string };
+  if (language !== 'ar' && language !== 'fr') {
+    fs.unlink(audioFile.path, () => {});
+    res.status(400).json({
+      error: 'language is required for partial transcription — send "ar" or "fr"',
+    });
+    return;
+  }
 
   try {
     const transcript = await transcribeAudio(audioFile.path, {
-      language:       (language === 'ar' || language === 'fr') ? language : null,
+      language:       language === 'ar' ? 'ar' : 'fr',
       diarize:        false,
       cheap:          true,
       skipPreprocess: true, // small finalized M4A from iOS — no ffmpeg needed, send directly
@@ -427,6 +478,16 @@ router.post('/', authenticate, uploadAudio.single('audio'), async (req: AuthRequ
     pre_transcript?:       string;  // client-side accumulated transcript — skip Whisper if provided
   };
 
+  if (language !== 'ar' && language !== 'fr') {
+    fs.unlink(audioFile.path, () => {});
+    res.status(400).json({
+      error: 'language is required — use "ar" or "fr" (Whisper Studio: no automatic language guess)',
+    });
+    return;
+  }
+
+  const resolvedLanguage: 'ar' | 'fr' = language;
+
   const useDiarize = diarize === 'true';
   // Resolve transcription model: explicit > cheap flag > diarize flag > default
   const resolvedTranscriptionModel: TranscriptionModelKey = (
@@ -452,10 +513,18 @@ router.post('/', authenticate, uploadAudio.single('audio'), async (req: AuthRequ
 
   // Create DB entry in processing state
   const { rows } = await pool.query(
-    `INSERT INTO voice_notes (user_id, title, subject, duration_s, status, transcription_model, audio_filename)
-     VALUES ($1, $2, $3, $4, 'processing', $5, $6)
+    `INSERT INTO voice_notes (user_id, title, subject, duration_s, language, status, transcription_model, audio_filename)
+     VALUES ($1, $2, $3, $4, $5, 'processing', $6, $7)
      RETURNING *`,
-    [req.user!.id, title || null, subject || null, duration_s ? parseInt(duration_s) : null, resolvedTranscriptionModel, audioFilename],
+    [
+      req.user!.id,
+      title || null,
+      subject || null,
+      duration_s ? parseInt(duration_s, 10) : null,
+      resolvedLanguage,
+      resolvedTranscriptionModel,
+      audioFilename,
+    ],
   );
   const noteId: string = rows[0].id;
   const noteRow = rows[0];
@@ -489,11 +558,11 @@ router.post('/', authenticate, uploadAudio.single('audio'), async (req: AuthRequ
       const transcript = pre_transcript?.trim()
         ? pre_transcript.trim()
         : useGroqTranscription
-          ? await transcribeAudioGroq(audioFile.path, language ?? null)
+          ? await transcribeAudioGroq(audioFile.path, resolvedLanguage)
           : useChirpTranscription
-            ? await transcribeAudioChirp(audioFile.path, language ?? null)
+            ? await transcribeAudioChirp(audioFile.path, resolvedLanguage)
             : await transcribeAudio(audioFile.path, {
-              language:   language ?? null,
+              language:   resolvedLanguage,
               diarize:    useDiarize,
               cheap:      useCheap,
               subject:    subject || undefined,
@@ -563,7 +632,7 @@ router.post('/', authenticate, uploadAudio.single('audio'), async (req: AuthRequ
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, title, subject, duration_s, status, error_message,
+      `SELECT id, title, subject, duration_s, language, status, error_message,
               LEFT(transcript, 200)        AS transcript_preview,
               enhance_mode, deck_id,
               transcription_model,
@@ -623,7 +692,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       [req.params.id, req.user!.id],
     );
     if (!rows.length) { res.status(404).json({ error: 'Note not found' }); return; }
-    res.json(rows[0]);
+    res.json(attachFlashcardBoundsToVoiceNote(rows[0]));
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -728,11 +797,13 @@ router.get('/:id/audio', async (req: Request, res: Response) => {
 // AI enhancement: summary / rewrite / flashcards
 
 router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response) => {
-  const { mode, subject: subjectOverride, cheap, enhancement_model } = req.body as {
+  const { mode, subject: subjectOverride, cheap, enhancement_model, flashcard_count } = req.body as {
     mode:               EnhanceMode;
     subject?:           string;
     cheap?:             string;          // legacy compat
     enhancement_model?: string;          // explicit model key (preferred)
+    /** Whisper Studio flashcards uniquement — entier dans [flashcard_bounds.min, max] */
+    flashcard_count?:   number;
   };
 
   const VALID_MODES: EnhanceMode[] = ['summary', 'rewrite', 'flashcards'];
@@ -765,16 +836,67 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
     }
 
     const subject = subjectOverride || note.subject || 'lecture';
-    const dynamicLimits = getEnhancementLimits(resolvedEnhancementModel, mode);
+
+    const bounds = flashcardBoundsFromTranscript(String(note.transcript));
+    let resolvedFlashcardCount: number | undefined;
+    if (mode === 'flashcards') {
+      const noteLang = note.language as string | null | undefined;
+      if (noteLang !== 'ar' && noteLang !== 'fr') {
+        res.status(400).json({
+          error:
+            'Voice note language is missing. Record or upload again with Arabic or French selected, '
+            + 'or PATCH this note with {"language":"ar"} or {"language":"fr"}.',
+        });
+        return;
+      }
+
+      if (flashcard_count === undefined || flashcard_count === null) {
+        res.status(400).json({
+          error:
+            'flashcard_count is required — confirm how many flashcards you want before generating '
+            + `(allowed range ${bounds.min}–${bounds.max} for ~${bounds.word_count} words).`,
+          flashcard_bounds: bounds,
+        });
+        return;
+      }
+
+      const ni = Math.floor(Number(flashcard_count));
+      if (!Number.isFinite(ni) || ni < bounds.min || ni > bounds.max) {
+        res.status(400).json({
+          error:
+            `flashcard_count must be an integer between ${bounds.min} and ${bounds.max} ` +
+            `(transcript ≈ ${bounds.word_count} words).`,
+          flashcard_bounds: bounds,
+        });
+        return;
+      }
+      resolvedFlashcardCount = clampInt(ni, 1, WHISPER_FLASHCARD_HARD_MAX);
+    }
+
+    const deckLang: 'ar' | 'fr' | undefined =
+      mode === 'flashcards'
+        ? (note.language === 'ar' ? 'ar' : 'fr')
+        : undefined;
+
+    const dynamicLimits = getEnhancementLimits(
+      resolvedEnhancementModel,
+      mode,
+      resolvedFlashcardCount != null ? { cardCount: resolvedFlashcardCount } : undefined,
+    );
+
+    const limitsForEnhance =
+      resolvedFlashcardCount != null
+        ? { ...dynamicLimits, flashcardCount: resolvedFlashcardCount, deckLanguage: deckLang! }
+        : dynamicLimits;
 
     if (mode === 'flashcards') {
       const result = useGroqEnhancement
-        ? await enhanceTranscriptGroq(note.transcript, mode, subject, dynamicLimits)
+        ? await enhanceTranscriptGroq(note.transcript, mode, subject, limitsForEnhance)
         : useGeminiEnhancement
-          ? await enhanceTranscriptGemini(note.transcript, mode, subject, dynamicLimits)
-          : await enhanceTranscript(note.transcript, mode, subject, { cheap: useCheap, limits: dynamicLimits });
-      // Hard cap to keep “1 action” bounded (8–15 cards expected by prompt)
-      const cards = (result.cards ?? []).slice(0, 15);
+          ? await enhanceTranscriptGemini(note.transcript, mode, subject, limitsForEnhance)
+          : await enhanceTranscript(note.transcript, mode, subject, { cheap: useCheap, limits: limitsForEnhance });
+      const cap = resolvedFlashcardCount!;
+      const cards = (result.cards ?? []).slice(0, cap);
 
       if (cards.length) {
         const deckTitle = (note.title || note.subject || 'Voice Note').slice(0, 80);
@@ -797,11 +919,11 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
         // ── Billing: volume-based cost for enhancement (whisper_studio wallet) ─
         try {
           const outputChars = JSON.stringify(cards).length;
-          const bill = computeEnhancementBilling({
+          const bill = computeFlashcardEnhancementBilling({
             model: resolvedEnhancementModel,
-            mode,
             inputChars: Math.min(note.transcript.length, dynamicLimits.inputCharsMax),
             outputChars,
+            cardCount: cap,
           });
           const costMru = bill.costMru;
           await chargeVoiceStudioUsage({
@@ -812,18 +934,19 @@ router.post('/:id/enhance', authenticate, async (req: AuthRequest, res: Response
             walletFeatureKey: 'whisper_studio',
             walletCostMru: costMru,
             providerCostMru: estimateProviderCostFromCharge(costMru),
-            walletDescription: `IA (flashcards, ${cards.length} cartes) — ${resolvedEnhancementModel} — ${bill.totalChars} chars`,
+            walletDescription:
+              `IA flashcards ${bill.card_count} cartes (×${bill.multiplier_vs_baseline} tarif réf. 12) — ${resolvedEnhancementModel} — ${bill.totalChars} chars`,
           });
         } catch (billingErr) {
           console.warn('[voice-notes/enhance] flashcard billing error:', billingErr);
         }
 
         const outputChars = JSON.stringify(cards).length;
-        const billing = computeEnhancementBilling({
+        const billing = computeFlashcardEnhancementBilling({
           model: resolvedEnhancementModel,
-          mode,
           inputChars: Math.min(note.transcript.length, dynamicLimits.inputCharsMax),
           outputChars,
+          cardCount: cap,
         });
         res.json({ mode, deck, cards, billing });
         return;
@@ -1198,7 +1321,11 @@ router.post('/:id/restore-version', authenticate, async (req: AuthRequest, res: 
 // ─── PATCH /api/v1/voice-notes/:id ───────────────────────────────────────────
 
 router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
-  const { title, transcript } = req.body as { title?: string; transcript?: string };
+  const { title, transcript, language } = req.body as {
+    title?: string;
+    transcript?: string;
+    language?: string;
+  };
 
   try {
     const fields: string[] = [];
@@ -1207,6 +1334,14 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 
     if (title !== undefined)      { fields.push(`title = $${idx++}`);      values.push(title); }
     if (transcript !== undefined) { fields.push(`transcript = $${idx++}`); values.push(transcript); }
+    if (language !== undefined) {
+      if (language !== 'ar' && language !== 'fr') {
+        res.status(400).json({ error: 'language must be "ar" or "fr"' });
+        return;
+      }
+      fields.push(`language = $${idx++}`);
+      values.push(language);
+    }
 
     if (!fields.length) { res.status(400).json({ error: 'No fields to update' }); return; }
 
@@ -1218,7 +1353,7 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       values,
     );
     if (!rows.length) { res.status(404).json({ error: 'Note not found' }); return; }
-    res.json(rows[0]);
+    res.json(attachFlashcardBoundsToVoiceNote(rows[0]));
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

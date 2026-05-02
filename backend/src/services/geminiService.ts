@@ -12,6 +12,8 @@ import fs from 'fs';
 import path from 'path';
 
 import { EnhanceMode, FlashcardPair, EnhanceResult } from './groqService';
+import { buildWhisperStudioFlashcardPrompt } from './whisperStudioFlashcardPrompt';
+import { WHISPER_FLASHCARD_HARD_MAX } from './whisperStudioFlashcardBounds';
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const TRANSCRIPTION_MODEL = 'gemini-2.0-flash';
@@ -90,7 +92,7 @@ export async function transcribeAudio(
 }
 
 // ─── 2. Enhancement (résumé / réécriture / flashcards) ────────────────────
-const ENHANCE_PROMPTS: Record<EnhanceMode, (t: string, s: string) => string> = {
+const ENHANCE_PROMPTS: Record<Exclude<EnhanceMode, 'flashcards'>, (t: string, s: string) => string> = {
   summary: (transcript, subject) =>
     `Tu es un assistant pédagogique. Voici la transcription d'un cours sur "${subject}".\n\n` +
     `TRANSCRIPTION :\n"""\n${transcript}\n"""\n\n` +
@@ -110,23 +112,18 @@ const ENHANCE_PROMPTS: Record<EnhanceMode, (t: string, s: string) => string> = {
     `4. Garde les formules, définitions et chiffres exacts\n` +
     `5. Langue : arabe si le cours est en arabe, français sinon\n` +
     `IMPORTANT : Maximum 350 mots.`,
-
-  flashcards: (transcript, subject) =>
-    `Tu es un assistant pédagogique. Transcription d'un cours sur "${subject}" :\n\n` +
-    `"""\n${transcript}\n"""\n\n` +
-    `Génère 8 à 12 flashcards question/réponse en JSON strict UNIQUEMENT (aucun texte avant/après).\n` +
-    `Règles :\n` +
-    `- Question : courte (≤ 10 mots), en arabe ou français\n` +
-    `- Réponse : concise (≤ 20 mots), factuelle\n` +
-    `Format :\n` +
-    `[{"front": "?", "back": "réponse courte"}, ...]`,
 };
 
 export async function enhanceTranscript(
   transcript: string,
   mode: EnhanceMode,
   subject: string = 'cours',
-  limits?: { inputCharsMax?: number; outputTokensMax?: number },
+  limits?: {
+    inputCharsMax?: number;
+    outputTokensMax?: number;
+    flashcardCount?: number;
+    deckLanguage?: 'ar' | 'fr';
+  },
 ): Promise<EnhanceResult> {
   const key = getKey();
 
@@ -141,7 +138,16 @@ export async function enhanceTranscript(
     ? transcript.slice(0, maxChars) + '\n\n[...transcription tronquée]'
     : transcript;
 
-  const prompt = ENHANCE_PROMPTS[mode](safeTranscript, subject);
+  const flashcardCardCount = Math.max(
+    1,
+    Math.min(WHISPER_FLASHCARD_HARD_MAX, Math.floor(limits?.flashcardCount ?? 10)),
+  );
+  const deckLang: 'ar' | 'fr' = limits?.deckLanguage === 'ar' ? 'ar' : 'fr';
+
+  const prompt =
+    mode === 'flashcards'
+      ? buildWhisperStudioFlashcardPrompt(safeTranscript, subject, flashcardCardCount, deckLang)
+      : ENHANCE_PROMPTS[mode](safeTranscript, subject);
   const MAX_TOKENS: Record<EnhanceMode, number> = { summary: 900, rewrite: 1400, flashcards: 2000 };
   const maxTokens = Math.max(200, Math.floor(limits?.outputTokensMax ?? MAX_TOKENS[mode]));
 
@@ -172,7 +178,10 @@ export async function enhanceTranscript(
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error('Réponse Gemini invalide pour les flashcards (JSON attendu)');
     const cards: FlashcardPair[] = JSON.parse(jsonMatch[0]);
-    return { mode, cards };
+    const capped = Array.isArray(cards)
+      ? cards.slice(0, Math.min(flashcardCardCount, WHISPER_FLASHCARD_HARD_MAX))
+      : [];
+    return { mode, cards: capped };
   }
 
   return { mode, text: content };
